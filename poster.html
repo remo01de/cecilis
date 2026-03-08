@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cecilia Character Poster</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="stars">
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+  <div class="star"></div>
+</div>
+  <div class="container">
+    <header class="hero">
+      <img src="img/cecilia1.png" alt="Cecilia Portrait" class="hero-image">
+      <h1 class="hero-title">Cecilia</h1>
+      <p class="hero-subtitle">Warmherzig ✨ Verspielt ✨ Magisch</p>
+    </header>
+
+    <section class="section">
+      <h2>Basisdaten</h2>
+      <ul class="base-info">
+        <li><strong>Name:</strong> Cecilia</li>
+        <li><strong>Alter:</strong> 17–19 Jahre</li>
+        <li><strong>Wesen:</strong> Warmherzig, verspielt, charmant frech</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Erscheinungsbild & Farben</h2>
+      <div class="appearance">
+        <div><strong>Haare:</strong> Vibrant Pink <div class="color-swatch" style="background:#FF69B4"></div></div>
+        <div><strong>Augen:</strong> Sparkling Blue <div class="color-swatch" style="background:#87CEEB"></div></div>
+        <div><strong>Haut:</strong> Soft Peach <div class="color-swatch" style="background:#FFD3B5"></div></div>
+        <div><strong>Glitzerstaub:</strong> Magical Gold <div class="color-swatch" style="background:#FFD700"></div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Outfits</h2>
+      <div class="outfits">
+        <div class="outfit">
+          <img src="img/cecilia5.png" alt="Frühlingsoutfit">
+          <p>Frühling</p>
+        </div>
+        <div class="outfit">
+          <img src="img/cecilia10.png" alt="Winteroutfit">
+          <p>Winter</p>
+        </div>
+        <div class="outfit">
+          <img src="img/cecilia15.png" alt="Partyoutfit">
+          <p>Party</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Typische Posen</h2>
+      <div class="poses">
+        <div class="pose">Kuschel-Pose 🧸</div>
+        <div class="pose">Lach-Pose 😂</div>
+        <div class="pose">Neckischer Blick 😉</div>
+        <div class="pose">Verträumter Blick ✨</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Magische Eigenschaften & Lieblingsorte</h2>
+      <p>Cecilia erschafft kleine Lichtpunkte und Herzchen, beschützt Tiere und liebt weiche, kuschelige Orte in zauberhaften Wäldern.</p>
+    </section>
+
+    <footer class="footer">
+      <p>Made with love ✨ Cecilia Character © 2025</p>
+    </footer>
+  </div>
+  <script>
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    const stars = document.querySelectorAll('.star');
+    stars.forEach((star, index) => {
+      let speed = (index + 1) * 0.05; // Unterschiedliche Geschwindigkeiten
+      star.style.transform = `translateY(${scrollY * speed}px)`;
+    });
+  });
+</script>
+
+</body>
+</html>

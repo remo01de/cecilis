@@ -1,0 +1,24 @@
+{
+  "name": "cecilia-chat",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext mjs,txt --exec node src/server.mjs",
+    "start": "node src/server.mjs"
+  },
+  "keywords": [],
+  "author": "Remo Schiklinski und ChatGPT5",
+  "license": "ISC",
+  "type": "module",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "openai": "^6.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

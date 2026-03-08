@@ -1,0 +1,13 @@
+node_modules
+cecilia-chat/node_modules
+.env
+cecilia-chat/.env
+*.md
+.claude
+.git
+.gitignore
+.vscode
+.idea
+agent-transcripts
+mcps
+terminals

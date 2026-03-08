@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cecilia Galerie & Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="placeholder-images.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #FFB6C1, #ADD8E6);
+      overflow-x: hidden;
+      color: #444;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    header h1 {
+      font-family: 'Pacifico', cursive;
+      font-size: 3rem;
+      color: #FF69B4;
+    }
+
+    /* Container für Galerie und Chat */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .gallery {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gallery img {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      max-height: 350px;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: opacity 2s ease-in-out;
+      position: absolute;
+    }
+
+    .gallery img.active {
+      opacity: 1;
+      position: relative;
+    }
+
+    /* Galerie-Höhe anpassen an Chatbox */
+    @media (min-width: 768px) {
+      .gallery img {
+        max-height: 500px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .gallery img {
+        max-height: 600px;
+      }
+    }
+
+    .chatbox {
+      background: rgba(255, 255, 255, 0.9);
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Desktop-Layout: Galerie links, Chat rechts */
+    @media (min-width: 768px) {
+      .main-content {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 2rem;
+      }
+
+      .gallery {
+        flex: 0 0 45%;
+        max-width: 500px;
+      }
+
+      .gallery img {
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .chatbox {
+        flex: 1;
+        margin: 0;
+        max-width: none;
+      }
+    }
+
+    /* Großer Desktop: Mehr Platz */
+    @media (min-width: 1200px) {
+      .gallery {
+        flex: 0 0 40%;
+      }
+
+      .chatbox {
+        flex: 1;
+        max-width: 700px;
+      }
+    }
+
+    .chatbox::before {
+      content: "✨💖✨";
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 2.5rem;
+      color: #FFD700;
+      animation: sparkle 1.5s infinite alternate ease-in-out;
+    }
+
+    .chat-messages {
+      height: 250px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: inset 0 0 10px rgba(255,182,193,0.5);
+    }
+
+    /* Größerer Chat-Bereich auf Desktop */
+    @media (min-width: 768px) {
+      .chat-messages {
+        height: 400px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .chat-messages {
+        height: 500px;
+      }
+    }
+
+    .chat-message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      position: relative;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .chat-message:hover {
+      background-color: rgba(255, 182, 193, 0.1);
+    }
+
+    .chat-message img {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      margin-top: 0.25rem;
+    }
+
+    .message-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .message-label {
+      color: #FF69B4;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .user-message .message-label {
+      color: #666;
+    }
+
+    .message-text {
+      line-height: 1.5;
+      color: #444;
+    }
+
+    .message-text strong {
+      color: #FF69B4;
+      font-weight: 600;
+    }
+
+    .message-text em {
+      font-style: italic;
+      color: #666;
+    }
+
+    .message-text a {
+      color: #87CEEB;
+      text-decoration: underline;
+    }
+
+    .message-text a:hover {
+      color: #5BA8D1;
+    }
+
+    .cecilia-message {
+      background-color: rgba(255, 182, 193, 0.05);
+    }
+
+    .user-message {
+      background-color: rgba(173, 216, 230, 0.05);
+    }
+
+    .loading {
+      opacity: 0.6;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+    }
+
+    .chat-input button {
+      background-color: #FF69B4;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover {
+      background-color: #ff85c1;
+    }
+
+    .clear-btn {
+      background-color: #ddd !important;
+      color: #666 !important;
+      padding: 0.5rem !important;
+      min-width: 2.5rem;
+      font-size: 1rem;
+    }
+
+    .clear-btn:hover {
+      background-color: #ccc !important;
+    }
+
+    .chat-image-container {
+      margin-top: 0.5rem;
+      position: relative;
+    }
+
+    .chat-image-container img {
+      width: 100% !important;
+      max-width: 400px !important;
+      height: auto !important;
+      max-height: none !important;
+      border-radius: 0.75rem !important;
+      box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3) !important;
+      margin: 0 !important;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .chat-image-container img:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4) !important;
+    }
+
+    .image-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: linear-gradient(135deg, rgba(255,182,193,0.15), rgba(173,216,230,0.15));
+      border-radius: 0.75rem;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #888;
+      animation: pulse 1.5s infinite;
+    }
+
+    .image-error {
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 200, 200, 0.3);
+      border-radius: 0.5rem;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #c44;
+    }
+
+    .search-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: linear-gradient(135deg, rgba(173,216,230,0.2), rgba(200,180,255,0.2));
+      border-radius: 0.75rem;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #888;
+      animation: pulse 1.5s infinite;
+    }
+
+    .search-sources {
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(173,216,230,0.1);
+      border-radius: 0.5rem;
+      border-left: 3px solid #87CEEB;
+    }
+
+    .search-sources summary {
+      font-size: 0.8rem;
+      color: #888;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .search-sources a {
+      display: block;
+      font-size: 0.75rem;
+      color: #87CEEB;
+      text-decoration: none;
+      padding: 0.15rem 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-sources a:hover {
+      color: #5BA8D1;
+      text-decoration: underline;
+    }
+
+    @keyframes sparkle {
+      0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
+      100% { transform: rotate(360deg) scale(1.5); opacity: 1; }
+    }
+
+    @keyframes floatHeart {
+      0% { transform: translateY(0px); opacity: 0.7; }
+      50% { transform: translateY(-5px); opacity: 1; }
+      100% { transform: translateY(0px); opacity: 0.7; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cecilia's Welt</h1>
+  </header>
+
+  <div class="main-content">
+    <section class="gallery">
+      <img id="galleryImage1" class="active" src="img/cecilia1.png" alt="Cecilia Bild 1">
+      <img id="galleryImage2" src="img/cecilia2.png" alt="Cecilia Bild 2">
+      <img id="galleryImage3" src="img/cecilia3.png" alt="Cecilia Bild 3">
+      <img id="galleryImage4" src="img/cecilia4.png" alt="Cecilia Bild 4">
+      <img id="galleryImage5" src="img/cecilia5.png" alt="Cecilia Bild 5">
+      <img id="galleryImage6" src="img/cecilia6.png" alt="Cecilia Bild 6">
+      <img id="galleryImage7" src="img/cecilia7.png" alt="Cecilia Bild 7">
+      <img id="galleryImage8" src="img/cecilia8.png" alt="Cecilia Bild 8">
+      <img id="galleryImage9" src="img/cecilia9.png" alt="Cecilia Bild 9">
+      <img id="galleryImage10" src="img/cecilia10.png" alt="Cecilia Bild 10">
+    </section>
+
+    <section class="chatbox">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Schreibe eine Nachricht an Cecilia...">
+        <button onclick="sendMessage()">Senden</button>
+        <button onclick="clearChat()" title="Chat leeren" class="clear-btn">🗑️</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Galerie Bilder
+    const images = document.querySelectorAll('.gallery img');
+    let currentImage = 0;
+
+    function changeImage() {
+      images[currentImage].classList.remove('active');
+      currentImage = (currentImage + 1) % images.length;
+      images[currentImage].classList.add('active');
+    }
+
+    setInterval(changeImage, 5000); // Alle 5 Sekunden wechseln
+
+    // Konfiguration
+    const API_BASE = window.location.protocol === 'file:'
+      ? 'http://localhost:30000'
+      : '';
+    const CONFIG = {
+      API_URL: API_BASE + '/api/chat',
+      SUMMARIZE_URL: API_BASE + '/api/chat/summarize',
+      IMAGE_URL: API_BASE + '/api/image',
+      SEARCH_URL: API_BASE + '/api/search',
+      USE_AI: true,
+      MAX_MESSAGE_LENGTH: 1000,
+      SUMMARIZE_THRESHOLD: 30,
+      MAX_DISPLAY_MESSAGES: 100,
+      STORAGE_KEY: 'cecilia_chat_state'
+    };
+
+    const IMAGE_MARKER_REGEX = /\[IMAGE:\s*(.+?)\]/g;
+    const SEARCH_MARKER_REGEX = /\[SEARCH:\s*(.+?)\]/g;
+
+    // Chat-State
+    let isWaitingForResponse = false;
+    let conversationHistory = [];
+    let conversationSummary = '';
+    let displayMessages = [];
+
+    // --- localStorage Persistenz ---
+    function saveChatState() {
+      try {
+        const trimmedDisplay = displayMessages.slice(-CONFIG.MAX_DISPLAY_MESSAGES);
+        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({
+          summary: conversationSummary,
+          history: conversationHistory,
+          display: trimmedDisplay
+        }));
+      } catch (e) {
+        console.warn('Chat-State konnte nicht gespeichert werden:', e);
+      }
+    }
+
+    function loadChatState() {
+      try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        conversationSummary = state.summary || '';
+        conversationHistory = Array.isArray(state.history) ? state.history : [];
+        displayMessages = Array.isArray(state.display) ? state.display : [];
+      } catch (e) {
+        console.warn('Chat-State konnte nicht geladen werden:', e);
+      }
+    }
+
+    function restoreDisplayMessages() {
+      for (const msg of displayMessages) {
+        const msgDiv = addMessageToChat(msg.sender, msg.text, false, true);
+        if (msg.imageUrl) {
+          addImageToMessage(msgDiv, msg.imageUrl);
+        }
+        if (msg.searchSources && msg.searchSources.length > 0) {
+          addSearchSourcesToMessage(msgDiv, msg.searchSources);
+        }
+      }
+    }
+
+    // Einfacher Markdown-zu-HTML Converter (XSS-sicher)
+    function parseMarkdown(text) {
+      // Escape HTML zuerst (Sicherheit)
+      let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Markdown-Formatierung
+      // **Bold**
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+      // *Italic*
+      html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+      // Links [text](url) - Optional
+      html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+      // Zeilenumbrüche
+      html = html.replace(/\n/g, '<br>');
+
+      return html;
+    }
+
+    // [IMAGE: prompt] Marker aus Text extrahieren
+    function extractImagePrompts(text) {
+      const prompts = [];
+      let match;
+      const regex = new RegExp(IMAGE_MARKER_REGEX.source, 'g');
+      while ((match = regex.exec(text)) !== null) {
+        prompts.push(match[1].trim());
+      }
+      return prompts;
+    }
+
+    function stripImageMarkers(text) {
+      return text
+        .replace(IMAGE_MARKER_REGEX, '')
+        .replace(SEARCH_MARKER_REGEX, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    // Bild generieren via Backend
+    async function generateImage(prompt) {
+      const response = await fetch(CONFIG.IMAGE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, size: '1024x1024' })
+      });
+
+      if (!response.ok) throw new Error('Image generation failed');
+      const data = await response.json();
+      return data.url;
+    }
+
+    // Hilfsfunktion: Nachricht zum Chat hinzufügen
+    function addMessageToChat(sender, message, isLoading = false, isRestore = false) {
+      const chatBox = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('chat-message');
+      messageDiv.classList.add(sender === 'user' ? 'user-message' : 'cecilia-message');
+      if (isLoading) messageDiv.classList.add('loading');
+
+      const img = document.createElement('img');
+      img.src = sender === 'user' ? 'img/user-avatar.svg' : 'img/cecilia-avatar.svg';
+      img.alt = sender === 'user' ? 'User' : 'Cecilia';
+
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('message-content');
+
+      const label = document.createElement('strong');
+      label.textContent = sender === 'user' ? 'Du:' : 'Cecilia:';
+      label.classList.add('message-label');
+
+      const textDiv = document.createElement('div');
+      textDiv.classList.add('message-text');
+
+      if (sender === 'cecilia' && !isLoading) {
+        const cleanText = stripImageMarkers(message);
+        if (cleanText) textDiv.innerHTML = parseMarkdown(cleanText);
+      } else {
+        textDiv.textContent = message;
+      }
+
+      contentDiv.appendChild(label);
+      contentDiv.appendChild(textDiv);
+
+      messageDiv.appendChild(img);
+      messageDiv.appendChild(contentDiv);
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      return messageDiv;
+    }
+
+    // Bild im Chat anzeigen (nach Generierung oder aus Restore)
+    function addImageToMessage(messageDiv, imageUrl) {
+      const contentDiv = messageDiv.querySelector('.message-content');
+      const container = document.createElement('div');
+      container.classList.add('chat-image-container');
+      const imgEl = document.createElement('img');
+      imgEl.src = imageUrl;
+      imgEl.alt = 'Von Cecilia generiertes Bild';
+      imgEl.loading = 'lazy';
+      imgEl.addEventListener('click', () => window.open(imageUrl, '_blank'));
+      container.appendChild(imgEl);
+      contentDiv.appendChild(container);
+      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+    }
+
+    // Bild-Generierung starten und Loading-State anzeigen
+    async function handleImageGeneration(messageDiv, prompt) {
+      const contentDiv = messageDiv.querySelector('.message-content');
+      const loadingEl = document.createElement('div');
+      loadingEl.classList.add('image-loading');
+      loadingEl.textContent = '🎨 Cecilia malt ein Bild...';
+      contentDiv.appendChild(loadingEl);
+      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+
+      try {
+        const imageUrl = await generateImage(prompt);
+        loadingEl.remove();
+        addImageToMessage(messageDiv, imageUrl);
+        return imageUrl;
+      } catch (e) {
+        console.error('Bildgenerierung fehlgeschlagen:', e);
+        loadingEl.remove();
+        const errorEl = document.createElement('div');
+        errorEl.classList.add('image-error');
+        errorEl.textContent = '🖼️ Bild konnte leider nicht erstellt werden.';
+        contentDiv.appendChild(errorEl);
+        return null;
+      }
+    }
+
+    // [SEARCH: query] Marker aus Text extrahieren
+    function extractSearchQueries(text) {
+      const queries = [];
+      let match;
+      const regex = new RegExp(SEARCH_MARKER_REGEX.source, 'g');
+      while ((match = regex.exec(text)) !== null) {
+        queries.push(match[1].trim());
+      }
+      return queries;
+    }
+
+    function stripSearchMarkers(text) {
+      return text.replace(SEARCH_MARKER_REGEX, '').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    // Websuche via Backend
+    async function performWebSearch(query) {
+      const response = await fetch(CONFIG.SEARCH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, count: 8 })
+      });
+      if (!response.ok) throw new Error('Search failed');
+      const data = await response.json();
+      return data.results || [];
+    }
+
+    // Suchergebnisse als Kontext für den zweiten Chat-Call formatieren
+    function formatSearchResultsForContext(query, results) {
+      if (results.length === 0) return `Websuche nach "${query}" ergab keine Ergebnisse.`;
+      const items = results
+        .map((r, i) => `${i + 1}. ${r.title}\n   ${r.snippet}\n   Quelle: ${r.url}`)
+        .join('\n\n');
+      return `Websuche nach "${query}" ergab folgende Ergebnisse:\n\n${items}`;
+    }
+
+    // Quellen-Links unter einer Nachricht anzeigen
+    function addSearchSourcesToMessage(messageDiv, results) {
+      if (!results || results.length === 0) return;
+      const contentDiv = messageDiv.querySelector('.message-content');
+      const sourcesEl = document.createElement('details');
+      sourcesEl.classList.add('search-sources');
+      const summary = document.createElement('summary');
+      summary.textContent = `🔮 ${results.length} Quellen`;
+      sourcesEl.appendChild(summary);
+      for (const r of results.slice(0, 5)) {
+        if (!r.url) continue;
+        const a = document.createElement('a');
+        a.href = r.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = r.title || r.url;
+        sourcesEl.appendChild(a);
+      }
+      contentDiv.appendChild(sourcesEl);
+    }
+
+    // Fallback-Antworten (für Offline-Modus oder bei API-Fehler)
+    function getFallbackResponse() {
+      const responses = [
+        "Oh, das klingt zauberhaft! ✨",
+        "Magst du einen Spaziergang im Feenwald machen? 🌸",
+        "Ich freue mich, mit dir zu plaudern! 💖",
+        "Hihi, du bist echt nett! 😊",
+        "Sollen wir zusammen Sterne zählen? ✨🌟",
+        "Ich hab heute einen Schmetterling gesehen! 🦋",
+        "Deine Worte machen mich glücklich! 🎀"
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+
+    // API-Aufruf an Backend
+    async function getCeciliaResponseFromAPI(message) {
+      try {
+        const payload = { message, history: conversationHistory };
+        if (conversationSummary) payload.summary = conversationSummary;
+
+        const response = await fetch(CONFIG.API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Bitte warte einen Moment, bevor du eine neue Nachricht sendest.');
+          }
+          throw new Error('Server-Fehler');
+        }
+
+        const data = await response.json();
+        return data.content || getFallbackResponse();
+      } catch (error) {
+        console.error('API-Fehler:', error);
+        throw error;
+      }
+    }
+
+    // Hauptfunktion: Nachricht senden
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+
+      // Validierung
+      if (!message) return;
+      if (message.length > CONFIG.MAX_MESSAGE_LENGTH) {
+        alert(`Nachricht ist zu lang! Maximal ${CONFIG.MAX_MESSAGE_LENGTH} Zeichen erlaubt.`);
+        return;
+      }
+      if (isWaitingForResponse) {
+        console.log('Warte noch auf Antwort...');
+        return;
+      }
+
+      // User-Nachricht anzeigen
+      addMessageToChat('user', message);
+      input.value = '';
+      isWaitingForResponse = true;
+
+      // Loading-Nachricht
+      const loadingMsg = addMessageToChat('cecilia', 'Denkt nach...', true);
+
+      try {
+        let response;
+        let isAIResponse = false;
+
+        if (CONFIG.USE_AI) {
+          try {
+            response = await getCeciliaResponseFromAPI(message);
+            isAIResponse = true;
+          } catch (apiError) {
+            console.warn('API nicht erreichbar, verwende Fallback:', apiError);
+            response = getFallbackResponse();
+
+            if (!window.apiWarningShown) {
+              window.apiWarningShown = true;
+              const warningDiv = document.createElement('div');
+              warningDiv.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;padding:10px;margin:10px 0;border-radius:5px;font-size:12px;';
+              warningDiv.textContent = '⚠️ Backend-Server nicht erreichbar. Verwende Offline-Modus mit vordefinierten Antworten.';
+              document.getElementById('chatMessages').insertBefore(warningDiv, document.getElementById('chatMessages').firstChild);
+            }
+          }
+        } else {
+          response = getFallbackResponse();
+        }
+
+        // Prüfe ob Cecilia eine Websuche machen will
+        const searchQueries = extractSearchQueries(response);
+        let finalResponse = response;
+        let searchResults = null;
+
+        if (searchQueries.length > 0 && isAIResponse) {
+          // Two-Pass: Suche ausführen, dann Cecilia nochmal fragen
+          const searchQuery = searchQueries[0];
+          const preliminaryText = stripSearchMarkers(response);
+
+          // Loading-Text aktualisieren
+          const loadingText = loadingMsg.querySelector('.message-text');
+          if (loadingText) loadingText.textContent = '🔮 Recherchiert im Web...';
+
+          try {
+            searchResults = await performWebSearch(searchQuery);
+            const searchContext = formatSearchResultsForContext(searchQuery, searchResults);
+
+            // Loading-Text aktualisieren
+            if (loadingText) loadingText.textContent = '✨ Verarbeitet Ergebnisse...';
+
+            // Zweiter Chat-Call mit Suchergebnissen als Kontext
+            const followUpPayload = {
+              message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die Ergebnisse:\n\n${searchContext}\n\nBitte antworte dem User jetzt basierend auf diesen Suchergebnissen. Bleibe in deinem Charakter als Cecilia. Fasse die relevanten Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
+              history: conversationHistory,
+            };
+            if (conversationSummary) followUpPayload.summary = conversationSummary;
+
+            const followUpRes = await fetch(CONFIG.API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(followUpPayload)
+            });
+
+            if (followUpRes.ok) {
+              const followUpData = await followUpRes.json();
+              finalResponse = followUpData.content || preliminaryText || response;
+            } else {
+              finalResponse = preliminaryText || response;
+            }
+          } catch (searchError) {
+            console.warn('Websuche fehlgeschlagen:', searchError);
+            finalResponse = preliminaryText || response;
+            searchResults = null;
+          }
+        }
+
+        // Loading-Nachricht entfernen
+        loadingMsg.remove();
+
+        // Cecilia-Antwort anzeigen (ohne Marker)
+        const ceciliaMsg = addMessageToChat('cecilia', finalResponse);
+
+        // Quellen anzeigen, falls Suche stattfand
+        if (searchResults && searchResults.length > 0) {
+          addSearchSourcesToMessage(ceciliaMsg, searchResults);
+        }
+
+        // Bildgenerierung starten, falls [IMAGE: prompt] vorhanden
+        const imagePrompts = extractImagePrompts(finalResponse);
+        let generatedImageUrl = null;
+        if (imagePrompts.length > 0 && CONFIG.USE_AI) {
+          generatedImageUrl = await handleImageGeneration(ceciliaMsg, imagePrompts[0]);
+        }
+
+        // Display- und Conversation-History pflegen
+        const displayEntry = { sender: 'cecilia', text: finalResponse };
+        if (generatedImageUrl) displayEntry.imageUrl = generatedImageUrl;
+        if (searchResults && searchResults.length > 0) {
+          displayEntry.searchSources = searchResults.slice(0, 5).map(r => ({ title: r.title, url: r.url }));
+        }
+        displayMessages.push(
+          { sender: 'user', text: message },
+          displayEntry
+        );
+
+        if (isAIResponse) {
+          conversationHistory.push(
+            { role: 'user', content: message },
+            { role: 'assistant', content: finalResponse }
+          );
+
+          if (conversationHistory.length >= CONFIG.SUMMARIZE_THRESHOLD) {
+            await summarizeConversation();
+          }
+        }
+
+        saveChatState();
+
+      } catch (error) {
+        loadingMsg.remove();
+        addMessageToChat('cecilia', 'Entschuldigung, etwas ist schiefgelaufen. Versuche es nochmal! 🌸');
+        console.error('Chat-Fehler:', error);
+      } finally {
+        isWaitingForResponse = false;
+      }
+    }
+
+    // Zusammenfassung generieren wenn History zu lang wird
+    async function summarizeConversation() {
+      try {
+        console.log(`Zusammenfassung wird erstellt (${conversationHistory.length} Einträge)...`);
+        const payload = { history: conversationHistory };
+        if (conversationSummary) payload.summary = conversationSummary;
+
+        const response = await fetch(CONFIG.SUMMARIZE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Summarize fehlgeschlagen');
+
+        const data = await response.json();
+        if (data.summary) {
+          conversationSummary = data.summary;
+          conversationHistory = [];
+          console.log('Zusammenfassung erstellt, History zurückgesetzt.');
+        }
+      } catch (e) {
+        console.warn('Zusammenfassung fehlgeschlagen, History wird gekürzt:', e);
+        conversationHistory = conversationHistory.slice(-10);
+      }
+    }
+
+    // Chat leeren
+    function clearChat() {
+      conversationHistory = [];
+      conversationSummary = '';
+      displayMessages = [];
+      document.getElementById('chatMessages').innerHTML = '';
+      window.apiWarningShown = false;
+      try { localStorage.removeItem(CONFIG.STORAGE_KEY); } catch (e) {}
+    }
+
+    // Chat-State beim Laden wiederherstellen
+    loadChatState();
+    restoreDisplayMessages();
+
+    // Enter-Taste zum Senden
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !isWaitingForResponse) {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>

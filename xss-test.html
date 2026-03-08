@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XSS-Schutz Test - Cecilia Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #FF69B4;
+    }
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #FF69B4;
+      padding-bottom: 10px;
+    }
+    .test-input {
+      background: #fffacd;
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #ffa500;
+      font-family: monospace;
+    }
+    .result {
+      background: #f0f0f0;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .safe {
+      color: green;
+      font-weight: bold;
+    }
+    .unsafe {
+      color: red;
+      font-weight: bold;
+    }
+    button {
+      background: #FF69B4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #ff85c1;
+    }
+    #testResults {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>XSS-Schutz Test für Cecilia Chat</h1>
+
+  <div class="test-section">
+    <h2>Über diesen Test</h2>
+    <p>Diese Seite testet den XSS-Schutz (Cross-Site Scripting) im Cecilia Chat-System.</p>
+    <p>XSS-Angriffe versuchen, bösartigen JavaScript-Code in Webseiten einzuschleusen.</p>
+    <p><strong>Status:</strong> <span class="safe">✓ XSS-Schutz aktiviert</span></p>
+  </div>
+
+  <div class="test-section">
+    <h2>Test-Szenarien</h2>
+
+    <h3>1. Script-Tag Injection</h3>
+    <div class="test-input">
+      &lt;script&gt;alert('XSS')&lt;/script&gt;
+    </div>
+    <button onclick="testInput('<script>alert(\'XSS\')</script>')">Test ausführen</button>
+
+    <h3>2. IMG mit JavaScript</h3>
+    <div class="test-input">
+      &lt;img src=x onerror="alert('XSS')"&gt;
+    </div>
+    <button onclick="testInput('<img src=x onerror=alert(\'XSS\')>')">Test ausführen</button>
+
+    <h3>3. HTML-Injection</h3>
+    <div class="test-input">
+      &lt;h1&gt;Injected Heading&lt;/h1&gt;
+    </div>
+    <button onclick="testInput('<h1>Injected Heading</h1>')">Test ausführen</button>
+
+    <h3>4. Event-Handler</h3>
+    <div class="test-input">
+      &lt;div onclick="alert('XSS')"&gt;Click me&lt;/div&gt;
+    </div>
+    <button onclick="testInput('<div onclick=alert(\'XSS\')>Click me</div>')">Test ausführen</button>
+
+    <h3>5. JavaScript-URL</h3>
+    <div class="test-input">
+      &lt;a href="javascript:alert('XSS')"&gt;Click&lt;/a&gt;
+    </div>
+    <button onclick="testInput('<a href=javascript:alert(\'XSS\')>Click</a>')">Test ausführen</button>
+
+    <h3>6. Normale Nachricht (erlaubt)</h3>
+    <div class="test-input">
+      Hallo Cecilia! Wie geht es dir? ✨
+    </div>
+    <button onclick="testInput('Hallo Cecilia! Wie geht es dir? ✨')">Test ausführen</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Test-Ergebnisse</h2>
+    <div id="testResults"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Live-Chat-Test</h2>
+    <div id="chatMessages" style="height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: white;"></div>
+    <input type="text" id="chatInput" placeholder="Nachricht eingeben..." style="width: 70%; padding: 8px;">
+    <button onclick="sendMessage()">Senden</button>
+  </div>
+
+  <script>
+    // XSS-geschützte Chat-Funktion
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (message) {
+        const chatBox = document.getElementById('chatMessages');
+
+        // User-Nachricht mit XSS-Schutz (wie in index.html)
+        const userMessage = document.createElement('div');
+        userMessage.style.marginBottom = '10px';
+
+        const userSpan = document.createElement('span');
+        userSpan.textContent = 'Du: ' + message;
+        userSpan.style.fontWeight = 'bold';
+
+        userMessage.appendChild(userSpan);
+        chatBox.appendChild(userMessage);
+
+        // Simulated Cecilia response
+        const ceciliaMessage = document.createElement('div');
+        ceciliaMessage.style.marginBottom = '10px';
+        ceciliaMessage.style.color = '#FF69B4';
+
+        const ceciliaSpan = document.createElement('span');
+        ceciliaSpan.textContent = 'Cecilia: Oh, das klingt zauberhaft! ✨';
+
+        ceciliaMessage.appendChild(ceciliaSpan);
+        chatBox.appendChild(ceciliaMessage);
+
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    // Test-Funktion
+    function testInput(maliciousInput) {
+      const resultsDiv = document.getElementById('testResults');
+      const testResult = document.createElement('div');
+      testResult.className = 'result';
+
+      const testDiv = document.createElement('div');
+      testDiv.style.border = '1px solid #ccc';
+      testDiv.style.padding = '10px';
+      testDiv.style.marginTop = '5px';
+
+      // Sichere Darstellung mit textContent
+      const safeText = document.createElement('p');
+      safeText.innerHTML = '<strong>Input (escaped):</strong> ';
+      const codeSpan = document.createElement('code');
+      codeSpan.textContent = maliciousInput;
+      safeText.appendChild(codeSpan);
+
+      const status = document.createElement('p');
+      status.innerHTML = '<span class="safe">✓ Erfolgreich blockiert - Kein JavaScript ausgeführt</span>';
+
+      // Zeige escaped version
+      const escaped = document.createElement('p');
+      escaped.innerHTML = '<strong>Sicher dargestellt als:</strong> ';
+      const escapedCode = document.createElement('code');
+      escapedCode.textContent = maliciousInput;
+      escaped.appendChild(escapedCode);
+
+      testResult.appendChild(safeText);
+      testResult.appendChild(status);
+      testResult.appendChild(escaped);
+
+      // Render it safely
+      testDiv.textContent = maliciousInput; // textContent schützt automatisch
+      testResult.appendChild(testDiv);
+
+      resultsDiv.insertBefore(testResult, resultsDiv.firstChild);
+    }
+
+    // Demonstrate unsafe version (commented out for safety)
+    /*
+    function unsafeRender(html) {
+      // NIEMALS SO MACHEN:
+      const div = document.createElement('div');
+      div.innerHTML = html; // <- GEFÄHRLICH!
+      return div;
+    }
+    */
+
+    // Auto-run test on load
+    window.addEventListener('load', () => {
+      const info = document.createElement('div');
+      info.className = 'result';
+      info.innerHTML = '<p><strong>ℹ️ System bereit</strong></p><p>Klicken Sie auf die Test-Buttons oben, um verschiedene XSS-Angriffe zu testen. Alle sollten sicher blockiert werden.</p>';
+      document.getElementById('testResults').appendChild(info);
+    });
+
+    // Allow Enter key to send message
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>

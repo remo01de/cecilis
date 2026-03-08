@@ -1,0 +1,12 @@
+services:
+  cecilia:
+    build: .
+    ports:
+      - "30000:30000"
+    env_file:
+      - cecilia-chat/.env
+    environment:
+      - NODE_ENV=production
+      - PUBLIC_DIR=/app
+      - PORT=30000
+    restart: unless-stopped

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+  <circle cx="15" cy="15" r="15" fill="#FF69B4"/>
+  <circle cx="15" cy="12" r="5" fill="#fff"/>
+  <path d="M 7 25 Q 7 18, 15 18 Q 23 18, 23 25 Z" fill="#fff"/>
+  <text x="15" y="8" font-size="8" text-anchor="middle" fill="#FFD700">✨</text>
+</svg>
