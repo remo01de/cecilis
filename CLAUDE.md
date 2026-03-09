@@ -18,7 +18,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17–19, warmher
 ├── Dockerfile                     # Docker-Image (Node 22 Alpine)
 ├── docker-compose.yml             # Docker Compose Konfiguration
 ├── .dockerignore
-├── index.html                     # Hauptseite: Galerie (10 Bilder, Auto-Rotation) + Chat
+├── index.html                     # Hauptseite: Automatische KI-Galerie + Chat
 ├── poster.html                    # Character-Poster
 ├── cecilia-charakter.html         # Detailliertes Charakterprofil
 ├── styles.css                     # Gemeinsames Stylesheet
@@ -76,9 +76,9 @@ Alle Endpoints haben Rate-Limiting und Input-Validierung.
 ## Frontend-Architektur (index.html)
 
 Alles in einer einzigen HTML-Datei (Inline-CSS + JS):
-- **API-URLs:** Relativ (`/api/chat`), Fallback auf `http://localhost:30000` bei `file://`-Protokoll
+- **API-URLs:** Relativ wenn Port 30000, sonst Fallback auf `http://localhost:30000` (funktioniert mit Backend, Live Server und `file://`)
 - **CONFIG-Objekt:** URLs, Limits, Thresholds
-- **Galerie:** 10 Bilder mit Auto-Rotation (5s)
+- **Automatische Galerie:** Beim ersten Besuch wird sofort ein Willkommensbild generiert (Jahreszeit + happy/Feenwald/Feenkleid). Danach alle 10-20 Chat-Runden automatisch. Die AI analysiert den Chatverlauf (letzte 6 Nachrichten oder Summary) und bestimmt Stimmung/Ort/Outfit, Jahreszeit kommt vom aktuellen Datum. Prompt-Builder, Loading-Overlay, Thumbnail-Leiste mit Label, Auto-Rotation (6s). localStorage-Persistenz (`cecilia_gallery`, max 30 Bilder). Klick auf Hauptbild öffnet es im neuen Tab.
 - **Chat-Flow:** `sendMessage()` → `getCeciliaResponseFromAPI()` → Marker-Erkennung → ggf. Image/Search → Display + History + Save
 - **Marker-Stripping:** `stripImageMarkers()` entfernt beide Marker-Typen aus dem angezeigten Text
 - **XSS-Schutz:** `parseMarkdown()` escaped HTML vor Markdown-Parsing
@@ -107,7 +107,7 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 ### Runde 2 (2026-01-27)
 - Rate-Limiting mit `express-rate-limit` (pro IP, 20 Req/Min)
 
-### Runde 3 (2026-03-03) – aktuelle Session
+### Runde 3 (2026-03-03)
 - Conversation Memory: `conversationHistory` + `conversationSummary` + `displayMessages` in localStorage
 - Auto-Zusammenfassung nach 30 History-Einträgen via `/api/chat/summarize`
 - Chat-State wird über Sessions hinweg persistiert und beim Laden wiederhergestellt
@@ -115,6 +115,19 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 - Websuche via Z.AI API (`search-prime`, `[SEARCH: query]` Marker, Two-Pass-Flow)
 - Drei neue Backend-Routen: `/api/image`, `/api/search`, `/api/chat/summarize`
 - System-Prompt erweitert um Bild- und Suchfähigkeiten
+
+### Runde 4 (2026-03-09) – aktuelle Session
+- Automatische Galerie: Statische Bilder (`img/cecilia1-10.png`) komplett durch KI-generierte Bilder ersetzt
+- Willkommensbild: Beim allerersten Besuch (leere Galerie) wird sofort ein Standard-Bild generiert (Jahreszeit + happy/Feenwald/Feenkleid)
+- Auto-Trigger: Nach zufällig 10-20 Chat-Runden wird automatisch ein Galeriebild generiert
+- AI-Analyse: Letzte 6 Chat-Nachrichten (oder `conversationSummary` falls History leer nach Zusammenfassung) werden an die Chat-API gesendet, um Stimmung/Ort/Outfit passend zur Konversation zu bestimmen. Kompakter Prompt (<1000 Zeichen) um Backend-Validierung einzuhalten
+- 10 Stimmungen, 10 Orte, 10 Outfits als Optionen für die AI-Analyse
+- Jahreszeit automatisch aus aktuellem Datum (Monat) ermittelt
+- Prompt-Builder: Kombiniert AI-Analyse + Jahreszeit zu detailliertem englischem Cecilia-Prompt
+- Galerie-Persistenz: Generierte Bilder + Runden-Zähler in localStorage (`cecilia_gallery`, max 30)
+- Thumbnail-Leiste mit Label (Stimmung · Jahreszeit · Ort · Outfit) und Auto-Rotation (6s)
+- API-URL-Erkennung: Port-basiert statt nur `file://`-Check (funktioniert auch mit VS Code Live Server)
+- GitHub-Repository: https://github.com/remo01de/cecilis (privat)
 
 ## Was bereits erledigt ist
 
@@ -131,6 +144,10 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 - [x] Docker-Setup (Dockerfile, docker-compose.yml) – 2026-03-03
 - [x] Express serviert Frontend statisch (kein separater Webserver nötig) – 2026-03-03
 - [x] Frontend API-URLs relativ statt hardcoded localhost – 2026-03-03
+- [x] Automatische Galerie mit Willkommensbild + Chat-basierter KI-Bildgenerierung – 2026-03-09
+- [x] AI-Analyse des Chatverlaufs für Stimmung/Ort/Outfit, Jahreszeit via Datum – 2026-03-09
+- [x] API-URL-Erkennung port-basiert (Backend, Live Server, file://) – 2026-03-09
+- [x] GitHub-Repository erstellt (remo01de/cecilis) – 2026-03-09
 
 ## Docker
 
@@ -164,12 +181,13 @@ Siehe `TODO.md` für die vollständige Liste. Highlights:
 - [ ] Strukturiertes Logging (Winston/Pino)
 - [ ] Testing (Unit + E2E)
 - [ ] CI/CD Pipeline
-- [ ] Galerie-Steuerung (Prev/Next, Pause, Thumbnails)
+- [ ] Galerie: Bilder-URLs könnten nach einiger Zeit ablaufen (Z.AI CDN), ggf. lokales Caching
 
 ## Hinweise
 
-- Bilder `img/cecilia1.png` bis `img/cecilia10.png` fehlen grösstenteils – `placeholder-images.js` fängt das ab
-- Frontend API-URLs sind relativ (`/api/chat`), bei `file://`-Protokoll Fallback auf `http://localhost:30000`
+- Galerie nutzt jetzt KI-generierte Bilder statt statische `img/cecilia1-10.png`
+- Statische Bilder im `img/`-Ordner (z.B. `Cecilia-Frühling.png`) sind Referenzbilder, nicht mehr in der Galerie-Rotation
+- Frontend API-URLs: Relativ wenn Port 30000, sonst explizit `http://localhost:30000`
 - `npm run dev` im `cecilia-chat/` Ordner startet Backend mit Auto-Reload (nodemon)
 - `server.mjs` serviert statische Frontend-Dateien via `PUBLIC_DIR` (default: Projekt-Root)
 - User spricht Deutsch, Antworten immer auf Deutsch

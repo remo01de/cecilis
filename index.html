@@ -40,43 +40,105 @@
 
     .gallery {
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
       flex-direction: column;
-      position: relative;
-      overflow: hidden;
+      gap: 0.8rem;
     }
 
-    .gallery img {
+    .gallery-main {
+      position: relative;
       width: 100%;
       max-width: 500px;
-      height: auto;
-      max-height: 350px;
-      object-fit: cover;
-      object-position: top;
+      aspect-ratio: 3 / 4;
       border-radius: 1rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      opacity: 0;
-      transition: opacity 2s ease-in-out;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      background: linear-gradient(135deg, #ffe0ec, #d4eaf7);
+      cursor: pointer;
+    }
+
+    .gallery-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.6s ease;
+    }
+
+    .gallery-main img.fading { opacity: 0; }
+
+    .gallery-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: #FF69B4;
+      font-size: 1rem;
+      text-align: center;
+      padding: 2rem;
+      gap: 0.8rem;
+    }
+
+    .gallery-placeholder .placeholder-icon { font-size: 3rem; }
+
+    .gallery-generating {
       position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 182, 193, 0.85);
+      color: white;
+      font-weight: 600;
+      gap: 1rem;
+      z-index: 2;
     }
 
-    .gallery img.active {
+    .gallery-generating .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .gallery-thumbnails {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 0.3rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: #FFB6C1 transparent;
+    }
+
+    .gallery-thumb {
+      width: 56px;
+      height: 75px;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .gallery-thumb:hover { opacity: 1; border-color: #FF69B4; }
+
+    .gallery-thumb.active {
       opacity: 1;
-      position: relative;
+      border-color: #FF69B4;
+      box-shadow: 0 2px 8px rgba(255, 105, 180, 0.4);
     }
 
-    /* Galerie-Höhe anpassen an Chatbox */
-    @media (min-width: 768px) {
-      .gallery img {
-        max-height: 500px;
-      }
-    }
-
-    @media (min-width: 1200px) {
-      .gallery img {
-        max-height: 600px;
-      }
+    .gallery-info {
+      font-size: 0.65rem;
+      color: #999;
+      text-align: center;
     }
 
     .chatbox {
@@ -103,11 +165,6 @@
 
       .gallery {
         flex: 0 0 45%;
-        max-width: 500px;
-      }
-
-      .gallery img {
-        width: 100%;
         max-width: 500px;
       }
 
@@ -389,17 +446,16 @@
   </header>
 
   <div class="main-content">
-    <section class="gallery">
-      <img id="galleryImage1" class="active" src="img/cecilia1.png" alt="Cecilia Bild 1">
-      <img id="galleryImage2" src="img/cecilia2.png" alt="Cecilia Bild 2">
-      <img id="galleryImage3" src="img/cecilia3.png" alt="Cecilia Bild 3">
-      <img id="galleryImage4" src="img/cecilia4.png" alt="Cecilia Bild 4">
-      <img id="galleryImage5" src="img/cecilia5.png" alt="Cecilia Bild 5">
-      <img id="galleryImage6" src="img/cecilia6.png" alt="Cecilia Bild 6">
-      <img id="galleryImage7" src="img/cecilia7.png" alt="Cecilia Bild 7">
-      <img id="galleryImage8" src="img/cecilia8.png" alt="Cecilia Bild 8">
-      <img id="galleryImage9" src="img/cecilia9.png" alt="Cecilia Bild 9">
-      <img id="galleryImage10" src="img/cecilia10.png" alt="Cecilia Bild 10">
+    <section class="gallery" id="gallerySection">
+      <div class="gallery-main" id="galleryMain">
+        <div class="gallery-placeholder" id="galleryPlaceholder">
+          <span class="placeholder-icon">🎨</span>
+          <span>Chatte mit Cecilia – sie malt sich passend zur Unterhaltung!</span>
+        </div>
+      </div>
+
+      <div class="gallery-thumbnails" id="galleryThumbnails"></div>
+      <div class="gallery-info" id="galleryInfo"></div>
     </section>
 
     <section class="chatbox">
@@ -413,22 +469,381 @@
   </div>
 
   <script>
-    // Galerie Bilder
-    const images = document.querySelectorAll('.gallery img');
-    let currentImage = 0;
+    // ========================
+    // Automatische Galerie
+    // ========================
+    const GALLERY_STORAGE_KEY = 'cecilia_gallery';
+    const GALLERY_MAX_IMAGES = 30;
+    const GALLERY_MIN_ROUNDS = 10;
+    const GALLERY_MAX_ROUNDS = 20;
 
-    function changeImage() {
-      images[currentImage].classList.remove('active');
-      currentImage = (currentImage + 1) % images.length;
-      images[currentImage].classList.add('active');
+    const GALLERY_SEASON_PROMPTS = {
+      spring: 'cherry blossom trees, falling petals, fresh green leaves, warm sunlight, spring garden',
+      summer: 'bright golden sunshine, vivid blue sky, lush tropical greenery, warm summer glow',
+      autumn: 'golden and red falling leaves, warm amber light, cozy autumn atmosphere',
+      winter: 'softly falling snow, frost crystals, cool blue winter light, magical winter wonderland'
+    };
+
+    const galleryState = {
+      images: [],
+      currentIndex: -1,
+      isGenerating: false,
+      rotationTimer: null,
+      roundsSinceLastImage: 0,
+      nextImageThreshold: 0
+    };
+
+    function pickNextThreshold() {
+      galleryState.nextImageThreshold = GALLERY_MIN_ROUNDS + Math.floor(Math.random() * (GALLERY_MAX_ROUNDS - GALLERY_MIN_ROUNDS + 1));
     }
 
-    setInterval(changeImage, 5000); // Alle 5 Sekunden wechseln
+    function getCurrentSeason() {
+      const month = new Date().getMonth();
+      if (month >= 2 && month <= 4) return 'spring';
+      if (month >= 5 && month <= 7) return 'summer';
+      if (month >= 8 && month <= 10) return 'autumn';
+      return 'winter';
+    }
+
+    function getSeasonLabel(season) {
+      return { spring: 'Frühling', summer: 'Sommer', autumn: 'Herbst', winter: 'Winter' }[season] || season;
+    }
+
+    async function analyzeConversationForGallery() {
+      let context = '';
+
+      const recent = conversationHistory.slice(-6);
+      if (recent.length >= 2) {
+        context = recent
+          .map(m => `${m.role === 'user' ? 'U' : 'C'}: ${m.content.slice(0, 80)}`)
+          .join('\n');
+      } else if (conversationSummary) {
+        context = conversationSummary.slice(0, 500);
+      } else {
+        return null;
+      }
+
+      const analysisPrompt = `Bestimme aus diesem Chat mood/location/outfit für Cecilia.
+mood: happy|sad|thoughtful|playful|dreamy|excited|romantic|shy|confident|mischievous
+location: fairy-forest|beach|bar|garden|city|mountain|library|lake|castle|meadow
+outfit: dress|bikini|coat|casual|elegant|fairy-outfit|kimono|sportswear|pajamas|school-uniform
+Chat: ${context}
+Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
+
+      try {
+        const response = await fetch(CONFIG.API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: analysisPrompt, history: [] })
+        });
+
+        if (!response.ok) return null;
+        const data = await response.json();
+        const content = (data.content || '').trim();
+
+        const jsonMatch = content.match(/\{[^}]+\}/);
+        if (!jsonMatch) return null;
+        return JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.warn('Galerie-Analyse fehlgeschlagen:', e);
+        return null;
+      }
+    }
+
+    function buildAutoGalleryPrompt(analysis, season) {
+      const moodDescriptions = {
+        happy: 'smiling radiantly, eyes sparkling with joy, cheerful expression',
+        sad: 'looking melancholic, soft tears, bittersweet gentle expression',
+        thoughtful: 'pensive gaze, hand on chin, contemplative serene expression',
+        playful: 'winking mischievously, tongue out slightly, fun energetic pose',
+        dreamy: 'eyes half-closed, peaceful dreaming expression, serene smile',
+        excited: 'eyes wide open, big bright smile, energetic enthusiastic pose',
+        romantic: 'blushing cheeks, gentle loving smile, soft warm gaze, heart-shaped sparkles',
+        shy: 'hiding half behind hands, blushing deeply, adorable shy expression',
+        confident: 'hands on hips, bold confident smile, powerful elegant stance',
+        mischievous: 'sly grin, one eyebrow raised, playful scheming expression'
+      };
+
+      const locationDescriptions = {
+        'fairy-forest': 'enchanted magical fairy forest, glowing mushrooms, fireflies, ethereal mist, ancient trees with luminous vines',
+        beach: 'beautiful tropical beach, turquoise ocean waves, white sand, palm trees, golden hour light',
+        bar: 'cozy stylish bar interior, warm ambient lighting, elegant cocktails, wooden counter',
+        garden: 'blooming flower garden, roses and lavender, stone path, butterfly, gazebo',
+        city: 'modern city rooftop at twilight, sparkling city lights, skyline panorama',
+        mountain: 'majestic mountain peaks, alpine meadow, crystal clear lake reflection, dramatic clouds',
+        library: 'cozy magical library, floating books, candlelight, tall wooden bookshelves, warm atmosphere',
+        lake: 'serene crystal clear lake at sunset, lily pads, reflections, weeping willow trees',
+        castle: 'fairy tale castle interior, stained glass windows, crystal chandeliers, elegant marble halls',
+        meadow: 'vast flower meadow, wildflowers, gentle breeze, rolling hills, soft clouds'
+      };
+
+      const outfitDescriptions = {
+        dress: 'wearing a beautiful flowing dress with delicate lace details and ribbon accents',
+        bikini: 'wearing a cute stylish bikini with floral pattern',
+        coat: 'wearing a fashionable long winter coat with fur-trimmed hood and scarf',
+        casual: 'wearing a casual trendy outfit with crop top and high-waisted jeans',
+        elegant: 'wearing a stunning elegant evening gown with sparkly details',
+        'fairy-outfit': 'wearing a magical shimmering fairy dress with translucent wings and flower crown',
+        kimono: 'wearing a beautiful traditional kimono with floral patterns and elegant obi',
+        sportswear: 'wearing a cute sporty outfit with pastel-colored hoodie and sneakers',
+        pajamas: 'wearing adorable cozy pajamas with star patterns and fluffy slippers',
+        'school-uniform': 'wearing a cute school uniform with plaid skirt and bow tie'
+      };
+
+      const parts = [
+        'A beautiful anime-style fairy girl named Cecilia, age 17-19, with long flowing pastel-colored hair adorned with small flowers and magical sparkles, large expressive eyes, delicate translucent fairy wings'
+      ];
+
+      const mood = moodDescriptions[analysis.mood] || moodDescriptions.happy;
+      const location = locationDescriptions[analysis.location] || locationDescriptions['fairy-forest'];
+      const outfit = outfitDescriptions[analysis.outfit] || outfitDescriptions.dress;
+      const seasonDesc = GALLERY_SEASON_PROMPTS[season] || GALLERY_SEASON_PROMPTS.spring;
+
+      parts.push(outfit, mood, location, seasonDesc);
+      parts.push('high quality detailed anime illustration, soft pastel color palette, magical atmosphere, beautiful lighting, 4k');
+
+      return parts.join('. ');
+    }
+
+    function buildAnalysisLabel(analysis, season) {
+      const labels = {
+        mood: { happy:'Glücklich', sad:'Traurig', thoughtful:'Nachdenklich', playful:'Verspielt', dreamy:'Verträumt', excited:'Aufgeregt', romantic:'Romantisch', shy:'Schüchtern', confident:'Selbstbewusst', mischievous:'Frech' },
+        location: { 'fairy-forest':'Feenwald', beach:'Strand', bar:'Bar', garden:'Garten', city:'Stadt', mountain:'Berge', library:'Bibliothek', lake:'See', castle:'Schloss', meadow:'Wiese' },
+        outfit: { dress:'Kleid', bikini:'Bikini', coat:'Mantel', casual:'Casual', elegant:'Elegant', 'fairy-outfit':'Feenkleid', kimono:'Kimono', sportswear:'Sportlich', pajamas:'Pyjama', 'school-uniform':'Schuluniform' }
+      };
+      const parts = [];
+      if (analysis.mood) parts.push(labels.mood[analysis.mood] || analysis.mood);
+      parts.push(getSeasonLabel(season));
+      if (analysis.location) parts.push(labels.location[analysis.location] || analysis.location);
+      if (analysis.outfit) parts.push(labels.outfit[analysis.outfit] || analysis.outfit);
+      return parts.join(' · ');
+    }
+
+    async function autoGenerateGalleryImage() {
+      if (galleryState.isGenerating) return;
+      galleryState.isGenerating = true;
+
+      console.log('🎨 Automatische Galerie-Generierung gestartet...');
+
+      const mainEl = document.getElementById('galleryMain');
+      const overlay = document.createElement('div');
+      overlay.classList.add('gallery-generating');
+      overlay.innerHTML = '<div class="spinner"></div><span>Cecilia malt...</span>';
+      mainEl.appendChild(overlay);
+
+      stopGalleryRotation();
+
+      try {
+        const analysis = await analyzeConversationForGallery();
+        const season = getCurrentSeason();
+        const fallbackAnalysis = { mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit' };
+        const finalAnalysis = analysis || fallbackAnalysis;
+
+        const prompt = buildAutoGalleryPrompt(finalAnalysis, season);
+        console.log('🎨 Galerie-Prompt:', finalAnalysis);
+
+        const response = await fetch(CONFIG.IMAGE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, size: '1024x1024' })
+        });
+
+        if (!response.ok) throw new Error('Bildgenerierung fehlgeschlagen');
+        const data = await response.json();
+        if (!data.url) throw new Error('Keine Bild-URL erhalten');
+
+        const entry = {
+          url: data.url,
+          label: buildAnalysisLabel(finalAnalysis, season),
+          mood: finalAnalysis.mood,
+          location: finalAnalysis.location,
+          outfit: finalAnalysis.outfit,
+          season,
+          createdAt: new Date().toISOString()
+        };
+
+        galleryState.images.push(entry);
+        if (galleryState.images.length > GALLERY_MAX_IMAGES) {
+          galleryState.images = galleryState.images.slice(-GALLERY_MAX_IMAGES);
+        }
+        galleryState.currentIndex = galleryState.images.length - 1;
+
+        saveGalleryState();
+        renderGalleryMain();
+        renderGalleryThumbnails();
+        startGalleryRotation();
+
+        console.log('🎨 Galerie-Bild erfolgreich generiert:', entry.label);
+      } catch (err) {
+        console.warn('Galerie-Bildgenerierung fehlgeschlagen:', err);
+      } finally {
+        overlay.remove();
+        galleryState.isGenerating = false;
+      }
+    }
+
+    function checkGalleryTrigger() {
+      galleryState.roundsSinceLastImage++;
+      if (galleryState.roundsSinceLastImage >= galleryState.nextImageThreshold) {
+        galleryState.roundsSinceLastImage = 0;
+        pickNextThreshold();
+        saveGalleryState();
+        autoGenerateGalleryImage();
+      }
+    }
+
+    function saveGalleryState() {
+      try {
+        localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify({
+          images: galleryState.images.slice(-GALLERY_MAX_IMAGES),
+          currentIndex: galleryState.currentIndex,
+          roundsSinceLastImage: galleryState.roundsSinceLastImage,
+          nextImageThreshold: galleryState.nextImageThreshold
+        }));
+      } catch (e) { console.warn('Galerie-State konnte nicht gespeichert werden:', e); }
+    }
+
+    function loadGalleryState() {
+      try {
+        const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
+        if (!raw) { pickNextThreshold(); return; }
+        const data = JSON.parse(raw);
+        galleryState.images = Array.isArray(data.images) ? data.images : [];
+        galleryState.currentIndex = typeof data.currentIndex === 'number' ? data.currentIndex : galleryState.images.length - 1;
+        galleryState.roundsSinceLastImage = data.roundsSinceLastImage || 0;
+        galleryState.nextImageThreshold = data.nextImageThreshold || 0;
+        if (!galleryState.nextImageThreshold) pickNextThreshold();
+      } catch (e) { console.warn('Galerie-State konnte nicht geladen werden:', e); pickNextThreshold(); }
+    }
+
+    function renderGalleryMain() {
+      const mainEl = document.getElementById('galleryMain');
+      const placeholder = document.getElementById('galleryPlaceholder');
+
+      if (galleryState.images.length === 0) {
+        mainEl.querySelectorAll('img').forEach(i => i.remove());
+        if (placeholder) placeholder.style.display = 'flex';
+        return;
+      }
+
+      if (placeholder) placeholder.style.display = 'none';
+
+      const idx = Math.max(0, Math.min(galleryState.currentIndex, galleryState.images.length - 1));
+      const entry = galleryState.images[idx];
+
+      let imgEl = mainEl.querySelector('img');
+      if (!imgEl) {
+        imgEl = document.createElement('img');
+        imgEl.alt = 'Cecilia Galeriebild';
+        mainEl.appendChild(imgEl);
+      }
+
+      imgEl.classList.add('fading');
+      setTimeout(() => {
+        imgEl.src = entry.url;
+        imgEl.alt = entry.label || 'Cecilia';
+        imgEl.classList.remove('fading');
+      }, 300);
+    }
+
+    function renderGalleryThumbnails() {
+      const container = document.getElementById('galleryThumbnails');
+      container.innerHTML = '';
+
+      for (let i = 0; i < galleryState.images.length; i++) {
+        const entry = galleryState.images[i];
+        const thumb = document.createElement('img');
+        thumb.src = entry.url;
+        thumb.alt = entry.label || 'Thumbnail';
+        thumb.title = entry.label || '';
+        thumb.classList.add('gallery-thumb');
+        if (i === galleryState.currentIndex) thumb.classList.add('active');
+        thumb.addEventListener('click', () => {
+          stopGalleryRotation();
+          galleryState.currentIndex = i;
+          renderGalleryMain();
+          renderGalleryThumbnails();
+          saveGalleryState();
+        });
+        container.appendChild(thumb);
+      }
+
+      const info = document.getElementById('galleryInfo');
+      if (galleryState.images.length > 0) {
+        const current = galleryState.images[Math.max(0, Math.min(galleryState.currentIndex, galleryState.images.length - 1))];
+        info.textContent = current.label || `${galleryState.images.length} Bilder`;
+      } else {
+        info.textContent = '';
+      }
+    }
+
+    function startGalleryRotation() {
+      stopGalleryRotation();
+      if (galleryState.images.length < 2) return;
+      galleryState.rotationTimer = setInterval(() => {
+        galleryState.currentIndex = (galleryState.currentIndex + 1) % galleryState.images.length;
+        renderGalleryMain();
+        renderGalleryThumbnails();
+      }, 6000);
+    }
+
+    function stopGalleryRotation() {
+      if (galleryState.rotationTimer) {
+        clearInterval(galleryState.rotationTimer);
+        galleryState.rotationTimer = null;
+      }
+    }
+
+    document.getElementById('galleryMain').addEventListener('click', (e) => {
+      if (e.target.tagName === 'IMG' && e.target.src) {
+        window.open(e.target.src, '_blank');
+      }
+    });
+
+    loadGalleryState();
+    renderGalleryMain();
+    renderGalleryThumbnails();
+    if (galleryState.images.length >= 2) startGalleryRotation();
+
+    if (galleryState.images.length === 0) {
+      const season = getCurrentSeason();
+      const defaultAnalysis = { mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit' };
+      const prompt = buildAutoGalleryPrompt(defaultAnalysis, season);
+      galleryState.isGenerating = true;
+
+      const mainEl = document.getElementById('galleryMain');
+      const overlay = document.createElement('div');
+      overlay.classList.add('gallery-generating');
+      overlay.innerHTML = '<div class="spinner"></div><span>Cecilia malt ihr erstes Bild...</span>';
+      mainEl.appendChild(overlay);
+
+      fetch(
+        (window.location.port === '30000' ? '' : 'http://localhost:30000') + '/api/image',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, size: '1024x1024' }) }
+      )
+        .then(r => { if (!r.ok) throw new Error('Fehler'); return r.json(); })
+        .then(data => {
+          if (!data.url) throw new Error('Keine URL');
+          galleryState.images.push({
+            url: data.url,
+            label: buildAnalysisLabel(defaultAnalysis, season),
+            mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit', season,
+            createdAt: new Date().toISOString()
+          });
+          galleryState.currentIndex = 0;
+          saveGalleryState();
+          renderGalleryMain();
+          renderGalleryThumbnails();
+          console.log('🎨 Willkommensbild generiert');
+        })
+        .catch(err => console.warn('Willkommensbild fehlgeschlagen:', err))
+        .finally(() => { overlay.remove(); galleryState.isGenerating = false; });
+    }
 
     // Konfiguration
-    const API_BASE = window.location.protocol === 'file:'
-      ? 'http://localhost:30000'
-      : '';
+    const BACKEND_PORT = '30000';
+    const isBackendServer = window.location.port === BACKEND_PORT;
+    const API_BASE = isBackendServer ? '' : `http://localhost:${BACKEND_PORT}`;
     const CONFIG = {
       API_URL: API_BASE + '/api/chat',
       SUMMARIZE_URL: API_BASE + '/api/chat/summarize',
@@ -861,6 +1276,8 @@
         }
 
         saveChatState();
+
+        if (isAIResponse) checkGalleryTrigger();
 
       } catch (error) {
         loadingMsg.remove();
