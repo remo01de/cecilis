@@ -194,7 +194,12 @@
       left: 20px;
       font-size: 2.5rem;
       color: #FFD700;
-      animation: sparkle 1.5s infinite alternate ease-in-out;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+
+    .chatbox.sparkle-active::before {
+      animation: sparkle 1.5s ease-in-out 3;
     }
 
     .chat-messages {
@@ -433,11 +438,79 @@
       100% { transform: rotate(360deg) scale(1.5); opacity: 1; }
     }
 
-    @keyframes floatHeart {
-      0% { transform: translateY(0px); opacity: 0.7; }
-      50% { transform: translateY(-5px); opacity: 1; }
-      100% { transform: translateY(0px); opacity: 0.7; }
+    /* Magic Words – elegante Mikro-Effekte */
+    .magic-word {
+      position: relative;
+      display: inline-block;
     }
+
+    /* Feenstaub: goldene Sternchen steigen auf */
+    .magic-particle-feenstaub {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      animation: magic-feenstaub-rise ease-out forwards;
+    }
+
+    @keyframes magic-feenstaub-rise {
+      0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translate(var(--mx), var(--my)) scale(0.4) rotate(var(--mr)); }
+    }
+
+    /* Magie: Schimmer-Gradient über das Wort */
+    .magic-word-magie {
+      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.25), rgba(255,182,193,0.3), transparent);
+      background-size: 250% 100%;
+      background-position: 100% 0;
+      animation: magic-shimmer-pass 0.9s ease-in-out forwards;
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    @keyframes magic-shimmer-pass {
+      0% { background-position: 100% 0; }
+      50% { background-position: 0% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    /* Wunsch: Sternschnuppe unter dem Wort */
+    .magic-shootingstar {
+      position: absolute;
+      pointer-events: none;
+      width: 30px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,200,50,0.9), rgba(255,150,180,0.7));
+      border-radius: 2px;
+      box-shadow: 0 0 6px rgba(255,200,50,0.5), 0 0 12px rgba(255,200,50,0.2);
+      animation: magic-star-arc 0.8s ease-out forwards;
+      z-index: 10;
+    }
+
+    @keyframes magic-star-arc {
+      0% { opacity: 0; transform: translateX(-15px) rotate(-12deg) scaleX(0.2); }
+      15% { opacity: 1; }
+      80% { opacity: 0.8; }
+      100% { opacity: 0; transform: translateX(var(--sw)) rotate(-4deg) scaleX(1.2); }
+    }
+
+    /* Traum: sanfte leuchtende Kreise */
+    .magic-bokeh {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(2px);
+      animation: magic-bokeh-pulse 1.2s ease-in-out forwards;
+      z-index: 10;
+    }
+
+    @keyframes magic-bokeh-pulse {
+      0% { opacity: 0; transform: scale(0.3); }
+      25% { opacity: var(--bo); transform: scale(1); }
+      65% { opacity: var(--bo); transform: scale(1.1); }
+      100% { opacity: 0; transform: scale(0.6); }
+    }
+
+
   </style>
 </head>
 <body>
@@ -1098,6 +1171,128 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     }
 
     // Fallback-Antworten (für Offline-Modus oder bei API-Fehler)
+    // ========================
+    // Magic Words – elegante Mikro-Effekte
+    // ========================
+    const MAGIC_WORDS = [
+      { pattern: /feenstaub/i, type: 'feenstaub' },
+      { pattern: /magisch|magie/i, type: 'magie' },
+      { pattern: /wünsche?|wunsch/i, type: 'wunsch' },
+      { pattern: /träume?|traum/i, type: 'traum' }
+    ];
+
+    const magicCooldowns = {};
+    const MAGIC_COOLDOWN_MS = 3000;
+
+    function triggerMagicEffect(type, targetEl) {
+      const now = Date.now();
+      if (magicCooldowns[type] && now - magicCooldowns[type] < MAGIC_COOLDOWN_MS) return;
+      magicCooldowns[type] = now;
+
+      switch (type) {
+        case 'feenstaub': spawnFeenstaubParticles(targetEl); break;
+        case 'magie': spawnShimmer(targetEl); break;
+        case 'wunsch': spawnShootingStar(targetEl); break;
+        case 'traum': spawnBokeh(targetEl); break;
+      }
+    }
+
+    function spawnFeenstaubParticles(el) {
+      const rect = el.getBoundingClientRect();
+      const emojis = ['✨', '⭐', '✧', '·'];
+      const count = 10 + Math.floor(Math.random() * 6);
+
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('span');
+        p.classList.add('magic-particle-feenstaub');
+        p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        p.style.left = `${rect.left + Math.random() * rect.width}px`;
+        p.style.top = `${rect.top + rect.height * 0.3}px`;
+        p.style.fontSize = `${0.5 + Math.random() * 0.6}rem`;
+        p.style.setProperty('--mx', `${(Math.random() - 0.5) * 60}px`);
+        p.style.setProperty('--my', `${-20 - Math.random() * 50}px`);
+        p.style.setProperty('--mr', `${(Math.random() - 0.5) * 180}deg`);
+        p.style.animationDuration = `${0.8 + Math.random() * 0.6}s`;
+        p.style.animationDelay = `${Math.random() * 0.4}s`;
+        document.body.appendChild(p);
+        p.addEventListener('animationend', () => p.remove());
+      }
+    }
+
+    function spawnShimmer(el) {
+      el.addEventListener('animationend', () => {
+        el.style.animation = 'none';
+        el.style.background = 'none';
+      }, { once: true });
+    }
+
+    function spawnShootingStar(el) {
+      const star = document.createElement('span');
+      star.classList.add('magic-shootingstar');
+      star.style.bottom = '-4px';
+      star.style.left = '-15px';
+      star.style.setProperty('--sw', `${el.offsetWidth + 20}px`);
+      el.appendChild(star);
+      star.addEventListener('animationend', () => star.remove());
+    }
+
+    function spawnBokeh(el) {
+      const colors = ['rgba(180,160,255,0.45)', 'rgba(150,200,255,0.35)', 'rgba(255,180,200,0.4)', 'rgba(255,220,150,0.35)'];
+      const count = 4 + Math.floor(Math.random() * 3);
+
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('span');
+        dot.classList.add('magic-bokeh');
+        const size = 10 + Math.random() * 16;
+        dot.style.width = dot.style.height = `${size}px`;
+        dot.style.background = colors[Math.floor(Math.random() * colors.length)];
+        dot.style.left = `${-10 + Math.random() * 110}%`;
+        dot.style.top = `${-40 + Math.random() * 60}%`;
+        dot.style.setProperty('--bo', `${0.5 + Math.random() * 0.3}`);
+        dot.style.animationDelay = `${i * 0.1}s`;
+        el.appendChild(dot);
+        dot.addEventListener('animationend', () => dot.remove());
+      }
+    }
+
+    function scanForMagicWords(messageEl) {
+      const textEls = messageEl.querySelectorAll('.message-text');
+      if (!textEls.length) return;
+
+      const triggered = new Set();
+
+      textEls.forEach(textEl => {
+        const html = textEl.innerHTML;
+        let newHtml = html;
+
+        for (const mw of MAGIC_WORDS) {
+          if (triggered.has(mw.type)) continue;
+          if (!mw.pattern.test(newHtml)) continue;
+
+          triggered.add(mw.type);
+          const cls = `magic-word magic-word-${mw.type}`;
+          newHtml = newHtml.replace(mw.pattern, (match) => `<span class="${cls}">${match}</span>`);
+        }
+
+        if (newHtml !== html) textEl.innerHTML = newHtml;
+      });
+
+      if (triggered.size === 0) return;
+
+      const sorted = [...triggered].sort((a, b) => {
+        const order = ['feenstaub', 'magie', 'wunsch', 'traum'];
+        return order.indexOf(a) - order.indexOf(b);
+      });
+
+      let delay = 0;
+      for (const type of sorted) {
+        const el = messageEl.querySelector(`.magic-word-${type}`);
+        if (!el) continue;
+        setTimeout(() => triggerMagicEffect(type, el), delay);
+        delay += 200;
+      }
+    }
+
     function getFallbackResponse() {
       const responses = [
         "Oh, das klingt zauberhaft! ✨",
@@ -1157,7 +1352,8 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       }
 
       // User-Nachricht anzeigen
-      addMessageToChat('user', message);
+      const userMsg = addMessageToChat('user', message);
+      scanForMagicWords(userMsg);
       input.value = '';
       isWaitingForResponse = true;
 
@@ -1238,8 +1434,18 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         // Loading-Nachricht entfernen
         loadingMsg.remove();
 
+        // Sparkle-Animation auslösen
+        const chatbox = document.querySelector('.chatbox');
+        chatbox.classList.remove('sparkle-active');
+        void chatbox.offsetWidth;
+        chatbox.classList.add('sparkle-active');
+        chatbox.addEventListener('animationend', () => chatbox.classList.remove('sparkle-active'), { once: true });
+
         // Cecilia-Antwort anzeigen (ohne Marker)
         const ceciliaMsg = addMessageToChat('cecilia', finalResponse);
+
+        // Magic-Word-Effekte scannen
+        scanForMagicWords(ceciliaMsg);
 
         // Quellen anzeigen, falls Suche stattfand
         if (searchResults && searchResults.length > 0) {

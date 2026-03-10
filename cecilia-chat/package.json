@@ -7,7 +7,7 @@
     "start": "node src/server.mjs"
   },
   "keywords": [],
-  "author": "Remo Schiklinski und ChatGPT5",
+  "author": "Remo Schiklinski",
   "license": "ISC",
   "type": "module",
   "description": "",
