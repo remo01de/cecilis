@@ -914,9 +914,14 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     }
 
     // Konfiguration
+    // Standard: relative URLs → Backend unter gleicher Domain / gleichem Host
+    // Nur wenn über localhost:anderen Port (z.B. Live Server) geladen wird,
+    // wird explizit auf http://localhost:30000 gefallbackt.
     const BACKEND_PORT = '30000';
-    const isBackendServer = window.location.port === BACKEND_PORT;
-    const API_BASE = isBackendServer ? '' : `http://localhost:${BACKEND_PORT}`;
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const API_BASE = isLocalhost && window.location.port !== BACKEND_PORT
+      ? `http://localhost:${BACKEND_PORT}`
+      : '';
     const CONFIG = {
       API_URL: API_BASE + '/api/chat',
       SUMMARIZE_URL: API_BASE + '/api/chat/summarize',
