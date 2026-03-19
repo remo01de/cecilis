@@ -163,3 +163,23 @@ h2 {
     opacity: 0.8;
   }
 }
+
+/* Mobile Responsive Optimizations */
+@media (max-width: 767px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .hero-title {
+    font-size: 2.2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .outfits, .poses {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+}

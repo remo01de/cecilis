@@ -65,12 +65,13 @@ function buildMessages(summary, validHistory, userMessage) {
 
 router.post("/", chatLimiter, async (req, res) => {
   try {
-    const { message, history, summary } = req.body ?? {};
+    const { message, history, summary, isSearchFollowUp } = req.body ?? {};
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "message (string) required" });
     }
 
-    if (!validateInput(message)) {
+    const maxLen = isSearchFollowUp ? 10000 : MAX_MESSAGE_LENGTH;
+    if (message.length > maxLen || /<script|javascript:|on\w+=/i.test(message)) {
       return res.status(400).json({ error: "Invalid input: message contains forbidden patterns or is too long" });
     }
 

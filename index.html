@@ -36,6 +36,7 @@
       padding: 2rem;
       max-width: 1400px;
       margin: 0 auto;
+      box-sizing: border-box;
     }
 
     .gallery {
@@ -113,6 +114,8 @@
       padding: 0.3rem 0;
       scrollbar-width: thin;
       scrollbar-color: #FFB6C1 transparent;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
     }
 
     .gallery-thumb {
@@ -125,6 +128,7 @@
       transition: all 0.2s;
       flex-shrink: 0;
       opacity: 0.7;
+      scroll-snap-align: start;
     }
 
     .gallery-thumb:hover { opacity: 1; border-color: #FF69B4; }
@@ -144,6 +148,7 @@
     .chatbox {
       background: rgba(255, 255, 255, 0.9);
       width: 100%;
+      box-sizing: border-box;
       max-width: 600px;
       margin: 0 auto;
       border-radius: 1rem;
@@ -268,6 +273,7 @@
     .message-text {
       line-height: 1.5;
       color: #444;
+      word-break: break-word;
     }
 
     .message-text strong {
@@ -317,6 +323,7 @@
       padding: 0.5rem;
       border: 1px solid #ccc;
       border-radius: 0.5rem;
+      font-size: 16px;
     }
 
     .chat-input button {
@@ -507,10 +514,42 @@
       0% { opacity: 0; transform: scale(0.3); }
       25% { opacity: var(--bo); transform: scale(1); }
       65% { opacity: var(--bo); transform: scale(1.1); }
-      100% { opacity: 0; transform: scale(0.6); }
     }
 
-
+    /* Mobile Responsive Optimizations */
+    @media (max-width: 767px) {
+      header {
+        padding: 1rem;
+      }
+      header h1 {
+        font-size: 2.2rem;
+      }
+      .main-content {
+        padding: 0.5rem;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+        gap: 1.5rem;
+      }
+      .chatbox {
+        padding: 0.5rem;
+      }
+      .chat-messages {
+        height: 80vh;
+        max-height: none;
+      }
+      .gallery-thumbnails {
+        padding: 0.5rem 0;
+      }
+      .gallery-thumb {
+        width: 60px;
+        height: 80px;
+      }
+      .chat-input button {
+        padding: 0.5rem 0.8rem;
+      }
+      .clear-btn {
+        min-width: 2.2rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1047,7 +1086,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       if (isLoading) messageDiv.classList.add('loading');
 
       const img = document.createElement('img');
-      img.src = sender === 'user' ? 'img/user-avatar.svg' : 'img/cecilia-avatar.svg';
+      img.src = sender === 'user' ? 'img/user-avatar.svg' : 'img/cecilia-avatar.png';
       img.alt = sender === 'user' ? 'User' : 'Cecilia';
 
       const contentDiv = document.createElement('div');
@@ -1087,6 +1126,16 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       imgEl.src = imageUrl;
       imgEl.alt = 'Von Cecilia generiertes Bild';
       imgEl.loading = 'lazy';
+      imgEl.referrerPolicy = 'no-referrer'; // Verhindert häufige 403 CDN-Blocks
+      
+      imgEl.onerror = () => {
+        imgEl.remove();
+        const errorFallback = document.createElement('div');
+        errorFallback.classList.add('image-error');
+        errorFallback.innerHTML = '🖼️ <em>Dieses AI-Bild aus dem Chat-Archiv ist abgelaufen und wurde vom Server entfernt.</em>';
+        container.appendChild(errorFallback);
+      };
+
       imgEl.addEventListener('click', () => window.open(imageUrl, '_blank'));
       container.appendChild(imgEl);
       contentDiv.appendChild(container);
@@ -1149,9 +1198,13 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     function formatSearchResultsForContext(query, results) {
       if (results.length === 0) return `Websuche nach "${query}" ergab keine Ergebnisse.`;
       const items = results
-        .map((r, i) => `${i + 1}. ${r.title}\n   ${r.snippet}\n   Quelle: ${r.url}`)
+        .map((r, i) => {
+           let safeSnippet = (r.snippet || '').trim();
+           if (safeSnippet.length > 500) safeSnippet = safeSnippet.substring(0, 500) + '...';
+           return `${i + 1}. Website: ${r.title}\n   Inhalt/Auszug: ${safeSnippet}\n   Quelle: ${r.url}`;
+        })
         .join('\n\n');
-      return `Websuche nach "${query}" ergab folgende Ergebnisse:\n\n${items}`;
+      return `Websuche nach "${query}" ergab folgende inhaltliche Auszüge:\n\n${items}`;
     }
 
     // Quellen-Links unter einer Nachricht anzeigen
@@ -1412,8 +1465,9 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
             // Zweiter Chat-Call mit Suchergebnissen als Kontext
             const followUpPayload = {
-              message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die Ergebnisse:\n\n${searchContext}\n\nBitte antworte dem User jetzt basierend auf diesen Suchergebnissen. Bleibe in deinem Charakter als Cecilia. Fasse die relevanten Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
+              message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die inhaltlichen Auszüge aus dem Web:\n\n${searchContext}\n\nBitte antworte dem User ausführlich basierend auf diesen Inhalten. Nenne konkrete Fakten und tatsächliche Nachrichten aus den "Inhalt/Auszug"-Texten (bitte berichte die eigentlichen News, anstatt nur die Namen der Webseiten aufzuzählen!). Bleibe in deinem Charakter als Cecilia. Fasse die Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
               history: conversationHistory,
+              isSearchFollowUp: true
             };
             if (conversationSummary) followUpPayload.summary = conversationSummary;
 

@@ -129,6 +129,12 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 - API-URL-Erkennung: Port-basiert statt nur `file://`-Check (funktioniert auch mit VS Code Live Server)
 - GitHub-Repository: https://github.com/remo01de/cecilis (privat)
 
+### Runde 5 (2026-03-19) – Heutige Session
+- **Responsive Design (Mobile-Optimierung):** Container-Paddings, Schriften und Safe-Area-Insets für iOS optimiert. Galerievorschau auf Touch-Wischen (Scroll-Snap) umgestellt.
+- **Bilder-Handling:** Neues KI-generiertes Cecilia-Avatar (`cecilia-avatar.png`) eingefügt. `onerror`-Fallback und `no-referrer` für fehlerhafte Z.AI-Bilder im Chat integriert.
+- **Websuche-Fallback via Perplexity:** `/api/search` weicht automatisch auf die Perplexity API aus, wenn Z.AI keine Ergebnisse liefert.
+- **Backend-Validierung angepasst:** Zweiter LLM-Lauf nach Websuche umgeht nun das 1000-Zeichen-Limit (`isSearchFollowUp: true`), gekappte Snippets (500 Zeichen) im Frontend zwingen die KI zur inhaltlichen Zusammenfassung.
+
 ## Was bereits erledigt ist
 
 - [x] XSS-Schutz (Frontend + Backend) – 2025-11-30
@@ -176,12 +182,12 @@ docker compose down
 Siehe `TODO.md` für die vollständige Liste. Highlights:
 - [ ] CORS in Produktion einschränken
 - [ ] Fehlerbehandlung verbessern (keine sensiblen Infos leaken)
-- [ ] Responsive Design / Mobile-Optimierung
+- [x] Responsive Design / Mobile-Optimierung – 2026-03-19
 - [ ] Accessibility (ARIA, Keyboard-Nav, Kontraste)
 - [ ] Strukturiertes Logging (Winston/Pino)
 - [ ] Testing (Unit + E2E)
 - [ ] CI/CD Pipeline
-- [ ] Galerie: Bilder-URLs könnten nach einiger Zeit ablaufen (Z.AI CDN), ggf. lokales Caching
+- [x] Galerie: Ablaufen von Z.AI CDN Links durch `onerror`-Feedback abgefangen – lokales Caching noch optional
 
 ## Hinweise
 

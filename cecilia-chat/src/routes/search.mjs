@@ -45,25 +45,69 @@ router.post("/", searchLimiter, async (req, res) => {
       body.search_recency_filter = recency;
     }
 
-    const response = await fetch(Z_AI_SEARCH_URL, {
-      method: "POST",
-      headers: {
-        "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
+    let data = null;
+    let fallbackToPerplexity = false;
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "unknown");
-      console.error("Z.AI Search error:", response.status, errorText);
-      return res.status(502).json({ error: "Web search failed" });
+    try {
+      const response = await fetch(Z_AI_SEARCH_URL, {
+        method: "POST",
+        headers: {
+          "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        data = await response.json();
+        const zResults = data?.search_result || data?.results || data?.data || [];
+        if (zResults.length === 0) {
+          console.warn("Z.AI returned 0 results. Falling back to Perplexity.");
+          fallbackToPerplexity = true;
+        }
+      } else {
+        const errorText = await response.text().catch(() => "unknown");
+        console.warn("Z.AI Search error:", response.status, errorText, "- Falling back to Perplexity.");
+        fallbackToPerplexity = true;
+      }
+    } catch (zError) {
+      console.warn("Z.AI Fetch error:", zError.message, "- Falling back to Perplexity.");
+      fallbackToPerplexity = true;
     }
 
-    const data = await response.json();
+    if (fallbackToPerplexity) {
+      const perplexityKey = process.env.PERPLEXITY_API_KEY;
+      if (!perplexityKey) {
+        console.error("PERPLEXITY_API_KEY not configured for fallback.");
+        return res.status(500).json({ error: "Search failed and fallback key missing." });
+      }
 
-    const results = (data?.search_result || data?.results || data?.data || [])
+      try {
+        const perpRes = await fetch("https://api.perplexity.ai/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${perplexityKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ query: [query] })
+        });
+
+        if (!perpRes.ok) {
+          const perpErr = await perpRes.text().catch(() => "unknown");
+          console.error("Perplexity fallback error:", perpRes.status, perpErr);
+          return res.status(502).json({ error: "Web search failed (both primary and fallback)." });
+        }
+
+        data = await perpRes.json();
+      } catch (pError) {
+        console.error("Perplexity Fetch error:", pError);
+        return res.status(502).json({ error: "Web search failed completely." });
+      }
+    }
+
+    const rawResults = data?.search_result || data?.results || data?.data || [];
+    const results = rawResults
       .slice(0, safeCount)
       .map((r) => ({
         title: r.title || "",
