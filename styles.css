@@ -5,13 +5,13 @@ body {
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #FFB6C1, #ADD8E6);
   color: #444;
-  overflow-x: hidden;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  box-sizing: border-box;
 }
 
 .hero {
@@ -30,18 +30,24 @@ body {
 
 .hero-title {
   font-family: 'Pacifico', cursive;
-  font-size: 3rem;
+  font-size: clamp(2.4rem, 8vw, 3rem);
   color: #FF69B4;
   margin: 0.5rem 0;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .hero-subtitle {
   font-size: 1.5rem;
   color: #87CEEB;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .section {
   margin: 3rem 0;
+  overflow-wrap: anywhere;
 }
 
 h2 {
@@ -54,11 +60,13 @@ h2 {
 .base-info li {
   margin: 0.5rem 0;
   list-style: none;
+  overflow-wrap: anywhere;
 }
 
 .appearance div {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   margin: 0.5rem 0;
 }
 
@@ -169,13 +177,22 @@ h2 {
   .container {
     padding: 1rem;
   }
+
+  .hero {
+    padding: 1.25rem 0;
+  }
+
+  .hero-image {
+    width: min(190px, 70vw);
+  }
   
   .hero-title {
-    font-size: 2.2rem;
+    font-size: clamp(2rem, 13vw, 2.6rem);
   }
   
   .hero-subtitle {
-    font-size: 1.2rem;
+    font-size: 1.05rem;
+    padding: 0 0.5rem;
   }
   
   .outfits, .poses {

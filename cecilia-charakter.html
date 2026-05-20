@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cecilia's Charakterprofil</title>
+  <link rel="icon" href="/favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #FFB6C1, #ADD8E6);
-      overflow-x: hidden;
       color: #444;
       padding: 2rem;
+      box-sizing: border-box;
     }
     header {
       text-align: center;
@@ -21,7 +22,10 @@
     header h1 {
       font-family: 'Pacifico', cursive;
       color: #FF69B4;
-      font-size: 3rem;
+      font-size: clamp(2.2rem, 8vw, 3rem);
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+      margin: 0;
     }
     section {
       background: rgba(255, 255, 255, 0.9);
@@ -29,6 +33,7 @@
       padding: 2rem;
       margin-bottom: 2rem;
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      box-sizing: border-box;
     }
     h2 {
       color: #FF69B4;
@@ -65,7 +70,7 @@
         padding-bottom: 1rem;
       }
       header h1 {
-        font-size: 2.2rem;
+        font-size: clamp(2rem, 11vw, 2.6rem);
       }
       section {
         padding: 1.2rem;

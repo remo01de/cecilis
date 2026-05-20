@@ -1,593 +1,1136 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="night">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cecilia Galerie & Chat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cecilia · Chat</title>
+  <link rel="icon" href="/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
   <script src="placeholder-images.js"></script>
   <style>
+    /* =========================================================
+       DESIGN TOKENS  –  Y2K Fairycore / Modern Mystic
+       ========================================================= */
+    :root {
+      /* Surfaces – Nightshade (dark default) */
+      --bg-deep:    #0F0420;
+      --bg-night:   #15082A;
+      --bg-rich:    #261146;
+      --bg-veil:    rgba(15, 4, 32, 0.72);
+      --surface-1:  rgba(255,255,255,0.06);
+      --surface-2:  rgba(255,255,255,0.10);
+      --surface-3:  rgba(255,255,255,0.16);
+      --stroke:     rgba(255,255,255,0.14);
+      --stroke-soft:rgba(255,255,255,0.08);
+      --stroke-hot: rgba(255,111,203,0.45);
+
+      /* Brand – Pink */
+      --pink-300: #FFA8DC;
+      --pink-500: #FF6FCB;
+      --pink-600: #F353B5;
+      --pink-700: #D63A99;
+
+      /* Brand – Cyan */
+      --cyan-300: #A8F1FB;
+      --cyan-500: #7EE8FA;
+
+      /* Brand – Gold */
+      --gold-300: #FFE8A0;
+      --gold-500: #FFD86B;
+
+      /* Supporting */
+      --lavender-500: #C9B4FF;
+      --mint-500:     #B4F0D6;
+      --peach-500:    #FFB89A;
+
+      /* Text */
+      --text-1: #FFFFFF;
+      --text-2: #E8DCFF;
+      --text-3: #B0A0CE;
+      --text-4: #7E6E9E;
+      --text-on-pink: #2A0526;
+
+      /* Gradients */
+      --grad-magic:          linear-gradient(135deg,#FF6FCB 0%,#C9B4FF 50%,#7EE8FA 100%);
+      --grad-aurora:         linear-gradient(180deg,#1D0B3A 0%,#2A0F4D 45%,#3D1466 100%);
+      --grad-bubble-cecilia: linear-gradient(140deg,#3E2470 0%,#4A1E73 60%,#5B2E8A 100%);
+      --grad-bubble-user:    linear-gradient(140deg,#FF6FCB 0%,#F353B5 100%);
+
+      /* Radii */
+      --r-sm:  12px;
+      --r-md:  18px;
+      --r-lg:  24px;
+      --r-xl:  32px;
+      --r-pill:999px;
+
+      /* Shadows */
+      --shadow-card:      0 12px 40px rgba(8,2,22,0.55);
+      --shadow-pop:       0 24px 60px rgba(8,2,22,0.70);
+      --shadow-soft:      0 4px 20px rgba(0,0,0,0.30);
+      --shadow-inset:     inset 0 1px 0 rgba(255,255,255,0.08);
+      --shadow-glow-pink: 0 0 28px rgba(255,111,203,0.55), 0 8px 32px rgba(8,2,22,0.45);
+      --shadow-glow-cyan: 0 0 28px rgba(126,232,250,0.55), 0 8px 32px rgba(8,2,22,0.45);
+
+      /* Typography */
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+      --font-hand:    'Caveat', cursive;
+
+      /* Motion */
+      --ease-magic: cubic-bezier(0.34,1.56,0.64,1);
+      --ease-out:   cubic-bezier(0.16,1,0.3,1);
+    }
+
+    /* Day Dream – peach-pink light theme */
+    [data-theme="day"] {
+      --bg-deep:    #FFD3E7;
+      --bg-night:   #FFE3EF;
+      --bg-rich:    #FFEEF6;
+      --bg-veil:    rgba(255,233,244,0.78);
+      --surface-1:  rgba(255,255,255,0.55);
+      --surface-2:  rgba(255,255,255,0.85);
+      --surface-3:  #FFFFFF;
+      --stroke:     rgba(42,15,51,0.10);
+      --stroke-soft:rgba(42,15,51,0.05);
+      --stroke-hot: rgba(243,83,181,0.40);
+      --pink-500:  #F353B5;
+      --cyan-500:  #4ECBE3;
+      --gold-500:  #F2A93D;
+      --text-1: #2A0F33;
+      --text-2: #5A2F66;
+      --text-3: #8B5A99;
+      --text-4: #B084BD;
+      --text-on-pink: #FFFFFF;
+      --grad-aurora:         linear-gradient(180deg,#FFEEF6 0%,#FFE0EE 55%,#FFD3E7 100%);
+      --grad-bubble-cecilia: linear-gradient(140deg,#FFFFFF 0%,#FFF6FB 100%);
+      --grad-bubble-user:    linear-gradient(140deg,#F353B5 0%,#D63A99 100%);
+      --shadow-card:      0 14px 40px rgba(243,83,181,0.18);
+      --shadow-pop:       0 24px 60px rgba(243,83,181,0.25);
+      --shadow-glow-pink: 0 0 24px rgba(243,83,181,0.35), 0 8px 32px rgba(243,83,181,0.15);
+      --shadow-glow-cyan: 0 0 24px rgba(78,203,227,0.35), 0 8px 32px rgba(78,203,227,0.15);
+    }
+
+    /* =========================================================
+       BASE
+       ========================================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
     body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #FFB6C1, #ADD8E6);
-      overflow-x: hidden;
-      color: #444;
-      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text-2);
+      background: var(--bg-deep);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    ::selection { background: var(--pink-500); color: var(--text-on-pink); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+      }
     }
 
-    header {
-      text-align: center;
-      padding: 2rem;
+    /* =========================================================
+       BACKGROUND LAYERS
+       ========================================================= */
+    .aurora {
+      position: fixed; inset: 0; z-index: 0;
+      background: var(--grad-aurora);
+      overflow: hidden; pointer-events: none;
+    }
+    .aurora::before {
+      content: ""; position: absolute; inset: -10%;
+      background:
+        radial-gradient(ellipse at 15% 20%,rgba(255,111,203,0.22) 0%,transparent 50%),
+        radial-gradient(ellipse at 85% 10%,rgba(126,232,250,0.18) 0%,transparent 55%),
+        radial-gradient(ellipse at 50% 95%,rgba(201,180,255,0.18) 0%,transparent 55%);
+      filter: blur(20px);
+      animation: aurora-drift 24s ease-in-out infinite alternate;
+    }
+    [data-theme="day"] .aurora::before {
+      background:
+        radial-gradient(ellipse at 15% 20%,rgba(243,83,181,0.25) 0%,transparent 55%),
+        radial-gradient(ellipse at 85% 10%,rgba(78,203,227,0.20) 0%,transparent 55%),
+        radial-gradient(ellipse at 50% 95%,rgba(255,216,107,0.30) 0%,transparent 55%);
+    }
+    @keyframes aurora-drift {
+      0%   { transform: translate(0,0) scale(1); }
+      100% { transform: translate(-4%,3%) scale(1.06); }
     }
 
-    header h1 {
-      font-family: 'Pacifico', cursive;
-      font-size: 3rem;
-      color: #FF69B4;
+    .stars {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        radial-gradient(1px 1px at 23% 14%,rgba(255,255,255,0.9),transparent),
+        radial-gradient(1px 1px at 67% 8%,rgba(255,255,255,0.7),transparent),
+        radial-gradient(1.5px 1.5px at 12% 42%,rgba(255,255,255,0.8),transparent),
+        radial-gradient(1px 1px at 88% 30%,rgba(255,255,255,0.6),transparent),
+        radial-gradient(1px 1px at 45% 70%,rgba(255,255,255,0.7),transparent),
+        radial-gradient(1.5px 1.5px at 78% 85%,rgba(255,216,107,0.7),transparent),
+        radial-gradient(1px 1px at 30% 90%,rgba(255,255,255,0.5),transparent),
+        radial-gradient(1px 1px at 55% 32%,rgba(255,255,255,0.6),transparent),
+        radial-gradient(1px 1px at 92% 60%,rgba(255,255,255,0.5),transparent);
+      animation: twinkle 6s ease-in-out infinite;
+    }
+    [data-theme="day"] .stars { opacity: 0; }
+    @keyframes twinkle {
+      0%,100% { opacity: 0.7; }
+      50%     { opacity: 1; }
     }
 
-    /* Container für Galerie und Chat */
-    .main-content {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      padding: 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-      box-sizing: border-box;
+    .sparkle-field {
+      position: fixed; inset: 0; z-index: 1;
+      pointer-events: none; overflow: hidden;
+    }
+    .dust {
+      position: absolute; border-radius: 50%; opacity: 0;
+      animation: dust-rise linear infinite;
+    }
+    @keyframes dust-rise {
+      0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+      10%  { opacity: 0.9; }
+      90%  { opacity: 0.7; }
+      100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
     }
 
-    .gallery {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
+    .flutterer {
+      position: fixed; z-index: 2; pointer-events: none;
+      filter: drop-shadow(0 0 6px rgba(255,216,107,0.4));
+      animation: flutter-path linear infinite;
+    }
+    .flutterer.b1 { left: -40px; top: 12vh; animation-duration: 22s; }
+    .flutterer.b2 { left: -60px; top: 62vh; animation-duration: 28s; animation-delay: -8s; }
+    .wing-left, .wing-right {
+      transform-origin: 20px 15px;
+      animation: wing-flap 0.32s ease-in-out infinite;
+    }
+    .wing-right { animation-delay: 0.06s; }
+    @keyframes wing-flap {
+      0%, 100% { transform: scaleX(1); }
+      50%      { transform: scaleX(0.15); }
+    }
+    @keyframes flutter-path {
+      0%   { transform: translate(0,0)       rotate(-4deg); }
+      25%  { transform: translate(28vw,-3vh) rotate(6deg); }
+      50%  { transform: translate(56vw,4vh)  rotate(-3deg); }
+      75%  { transform: translate(84vw,-2vh) rotate(4deg); }
+      100% { transform: translate(115vw,2vh) rotate(0deg); }
     }
 
+    /* =========================================================
+       APP SHELL
+       ========================================================= */
+    .app-shell {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+      height: 100dvh;
+    }
+    @media (max-width: 860px) {
+      .app-shell { grid-template-columns: 1fr; }
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 49;
+      background: rgba(15,4,32,0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .sidebar-overlay.visible { display: block; }
+
+    /* =========================================================
+       SIDEBAR
+       ========================================================= */
+    .sidebar {
+      background: var(--surface-1);
+      border-right: 1px solid var(--stroke);
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      display: flex; flex-direction: column;
+      padding: 20px 16px;
+      gap: 16px;
+      overflow-y: auto;
+      height: 100vh;
+      height: 100dvh;
+    }
+    @media (max-width: 860px) {
+      .sidebar {
+        position: fixed; inset: 0 auto 0 0;
+        width: 84%; max-width: 320px;
+        z-index: 50;
+        transform: translateX(-101%);
+        transition: transform 280ms var(--ease-out);
+      }
+      .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-pop); }
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px; padding: 6px 8px;
+    }
+    .sidebar-brand-mark {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: var(--grad-magic);
+      display: grid; place-items: center;
+      box-shadow: var(--shadow-glow-pink);
+      flex: none; font-size: 18px;
+    }
+    .sidebar-brand-name {
+      font-family: var(--font-display);
+      font-size: 22px; line-height: 1; color: var(--text-1);
+    }
+    .sidebar-brand-tag {
+      font-size: 11px; color: var(--text-3);
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .sidebar-cta {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 12px 14px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--stroke-hot);
+      background: linear-gradient(135deg,rgba(255,111,203,0.20),rgba(126,232,250,0.12));
+      color: var(--text-1);
+      font: 600 14px/1 var(--font-body);
+      cursor: pointer;
+      transition: transform 180ms var(--ease-out), box-shadow 180ms;
+    }
+    .sidebar-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow-pink); }
+    .sidebar-section-label {
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text-4); padding: 12px 8px 4px;
+    }
+    .history-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--r-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 160ms, border-color 160ms;
+      text-align: left; width: 100%;
+      background: transparent; color: inherit; font: inherit;
+    }
+    .history-item:hover { background: var(--surface-1); }
+    .history-item.active { background: var(--surface-2); border-color: var(--stroke); }
+    .history-item-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--pink-500);
+      box-shadow: 0 0 8px var(--pink-500);
+      margin-top: 8px; flex: none;
+    }
+    .history-item-title {
+      font-size: 13px; font-weight: 600; color: var(--text-1);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-item-sub {
+      font-size: 11px; color: var(--text-3); margin-top: 2px;
+    }
+
+    /* =========================================================
+       CHAT COLUMN
+       ========================================================= */
+    .chat-col {
+      display: flex; flex-direction: column;
+      height: 100vh; height: 100dvh;
+      min-width: 0;
+    }
+
+    .chat-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--stroke-soft);
+      background: var(--bg-veil);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      z-index: 4; flex: none;
+    }
+    .chat-header-avatar {
+      width: 40px; height: 40px; border-radius: 14px;
+      overflow: hidden; flex: none;
+      background: var(--grad-magic);
+      box-shadow: var(--shadow-glow-pink);
+    }
+    .chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .chat-header-name {
+      font-family: var(--font-display);
+      font-size: 24px; color: var(--text-1); line-height: 1;
+    }
+    .chat-header-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--text-3); margin-top: 2px;
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--mint-500); box-shadow: 0 0 8px var(--mint-500);
+    }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: var(--surface-1);
+      border: 1px solid var(--stroke-soft);
+      color: var(--text-2); cursor: pointer;
+      transition: background 160ms, transform 160ms; flex: none;
+    }
+    .icon-btn:hover { background: var(--surface-2); transform: translateY(-1px); }
+    .menu-toggle { display: none; }
+    @media (max-width: 860px) { .menu-toggle { display: grid; } }
+
+    /* =========================================================
+       GALLERY BAR
+       ========================================================= */
+    .gallery-wrapper {
+      flex: none;
+      border-bottom: 1px solid var(--stroke-soft);
+      background: var(--bg-veil);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 10px 24px;
+    }
+    .gallery-inner {
+      max-width: 760px; margin: 0 auto;
+      display: flex; gap: 12px; align-items: center;
+    }
     .gallery-main {
       position: relative;
-      width: 100%;
-      max-width: 500px;
-      aspect-ratio: 3 / 4;
-      border-radius: 1rem;
+      width: 88px; height: 88px;
+      border-radius: var(--r-md);
       overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      background: linear-gradient(135deg, #ffe0ec, #d4eaf7);
-      cursor: pointer;
+      background: var(--surface-2);
+      border: 1px solid var(--stroke);
+      flex: none; cursor: pointer;
+      transition: box-shadow 200ms;
     }
-
+    .gallery-main:hover { box-shadow: var(--shadow-glow-pink); }
     .gallery-main img {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       object-fit: cover;
       transition: opacity 0.6s ease;
     }
-
     .gallery-main img.fading { opacity: 0; }
-
     .gallery-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      color: #FF69B4;
-      font-size: 1rem;
-      text-align: center;
-      padding: 2rem;
-      gap: 0.8rem;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+      color: var(--text-4); font-size: 10px;
+      text-align: center; padding: 6px; gap: 3px;
     }
-
-    .gallery-placeholder .placeholder-icon { font-size: 3rem; }
-
+    .gallery-placeholder span:first-child { font-size: 22px; }
     .gallery-generating {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 182, 193, 0.85);
-      color: white;
-      font-weight: 600;
-      gap: 1rem;
-      z-index: 2;
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: rgba(15,4,32,0.85);
+      color: var(--text-3); font-size: 10px; gap: 6px; z-index: 2;
     }
-
     .gallery-generating .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      width: 20px; height: 20px;
+      border: 2px solid var(--stroke);
+      border-top-color: var(--pink-500);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
-
+    .gallery-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .gallery-info {
+      font-size: 11px; color: var(--text-3);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .gallery-thumbnails {
-      display: flex;
-      gap: 0.5rem;
-      overflow-x: auto;
-      padding: 0.3rem 0;
-      scrollbar-width: thin;
-      scrollbar-color: #FFB6C1 transparent;
-      scroll-snap-type: x mandatory;
+      display: flex; gap: 6px;
+      overflow-x: auto; scroll-snap-type: x mandatory;
+      scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
     }
-
+    .gallery-thumbnails::-webkit-scrollbar { display: none; }
     .gallery-thumb {
-      width: 56px;
-      height: 75px;
-      border-radius: 8px;
-      object-fit: cover;
-      cursor: pointer;
+      width: 38px; height: 38px;
+      border-radius: 8px; object-fit: cover;
+      cursor: pointer; flex: none;
       border: 2px solid transparent;
-      transition: all 0.2s;
-      flex-shrink: 0;
-      opacity: 0.7;
-      scroll-snap-align: start;
+      opacity: 0.65; scroll-snap-align: start;
+      transition: opacity 180ms, border-color 180ms, box-shadow 180ms;
     }
-
-    .gallery-thumb:hover { opacity: 1; border-color: #FF69B4; }
-
+    .gallery-thumb:hover { opacity: 1; border-color: var(--pink-500); }
     .gallery-thumb.active {
-      opacity: 1;
-      border-color: #FF69B4;
-      box-shadow: 0 2px 8px rgba(255, 105, 180, 0.4);
+      opacity: 1; border-color: var(--pink-500);
+      box-shadow: 0 0 10px rgba(255,111,203,0.45);
+    }
+    @media (max-width: 600px) {
+      .gallery-wrapper { padding: 8px 16px; }
+      .gallery-main { width: 68px; height: 68px; }
+      .gallery-thumb { width: 30px; height: 30px; }
     }
 
-    .gallery-info {
-      font-size: 0.65rem;
-      color: #999;
-      text-align: center;
+    /* =========================================================
+       STREAM
+       ========================================================= */
+    .stream {
+      flex: 1; overflow-y: auto;
+      padding: 20px clamp(16px,4vw,48px) 16px;
+      scroll-behavior: smooth;
+    }
+    .stream::-webkit-scrollbar { width: 4px; }
+    .stream::-webkit-scrollbar-track { background: transparent; }
+    .stream::-webkit-scrollbar-thumb { background: var(--stroke); border-radius: 2px; }
+    .stream-inner {
+      max-width: 760px; margin: 0 auto;
+      display: flex; flex-direction: column;
+      gap: 18px;
     }
 
-    .chatbox {
-      background: rgba(255, 255, 255, 0.9);
-      width: 100%;
-      box-sizing: border-box;
-      max-width: 600px;
-      margin: 0 auto;
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
+    /* =========================================================
+       MESSAGE BUBBLES
+       ========================================================= */
+    .msg { display: flex; gap: 12px; max-width: 100%; }
+    .msg.cecilia { flex-direction: row; }
+    .msg.user    { flex-direction: row-reverse; align-self: flex-end; }
+
+    .msg-avatar {
+      width: 40px; height: 40px; border-radius: 14px;
+      flex: none; overflow: hidden;
+      background: var(--grad-magic);
+      box-shadow: var(--shadow-glow-pink);
+    }
+    .msg-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .msg.user .msg-avatar {
+      background: linear-gradient(135deg,#C9B4FF,#7EE8FA);
+      box-shadow: var(--shadow-glow-cyan);
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 17px;
+      color: #2A0F33;
     }
 
-    /* Desktop-Layout: Galerie links, Chat rechts */
-    @media (min-width: 768px) {
-      .main-content {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 2rem;
-      }
-
-      .gallery {
-        flex: 0 0 45%;
-        max-width: 500px;
-      }
-
-      .chatbox {
-        flex: 1;
-        margin: 0;
-        max-width: none;
-      }
-    }
-
-    /* Großer Desktop: Mehr Platz */
-    @media (min-width: 1200px) {
-      .gallery {
-        flex: 0 0 40%;
-      }
-
-      .chatbox {
-        flex: 1;
-        max-width: 700px;
-      }
-    }
-
-    .chatbox::before {
-      content: "✨💖✨";
-      position: absolute;
-      top: 10px;
-      left: 20px;
-      font-size: 2.5rem;
-      color: #FFD700;
-      opacity: 0.5;
-      transition: opacity 0.3s;
-    }
-
-    .chatbox.sparkle-active::before {
-      animation: sparkle 1.5s ease-in-out 3;
-    }
-
-    .chat-messages {
-      height: 250px;
-      overflow-y: auto;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      background: #fff;
-      border-radius: 1rem;
-      box-shadow: inset 0 0 10px rgba(255,182,193,0.5);
-    }
-
-    /* Größerer Chat-Bereich auf Desktop */
-    @media (min-width: 768px) {
-      .chat-messages {
-        height: 400px;
-      }
-    }
-
-    @media (min-width: 1200px) {
-      .chat-messages {
-        height: 500px;
-      }
-    }
-
-    .chat-message {
-      display: flex;
+    .msg-content {
+      min-width: 0; display: flex; flex-direction: column;
       align-items: flex-start;
-      margin-bottom: 1rem;
-      position: relative;
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      transition: background-color 0.2s;
     }
+    .msg.user .msg-content { align-items: flex-end; }
 
-    .chat-message:hover {
-      background-color: rgba(255, 182, 193, 0.1);
-    }
-
-    .chat-message img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      margin-right: 0.75rem;
-      flex-shrink: 0;
-      margin-top: 0.25rem;
-    }
-
-    .message-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .message-label {
-      color: #FF69B4;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .user-message .message-label {
-      color: #666;
-    }
-
-    .message-text {
-      line-height: 1.5;
-      color: #444;
-      word-break: break-word;
-    }
-
-    .message-text strong {
-      color: #FF69B4;
-      font-weight: 600;
-    }
-
-    .message-text em {
-      font-style: italic;
-      color: #666;
-    }
-
-    .message-text a {
-      color: #87CEEB;
-      text-decoration: underline;
-    }
-
-    .message-text a:hover {
-      color: #5BA8D1;
-    }
-
-    .cecilia-message {
-      background-color: rgba(255, 182, 193, 0.05);
-    }
-
-    .user-message {
-      background-color: rgba(173, 216, 230, 0.05);
-    }
-
-    .loading {
-      opacity: 0.6;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-
-    .chat-input {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .chat-input input {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 0.5rem;
-      font-size: 16px;
-    }
-
-    .chat-input button {
-      background-color: #FF69B4;
-      border: none;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-    }
-
-    .chat-input button:hover {
-      background-color: #ff85c1;
-    }
-
-    .clear-btn {
-      background-color: #ddd !important;
-      color: #666 !important;
-      padding: 0.5rem !important;
-      min-width: 2.5rem;
-      font-size: 1rem;
-    }
-
-    .clear-btn:hover {
-      background-color: #ccc !important;
-    }
-
-    .chat-image-container {
-      margin-top: 0.5rem;
+    .bubble {
+      max-width: min(560px,78%);
+      padding: 14px 18px;
+      border-radius: var(--r-lg);
+      font-size: 15px; line-height: 1.55;
+      color: var(--text-1);
       position: relative;
     }
-
-    .chat-image-container img {
-      width: 100% !important;
-      max-width: 400px !important;
-      height: auto !important;
-      max-height: none !important;
-      border-radius: 0.75rem !important;
-      box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3) !important;
-      margin: 0 !important;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+    .bubble.entering {
+      animation: bubble-in 480ms var(--ease-magic) both;
     }
-
-    .chat-image-container img:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4) !important;
+    .bubble.cecilia {
+      background:
+        linear-gradient(140deg,rgba(255,111,203,0.22),rgba(201,180,255,0.14) 50%,rgba(126,232,250,0.12)),
+        var(--grad-bubble-cecilia);
+      border: 1px solid rgba(255,168,220,0.30);
+      border-bottom-left-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45), var(--shadow-inset);
     }
-
-    .image-loading {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      background: linear-gradient(135deg, rgba(255,182,193,0.15), rgba(173,216,230,0.15));
-      border-radius: 0.75rem;
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
-      color: #888;
-      animation: pulse 1.5s infinite;
+    [data-theme="day"] .bubble.cecilia {
+      box-shadow: 0 4px 20px rgba(243,83,181,0.12), var(--shadow-inset);
     }
-
-    .image-error {
-      padding: 0.5rem 0.75rem;
-      background: rgba(255, 200, 200, 0.3);
-      border-radius: 0.5rem;
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: #c44;
+    .bubble.user {
+      background: var(--grad-bubble-user);
+      color: #FFFFFF;
+      border-bottom-right-radius: 8px;
+      box-shadow: var(--shadow-glow-pink);
     }
-
-    .search-loading {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      background: linear-gradient(135deg, rgba(173,216,230,0.2), rgba(200,180,255,0.2));
-      border-radius: 0.75rem;
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
-      color: #888;
-      animation: pulse 1.5s infinite;
+    .bubble p { margin: 0; }
+    .bubble p + p { margin-top: 8px; }
+    .bubble strong { color: var(--text-1); font-weight: 600; }
+    .bubble.cecilia strong {
+      background: var(--grad-magic);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent;
     }
+    .bubble em { font-style: italic; color: var(--text-3); }
+    .bubble.user em { color: rgba(255,255,255,0.8); }
+    .bubble a { color: var(--cyan-300); text-decoration: underline; }
+    .bubble a:hover { color: var(--cyan-500); }
 
-    .search-sources {
-      margin-top: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      background: rgba(173,216,230,0.1);
-      border-radius: 0.5rem;
-      border-left: 3px solid #87CEEB;
-    }
-
-    .search-sources summary {
-      font-size: 0.8rem;
-      color: #888;
-      cursor: pointer;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .search-sources a {
-      display: block;
-      font-size: 0.75rem;
-      color: #87CEEB;
-      text-decoration: none;
-      padding: 0.15rem 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .search-sources a:hover {
-      color: #5BA8D1;
-      text-decoration: underline;
-    }
-
-    @keyframes sparkle {
-      0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
-      100% { transform: rotate(360deg) scale(1.5); opacity: 1; }
-    }
-
-    /* Magic Words – elegante Mikro-Effekte */
-    .magic-word {
-      position: relative;
-      display: inline-block;
-    }
-
-    /* Feenstaub: goldene Sternchen steigen auf */
-    .magic-particle-feenstaub {
-      position: fixed;
+    .bubble-sparkle {
+      position: absolute; top: -8px; right: -8px;
       pointer-events: none;
-      z-index: 9999;
+      filter: drop-shadow(0 0 6px var(--gold-500));
+      animation: sparkle-pulse 2.6s ease-in-out infinite;
+      font-size: 18px; line-height: 1;
+    }
+    @keyframes bubble-in {
+      0%   { transform: translateY(8px) scale(0.96); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    @keyframes sparkle-pulse {
+      0%,100% { transform: scale(1) rotate(0deg);    opacity: 0.9; }
+      50%     { transform: scale(1.15) rotate(15deg); opacity: 1; }
+    }
+
+    .msg-meta {
+      font-size: 11px; color: var(--text-4);
+      margin: 4px 0 0 6px;
+    }
+    .msg.user .msg-meta { margin: 4px 6px 0 0; }
+
+    /* =========================================================
+       TYPING INDICATOR
+       ========================================================= */
+    .typing-indicator {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 18px;
+      border-radius: var(--r-pill);
+      background: var(--grad-bubble-cecilia);
+      border: 1px solid var(--stroke);
+      animation: bubble-in 360ms var(--ease-magic) both;
+    }
+    .typing-wand {
+      font-size: 20px;
+      animation: wand-wiggle 1.6s ease-in-out infinite;
+      transform-origin: bottom right; display: inline-block;
+    }
+    @keyframes wand-wiggle {
+      0%,100% { transform: rotate(-12deg); }
+      50%     { transform: rotate(12deg); }
+    }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--pink-500);
+      box-shadow: 0 0 8px var(--pink-500);
+      animation: typing-bounce 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(3) {
+      background: var(--lavender-500);
+      box-shadow: 0 0 8px var(--lavender-500);
+      animation-delay: 0.15s;
+    }
+    .typing-dot:nth-child(4) {
+      background: var(--cyan-500);
+      box-shadow: 0 0 8px var(--cyan-500);
+      animation-delay: 0.30s;
+    }
+    @keyframes typing-bounce {
+      0%,60%,100% { transform: translateY(0); opacity: 0.6; }
+      30%         { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* =========================================================
+       POLAROID IMAGES
+       ========================================================= */
+    .polaroid-stack {
+      margin-top: 12px; padding: 20px 0 32px;
+      display: flex; align-items: flex-start;
+    }
+    .polaroid {
+      position: relative; flex: none;
+      padding: 10px 10px 32px;
+      background: #FAF6F0; border-radius: 6px;
+      box-shadow: var(--shadow-card);
+      transition: transform 360ms var(--ease-magic), box-shadow 360ms;
+      animation: polaroid-drop 700ms var(--ease-magic) both;
+      cursor: pointer;
+    }
+    .polaroid:hover {
+      transform: translate(0,-8px) rotate(0deg) scale(1.04) !important;
+      box-shadow: var(--shadow-pop); z-index: 5;
+    }
+    .polaroid.p0 { transform: rotate(-6deg); z-index: 3; margin-right: -50px; animation-delay: 0ms; }
+    .polaroid.p1 { transform: rotate(3deg);  z-index: 2; margin-right: -50px; margin-top: 14px; animation-delay: 220ms; }
+    .polaroid.p2 { transform: rotate(-2deg); z-index: 1; margin-top: 8px; animation-delay: 420ms; }
+    @keyframes polaroid-drop {
+      0%   { transform: translateY(-30px) scale(0.92); opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .polaroid-tape {
+      position: absolute; top: -10px; left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 46px; height: 16px;
+      background: rgba(255,216,107,0.55);
+      border: 1px solid rgba(255,216,107,0.35);
+    }
+    .polaroid-img {
+      display: block; width: 140px; height: 140px;
+      border-radius: 3px; overflow: hidden;
+      background: var(--bg-rich); position: relative;
+    }
+    .polaroid-img img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .polaroid-img::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%);
+      transform: translateX(-110%);
+      animation: shimmer-reveal 1400ms ease-out 600ms 1;
+      pointer-events: none;
+    }
+    @keyframes shimmer-reveal { to { transform: translateX(110%); } }
+    .polaroid-caption {
+      font-family: var(--font-hand);
+      font-size: 17px; color: #2A0F33;
+      text-align: center; margin-top: 6px; line-height: 1;
+    }
+    @media (max-width: 500px) {
+      .polaroid-img { width: 110px; height: 110px; }
+      .polaroid.p0, .polaroid.p1 { margin-right: -40px; }
+    }
+
+    /* Single image (polaroid style) */
+    .chat-image-single {
+      display: inline-block;
+      position: relative;
+      padding: 10px 10px 30px;
+      background: #FAF6F0;
+      border-radius: 6px;
+      box-shadow: var(--shadow-card);
+      animation: polaroid-drop 700ms var(--ease-magic) both;
+      cursor: pointer;
+      margin-top: 12px;
+      max-width: min(200px, 85%);
+      transition: transform 360ms var(--ease-magic), box-shadow 360ms;
+    }
+    .chat-image-single:hover { transform: translateY(-4px) rotate(-1deg); box-shadow: var(--shadow-pop); }
+    .chat-image-single-tape {
+      position: absolute; top: -10px; left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 46px; height: 16px;
+      background: rgba(255,216,107,0.55);
+      border: 1px solid rgba(255,216,107,0.35);
+    }
+    .chat-image-single img {
+      width: 160px; height: 160px;
+      border-radius: 3px; object-fit: cover; display: block;
+    }
+    .chat-image-single-caption {
+      font-family: var(--font-hand);
+      font-size: 16px; color: #2A0F33;
+      text-align: center; margin-top: 5px; line-height: 1;
+    }
+
+    /* =========================================================
+       CRYSTAL CARD (search results)
+       ========================================================= */
+    .crystal-card {
+      margin-top: 12px;
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      background:
+        radial-gradient(circle at 18% 18%,rgba(255,255,255,0.25),transparent 40%),
+        radial-gradient(circle at 80% 90%,rgba(126,232,250,0.3),transparent 50%),
+        linear-gradient(135deg,rgba(201,180,255,0.18),rgba(126,232,250,0.10));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow-card), inset 0 0 40px rgba(126,232,250,0.10);
+      position: relative; overflow: hidden;
+    }
+    .crystal-card::before {
+      content: ""; position: absolute; right: -40px; top: -40px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%,rgba(255,255,255,0.5),rgba(201,180,255,0.4) 35%,rgba(126,232,250,0.25) 70%,transparent);
+      filter: blur(2px);
+      animation: orb-float 8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes orb-float {
+      0%,100% { transform: translate(0,0); }
+      50%     { transform: translate(-6px,6px); }
+    }
+    .crystal-card-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--cyan-300); margin-bottom: 10px;
+      position: relative; z-index: 1;
+    }
+    .crystal-card-body { position: relative; z-index: 1; }
+    .crystal-card-body p { margin: 0 0 8px; color: var(--text-1); font-size: 14px; line-height: 1.55; }
+    .crystal-sources {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+      position: relative; z-index: 1;
+    }
+    .crystal-source {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      background: var(--surface-2);
+      border: 1px solid var(--stroke-soft);
+      font-size: 11px; color: var(--text-2);
+      text-decoration: none; cursor: pointer;
+      transition: background 160ms;
+    }
+    .crystal-source:hover { background: var(--surface-3); color: var(--text-1); }
+    .crystal-source-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--grad-magic); flex: none;
+    }
+
+    /* Loading states */
+    .image-loading, .search-loading {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--r-md);
+      background: var(--surface-1);
+      border: 1px solid var(--stroke);
+      font-size: 13px; color: var(--text-3);
+      margin-top: 10px;
+      animation: pulse 1.5s infinite;
+    }
+    .image-error {
+      padding: 8px 12px;
+      background: rgba(255,80,80,0.08);
+      border: 1px solid rgba(255,80,80,0.18);
+      border-radius: var(--r-md);
+      margin-top: 10px;
+      font-size: 13px; color: var(--peach-500);
+    }
+    .api-warning {
+      padding: 10px 14px;
+      background: rgba(255,216,107,0.12);
+      border: 1px solid rgba(255,216,107,0.25);
+      border-radius: var(--r-md);
+      font-size: 13px; color: var(--gold-300);
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 0.7; }
+      50%     { opacity: 1; }
+    }
+
+    /* =========================================================
+       COMPOSER
+       ========================================================= */
+    .composer {
+      flex: none;
+      padding: 12px clamp(16px,4vw,48px) 20px;
+      background: linear-gradient(180deg,transparent,var(--bg-veil) 30%);
+    }
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .composer { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+    }
+    .composer-inner { max-width: 760px; margin: 0 auto; }
+    .suggestion-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .suggestion-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--r-pill);
+      background: var(--surface-1);
+      border: 1px solid var(--stroke);
+      color: var(--text-2);
+      font: 500 13px/1 var(--font-body);
+      cursor: pointer;
+      transition: background 160ms, transform 160ms, border-color 160ms;
+    }
+    .suggestion-chip:hover {
+      background: var(--surface-2);
+      border-color: var(--stroke-hot);
+      transform: translateY(-1px);
+      color: var(--text-1);
+    }
+    .input-shell {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 8px 8px 18px;
+      border-radius: var(--r-pill);
+      background: var(--surface-2);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow-soft), var(--shadow-inset);
+      transition: border-color 200ms, box-shadow 200ms;
+    }
+    .input-shell:focus-within {
+      border-color: var(--stroke-hot);
+      box-shadow: var(--shadow-glow-pink);
+    }
+    .input-shell input {
+      flex: 1; min-width: 0;
+      background: transparent; border: none; outline: none;
+      color: var(--text-1);
+      font: 400 15px/1.4 var(--font-body);
+      padding: 8px 0;
+    }
+    .input-shell input::placeholder { color: var(--text-4); }
+    .send-btn {
+      flex: none; width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--grad-magic);
+      border: none; color: #FFF;
+      display: grid; place-items: center;
+      cursor: pointer;
+      transition: transform 200ms var(--ease-magic), box-shadow 200ms;
+      box-shadow: var(--shadow-glow-pink);
+    }
+    .send-btn:hover  { transform: scale(1.05) rotate(-8deg); }
+    .send-btn:active { transform: scale(0.96); }
+    .clear-btn {
+      flex: none; width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--surface-1);
+      border: 1px solid var(--stroke-soft);
+      color: var(--text-3);
+      display: grid; place-items: center;
+      cursor: pointer;
+      transition: background 160ms;
+    }
+    .clear-btn:hover { background: var(--surface-2); color: var(--text-1); }
+
+    /* =========================================================
+       MAGIC WORD EFFECTS (preserved from original)
+       ========================================================= */
+    .magic-word { position: relative; display: inline-block; }
+    .magic-particle-feenstaub {
+      position: fixed; pointer-events: none; z-index: 9999;
       animation: magic-feenstaub-rise ease-out forwards;
     }
-
     @keyframes magic-feenstaub-rise {
-      0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
-      100% { opacity: 0; transform: translate(var(--mx), var(--my)) scale(0.4) rotate(var(--mr)); }
+      0%   { opacity: 1; transform: translate(0,0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translate(var(--mx),var(--my)) scale(0.4) rotate(var(--mr)); }
     }
-
-    /* Magie: Schimmer-Gradient über das Wort */
     .magic-word-magie {
-      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.25), rgba(255,182,193,0.3), transparent);
-      background-size: 250% 100%;
-      background-position: 100% 0;
+      background: linear-gradient(90deg,transparent,rgba(255,215,0,0.25),rgba(255,182,193,0.3),transparent);
+      background-size: 250% 100%; background-position: 100% 0;
       animation: magic-shimmer-pass 0.9s ease-in-out forwards;
-      border-radius: 3px;
-      padding: 0 2px;
+      border-radius: 3px; padding: 0 2px;
     }
-
     @keyframes magic-shimmer-pass {
-      0% { background-position: 100% 0; }
-      50% { background-position: 0% 0; }
+      0%   { background-position: 100% 0; }
+      50%  { background-position: 0% 0; }
       100% { background-position: -100% 0; }
     }
-
-    /* Wunsch: Sternschnuppe unter dem Wort */
     .magic-shootingstar {
-      position: absolute;
-      pointer-events: none;
-      width: 30px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(255,200,50,0.9), rgba(255,150,180,0.7));
+      position: absolute; pointer-events: none;
+      width: 30px; height: 2px;
+      background: linear-gradient(90deg,transparent,rgba(255,200,50,0.9),rgba(255,150,180,0.7));
       border-radius: 2px;
-      box-shadow: 0 0 6px rgba(255,200,50,0.5), 0 0 12px rgba(255,200,50,0.2);
-      animation: magic-star-arc 0.8s ease-out forwards;
-      z-index: 10;
+      animation: magic-star-arc 0.8s ease-out forwards; z-index: 10;
     }
-
     @keyframes magic-star-arc {
-      0% { opacity: 0; transform: translateX(-15px) rotate(-12deg) scaleX(0.2); }
-      15% { opacity: 1; }
-      80% { opacity: 0.8; }
+      0%   { opacity: 0; transform: translateX(-15px) rotate(-12deg) scaleX(0.2); }
+      15%  { opacity: 1; }
+      80%  { opacity: 0.8; }
       100% { opacity: 0; transform: translateX(var(--sw)) rotate(-4deg) scaleX(1.2); }
     }
-
-    /* Traum: sanfte leuchtende Kreise */
     .magic-bokeh {
-      position: absolute;
-      pointer-events: none;
-      border-radius: 50%;
-      filter: blur(2px);
-      animation: magic-bokeh-pulse 1.2s ease-in-out forwards;
-      z-index: 10;
+      position: absolute; pointer-events: none;
+      border-radius: 50%; filter: blur(2px);
+      animation: magic-bokeh-pulse 1.2s ease-in-out forwards; z-index: 10;
     }
-
     @keyframes magic-bokeh-pulse {
-      0% { opacity: 0; transform: scale(0.3); }
+      0%  { opacity: 0; transform: scale(0.3); }
       25% { opacity: var(--bo); transform: scale(1); }
       65% { opacity: var(--bo); transform: scale(1.1); }
-    }
-
-    /* Mobile Responsive Optimizations */
-    @media (max-width: 767px) {
-      header {
-        padding: 1rem;
-      }
-      header h1 {
-        font-size: 2.2rem;
-      }
-      .main-content {
-        padding: 0.5rem;
-        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-        gap: 1.5rem;
-      }
-      .chatbox {
-        padding: 0.5rem;
-      }
-      .chat-messages {
-        height: 80vh;
-        max-height: none;
-      }
-      .gallery-thumbnails {
-        padding: 0.5rem 0;
-      }
-      .gallery-thumb {
-        width: 60px;
-        height: 80px;
-      }
-      .chat-input button {
-        padding: 0.5rem 0.8rem;
-      }
-      .clear-btn {
-        min-width: 2.2rem;
-      }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Cecilia's Welt</h1>
-  </header>
+  <!-- Background layers -->
+  <div class="aurora"></div>
+  <div class="stars"></div>
 
-  <div class="main-content">
-    <section class="gallery" id="gallerySection">
-      <div class="gallery-main" id="galleryMain">
-        <div class="gallery-placeholder" id="galleryPlaceholder">
-          <span class="placeholder-icon">🎨</span>
-          <span>Chatte mit Cecilia – sie malt sich passend zur Unterhaltung!</span>
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-mark">✨</div>
+        <div>
+          <div class="sidebar-brand-name">Cecilia</div>
+          <div class="sidebar-brand-tag">Feenmagie · Beta</div>
         </div>
       </div>
 
-      <div class="gallery-thumbnails" id="galleryThumbnails"></div>
-      <div class="gallery-info" id="galleryInfo"></div>
-    </section>
+      <button class="sidebar-cta" onclick="clearChatWithNew()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg>
+        Neuer Zauber
+      </button>
 
-    <section class="chatbox">
-      <div class="chat-messages" id="chatMessages"></div>
-      <div class="chat-input">
-        <input type="text" id="chatInput" placeholder="Schreibe eine Nachricht an Cecilia...">
-        <button onclick="sendMessage()">Senden</button>
-        <button onclick="clearChat()" title="Chat leeren" class="clear-btn">🗑️</button>
+      <div class="sidebar-section-label">Verlauf</div>
+      <div id="sidebarHistory">
+        <div class="history-item active">
+          <span class="history-item-dot"></span>
+          <div style="min-width:0;flex:1">
+            <div class="history-item-title">Aktuelles Gespräch</div>
+            <div class="history-item-sub">Läuft gerade ✨</div>
+          </div>
+        </div>
       </div>
-    </section>
+
+      <div style="margin-top:auto">
+        <button class="history-item" id="themeToggle" onclick="toggleTheme()">
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>
+            </svg>
+            <span id="themeLabel" style="font-size:13px;color:var(--text-1);font-weight:600">Nightshade</span>
+          </span>
+          <span style="font-size:11px;color:var(--text-3)">tippen</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main column -->
+    <div class="chat-col">
+      <!-- Header -->
+      <header class="chat-header">
+        <button class="icon-btn menu-toggle" onclick="openSidebar()" aria-label="Menü">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7H20M4 12H20M4 17H20"/></svg>
+        </button>
+        <div class="chat-header-avatar">
+          <img src="img/cecilia-avatar.png" alt="Cecilia" onerror="this.style.display='none'">
+        </div>
+        <div style="flex:1">
+          <div class="chat-header-name">Cecilia</div>
+          <span class="chat-header-status">
+            <span class="status-dot"></span>
+            online · im Feenwald
+          </span>
+        </div>
+      </header>
+
+      <!-- Gallery bar -->
+      <div class="gallery-wrapper" id="gallerySection">
+        <div class="gallery-inner">
+          <div class="gallery-main" id="galleryMain">
+            <div class="gallery-placeholder" id="galleryPlaceholder">
+              <span>🎨</span>
+              <span>Bilder</span>
+            </div>
+          </div>
+          <div class="gallery-right">
+            <div class="gallery-info" id="galleryInfo"></div>
+            <div class="gallery-thumbnails" id="galleryThumbnails"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message stream -->
+      <div class="stream" id="streamArea">
+        <div class="stream-inner" id="chatMessages"></div>
+      </div>
+
+      <!-- Composer -->
+      <div class="composer">
+        <div class="composer-inner">
+          <div class="suggestion-row" id="suggestionRow">
+            <button class="suggestion-chip" onclick="useSuggestion(this)">✨ Mal mir eine Katze mit Flügeln</button>
+            <button class="suggestion-chip" onclick="useSuggestion(this)">🌙 Gute-Nacht-Geschichte</button>
+            <button class="suggestion-chip" onclick="useSuggestion(this)">🔮 Was ist heute in den Nachrichten?</button>
+          </div>
+          <div class="input-shell">
+            <input type="text" id="chatInput" placeholder="Erzähl Cecilia, was du sehen willst..." autocomplete="off">
+            <button class="send-btn" onclick="sendMessage()" aria-label="Senden">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M4 12L20 4L13 20L11 13Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
+              </svg>
+            </button>
+            <button class="clear-btn" onclick="clearChat()" aria-label="Chat leeren" title="Chat leeren">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // ========================
-    // Automatische Galerie
-    // ========================
+    // ==========================================
+    // AMBIENT ANIMATIONS
+    // ==========================================
+    (function initAmbient() {
+      // Fairy dust particles
+      const field = document.createElement('div');
+      field.className = 'sparkle-field';
+      field.setAttribute('aria-hidden', 'true');
+      const tints = ['var(--gold-500)', 'var(--pink-300)', 'var(--cyan-500)', 'var(--gold-300)'];
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('span');
+        p.className = 'dust';
+        const size = 2 + Math.random() * 4;
+        const tint = tints[i % tints.length];
+        Object.assign(p.style, {
+          left: Math.random() * 100 + '%',
+          bottom: '-12px',
+          width: size + 'px',
+          height: size + 'px',
+          background: tint,
+          boxShadow: `0 0 ${size * 2.5}px ${tint}`,
+          animationDelay: `-${Math.random() * 12}s`,
+          animationDuration: (9 + Math.random() * 10) + 's'
+        });
+        field.appendChild(p);
+      }
+      document.body.appendChild(field);
+
+      // Butterflies
+      const butterflies = [
+        { hue: '#FF6FCB', body: '#D63A99', cls: 'b1', size: 32 },
+        { hue: '#7EE8FA', body: '#3FB8CE', cls: 'b2', size: 24 }
+      ];
+      butterflies.forEach(({ hue, body, cls, size }) => {
+        const b = document.createElement('div');
+        b.className = `flutterer ${cls}`;
+        b.setAttribute('aria-hidden', 'true');
+        b.style.width = size + 'px';
+        b.innerHTML = `<svg viewBox="0 0 40 30" xmlns="http://www.w3.org/2000/svg">
+          <g class="wing-left">
+            <ellipse cx="10" cy="10" rx="9" ry="6" fill="${hue}" opacity="0.85"/>
+            <ellipse cx="10" cy="21" rx="6"  ry="5" fill="${hue}" opacity="0.7"/>
+          </g>
+          <g class="wing-right">
+            <ellipse cx="30" cy="10" rx="9" ry="6" fill="${hue}" opacity="0.85"/>
+            <ellipse cx="30" cy="21" rx="6"  ry="5" fill="${hue}" opacity="0.7"/>
+          </g>
+          <line x1="20" y1="4" x2="20" y2="25" stroke="${body}" stroke-width="1.5"/>
+        </svg>`;
+        document.body.appendChild(b);
+      });
+    })();
+
+    // ==========================================
+    // THEME TOGGLE
+    // ==========================================
+    let currentTheme = localStorage.getItem('cecilia_theme') || 'night';
+
+    function applyTheme(t) {
+      currentTheme = t;
+      document.documentElement.setAttribute('data-theme', t === 'day' ? 'day' : 'night');
+      const label = document.getElementById('themeLabel');
+      const icon  = document.getElementById('themeIcon');
+      if (label) label.textContent = t === 'day' ? 'Day Dream' : 'Nightshade';
+      if (icon) {
+        icon.innerHTML = t === 'day'
+          ? `<circle cx="12" cy="12" r="4"/><path d="M12 2V4M12 20V22M4 12H2M22 12H20M5 5L6.5 6.5M19 19L17.5 17.5M5 19L6.5 17.5M19 5L17.5 6.5"/>`
+          : `<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>`;
+      }
+      localStorage.setItem('cecilia_theme', t);
+    }
+
+    function toggleTheme() { applyTheme(currentTheme === 'day' ? 'night' : 'day'); }
+
+    applyTheme(currentTheme);
+
+    // ==========================================
+    // SIDEBAR
+    // ==========================================
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('sidebarOverlay').classList.add('visible');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('visible');
+    }
+    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+    // ==========================================
+    // SUGGESTION CHIPS
+    // ==========================================
+    function useSuggestion(btn) {
+      const text = btn.textContent.replace(/^[\s\S]{0,3}/, '').trim();
+      document.getElementById('chatInput').value = text;
+      sendMessage();
+    }
+
+    // ==========================================
+    // GALLERY
+    // ==========================================
     const GALLERY_STORAGE_KEY = 'cecilia_gallery';
-    const GALLERY_MAX_IMAGES = 30;
-    const GALLERY_MIN_ROUNDS = 10;
-    const GALLERY_MAX_ROUNDS = 20;
+    const GALLERY_MAX_IMAGES  = 30;
+    const GALLERY_MIN_ROUNDS  = 10;
+    const GALLERY_MAX_ROUNDS  = 20;
 
     const GALLERY_SEASON_PROMPTS = {
       spring: 'cherry blossom trees, falling petals, fresh green leaves, warm sunlight, spring garden',
@@ -623,7 +1166,6 @@
 
     async function analyzeConversationForGallery() {
       let context = '';
-
       const recent = conversationHistory.slice(-6);
       if (recent.length >= 2) {
         context = recent
@@ -648,11 +1190,9 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: analysisPrompt, history: [] })
         });
-
         if (!response.ok) return null;
         const data = await response.json();
         const content = (data.content || '').trim();
-
         const jsonMatch = content.match(/\{[^}]+\}/);
         if (!jsonMatch) return null;
         return JSON.parse(jsonMatch[0]);
@@ -675,7 +1215,6 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         confident: 'hands on hips, bold confident smile, powerful elegant stance',
         mischievous: 'sly grin, one eyebrow raised, playful scheming expression'
       };
-
       const locationDescriptions = {
         'fairy-forest': 'enchanted magical fairy forest, glowing mushrooms, fireflies, ethereal mist, ancient trees with luminous vines',
         beach: 'beautiful tropical beach, turquoise ocean waves, white sand, palm trees, golden hour light',
@@ -688,7 +1227,6 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         castle: 'fairy tale castle interior, stained glass windows, crystal chandeliers, elegant marble halls',
         meadow: 'vast flower meadow, wildflowers, gentle breeze, rolling hills, soft clouds'
       };
-
       const outfitDescriptions = {
         dress: 'wearing a beautiful flowing dress with delicate lace details and ribbon accents',
         bikini: 'wearing a cute stylish bikini with floral pattern',
@@ -705,15 +1243,12 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       const parts = [
         'A beautiful anime-style fairy girl named Cecilia, age 17-19, with long flowing pastel-colored hair adorned with small flowers and magical sparkles, large expressive eyes, delicate translucent fairy wings'
       ];
-
-      const mood = moodDescriptions[analysis.mood] || moodDescriptions.happy;
+      const mood     = moodDescriptions[analysis.mood]     || moodDescriptions.happy;
       const location = locationDescriptions[analysis.location] || locationDescriptions['fairy-forest'];
-      const outfit = outfitDescriptions[analysis.outfit] || outfitDescriptions.dress;
-      const seasonDesc = GALLERY_SEASON_PROMPTS[season] || GALLERY_SEASON_PROMPTS.spring;
-
+      const outfit   = outfitDescriptions[analysis.outfit]  || outfitDescriptions.dress;
+      const seasonDesc = GALLERY_SEASON_PROMPTS[season]     || GALLERY_SEASON_PROMPTS.spring;
       parts.push(outfit, mood, location, seasonDesc);
       parts.push('high quality detailed anime illustration, soft pastel color palette, magical atmosphere, beautiful lighting, 4k');
-
       return parts.join('. ');
     }
 
@@ -724,34 +1259,30 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         outfit: { dress:'Kleid', bikini:'Bikini', coat:'Mantel', casual:'Casual', elegant:'Elegant', 'fairy-outfit':'Feenkleid', kimono:'Kimono', sportswear:'Sportlich', pajamas:'Pyjama', 'school-uniform':'Schuluniform' }
       };
       const parts = [];
-      if (analysis.mood) parts.push(labels.mood[analysis.mood] || analysis.mood);
+      if (analysis.mood)     parts.push(labels.mood[analysis.mood]         || analysis.mood);
       parts.push(getSeasonLabel(season));
       if (analysis.location) parts.push(labels.location[analysis.location] || analysis.location);
-      if (analysis.outfit) parts.push(labels.outfit[analysis.outfit] || analysis.outfit);
+      if (analysis.outfit)   parts.push(labels.outfit[analysis.outfit]     || analysis.outfit);
       return parts.join(' · ');
     }
 
     async function autoGenerateGalleryImage() {
       if (galleryState.isGenerating) return;
       galleryState.isGenerating = true;
-
       console.log('🎨 Automatische Galerie-Generierung gestartet...');
 
-      const mainEl = document.getElementById('galleryMain');
+      const mainEl  = document.getElementById('galleryMain');
       const overlay = document.createElement('div');
       overlay.classList.add('gallery-generating');
-      overlay.innerHTML = '<div class="spinner"></div><span>Cecilia malt...</span>';
+      overlay.innerHTML = '<div class="spinner"></div><span>malt...</span>';
       mainEl.appendChild(overlay);
-
       stopGalleryRotation();
 
       try {
-        const analysis = await analyzeConversationForGallery();
-        const season = getCurrentSeason();
-        const fallbackAnalysis = { mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit' };
-        const finalAnalysis = analysis || fallbackAnalysis;
-
-        const prompt = buildAutoGalleryPrompt(finalAnalysis, season);
+        const analysis      = await analyzeConversationForGallery();
+        const season        = getCurrentSeason();
+        const finalAnalysis = analysis || { mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit' };
+        const prompt        = buildAutoGalleryPrompt(finalAnalysis, season);
         console.log('🎨 Galerie-Prompt:', finalAnalysis);
 
         const response = await fetch(CONFIG.IMAGE_URL, {
@@ -759,7 +1290,6 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, size: '1024x1024' })
         });
-
         if (!response.ok) throw new Error('Bildgenerierung fehlgeschlagen');
         const data = await response.json();
         if (!data.url) throw new Error('Keine Bild-URL erhalten');
@@ -773,18 +1303,15 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
           season,
           createdAt: new Date().toISOString()
         };
-
         galleryState.images.push(entry);
         if (galleryState.images.length > GALLERY_MAX_IMAGES) {
           galleryState.images = galleryState.images.slice(-GALLERY_MAX_IMAGES);
         }
         galleryState.currentIndex = galleryState.images.length - 1;
-
         saveGalleryState();
         renderGalleryMain();
         renderGalleryThumbnails();
         startGalleryRotation();
-
         console.log('🎨 Galerie-Bild erfolgreich generiert:', entry.label);
       } catch (err) {
         console.warn('Galerie-Bildgenerierung fehlgeschlagen:', err);
@@ -820,36 +1347,35 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
         if (!raw) { pickNextThreshold(); return; }
         const data = JSON.parse(raw);
-        galleryState.images = Array.isArray(data.images) ? data.images : [];
-        galleryState.currentIndex = typeof data.currentIndex === 'number' ? data.currentIndex : galleryState.images.length - 1;
+        galleryState.images               = Array.isArray(data.images) ? data.images : [];
+        galleryState.currentIndex         = typeof data.currentIndex === 'number' ? data.currentIndex : galleryState.images.length - 1;
         galleryState.roundsSinceLastImage = data.roundsSinceLastImage || 0;
-        galleryState.nextImageThreshold = data.nextImageThreshold || 0;
+        galleryState.nextImageThreshold   = data.nextImageThreshold  || 0;
         if (!galleryState.nextImageThreshold) pickNextThreshold();
-      } catch (e) { console.warn('Galerie-State konnte nicht geladen werden:', e); pickNextThreshold(); }
+      } catch (e) {
+        console.warn('Galerie-State konnte nicht geladen werden:', e);
+        pickNextThreshold();
+      }
     }
 
     function renderGalleryMain() {
-      const mainEl = document.getElementById('galleryMain');
+      const mainEl      = document.getElementById('galleryMain');
       const placeholder = document.getElementById('galleryPlaceholder');
-
       if (galleryState.images.length === 0) {
         mainEl.querySelectorAll('img').forEach(i => i.remove());
         if (placeholder) placeholder.style.display = 'flex';
         return;
       }
-
       if (placeholder) placeholder.style.display = 'none';
 
-      const idx = Math.max(0, Math.min(galleryState.currentIndex, galleryState.images.length - 1));
+      const idx   = Math.max(0, Math.min(galleryState.currentIndex, galleryState.images.length - 1));
       const entry = galleryState.images[idx];
-
-      let imgEl = mainEl.querySelector('img');
+      let imgEl   = mainEl.querySelector('img');
       if (!imgEl) {
         imgEl = document.createElement('img');
         imgEl.alt = 'Cecilia Galeriebild';
         mainEl.appendChild(imgEl);
       }
-
       imgEl.classList.add('fading');
       setTimeout(() => {
         imgEl.src = entry.url;
@@ -861,12 +1387,11 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     function renderGalleryThumbnails() {
       const container = document.getElementById('galleryThumbnails');
       container.innerHTML = '';
-
       for (let i = 0; i < galleryState.images.length; i++) {
         const entry = galleryState.images[i];
         const thumb = document.createElement('img');
-        thumb.src = entry.url;
-        thumb.alt = entry.label || 'Thumbnail';
+        thumb.src   = entry.url;
+        thumb.alt   = entry.label || 'Thumbnail';
         thumb.title = entry.label || '';
         thumb.classList.add('gallery-thumb');
         if (i === galleryState.currentIndex) thumb.classList.add('active');
@@ -879,10 +1404,10 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         });
         container.appendChild(thumb);
       }
-
       const info = document.getElementById('galleryInfo');
       if (galleryState.images.length > 0) {
-        const current = galleryState.images[Math.max(0, Math.min(galleryState.currentIndex, galleryState.images.length - 1))];
+        const idx     = Math.max(0, Math.min(galleryState.currentIndex, galleryState.images.length - 1));
+        const current = galleryState.images[idx];
         info.textContent = current.label || `${galleryState.images.length} Bilder`;
       } else {
         info.textContent = '';
@@ -907,9 +1432,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     }
 
     document.getElementById('galleryMain').addEventListener('click', (e) => {
-      if (e.target.tagName === 'IMG' && e.target.src) {
-        window.open(e.target.src, '_blank');
-      }
+      if (e.target.tagName === 'IMG' && e.target.src) window.open(e.target.src, '_blank');
     });
 
     loadGalleryState();
@@ -918,15 +1441,15 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     if (galleryState.images.length >= 2) startGalleryRotation();
 
     if (galleryState.images.length === 0) {
-      const season = getCurrentSeason();
+      const season          = getCurrentSeason();
       const defaultAnalysis = { mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit' };
-      const prompt = buildAutoGalleryPrompt(defaultAnalysis, season);
+      const prompt          = buildAutoGalleryPrompt(defaultAnalysis, season);
       galleryState.isGenerating = true;
 
-      const mainEl = document.getElementById('galleryMain');
+      const mainEl  = document.getElementById('galleryMain');
       const overlay = document.createElement('div');
       overlay.classList.add('gallery-generating');
-      overlay.innerHTML = '<div class="spinner"></div><span>Cecilia malt ihr erstes Bild...</span>';
+      overlay.innerHTML = '<div class="spinner"></div><span>malt...</span>';
       mainEl.appendChild(overlay);
 
       fetch(
@@ -952,48 +1475,46 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         .finally(() => { overlay.remove(); galleryState.isGenerating = false; });
     }
 
-    // Konfiguration
-    // Standard: relative URLs → Backend unter gleicher Domain / gleichem Host
-    // Nur wenn über localhost:anderen Port (z.B. Live Server) geladen wird,
-    // wird explizit auf http://localhost:30000 gefallbackt.
+    // ==========================================
+    // CONFIG
+    // ==========================================
     const BACKEND_PORT = '30000';
-    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    const API_BASE = isLocalhost && window.location.port !== BACKEND_PORT
+    const isLocalhost  = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const API_BASE     = isLocalhost && window.location.port !== BACKEND_PORT
       ? `http://localhost:${BACKEND_PORT}`
       : '';
     const CONFIG = {
-      API_URL: API_BASE + '/api/chat',
-      SUMMARIZE_URL: API_BASE + '/api/chat/summarize',
-      IMAGE_URL: API_BASE + '/api/image',
-      SEARCH_URL: API_BASE + '/api/search',
-      USE_AI: true,
+      API_URL:        API_BASE + '/api/chat',
+      SUMMARIZE_URL:  API_BASE + '/api/chat/summarize',
+      IMAGE_URL:      API_BASE + '/api/image',
+      SEARCH_URL:     API_BASE + '/api/search',
+      USE_AI:         true,
       MAX_MESSAGE_LENGTH: 1000,
       SUMMARIZE_THRESHOLD: 30,
       MAX_DISPLAY_MESSAGES: 100,
       STORAGE_KEY: 'cecilia_chat_state'
     };
 
-    const IMAGE_MARKER_REGEX = /\[IMAGE:\s*(.+?)\]/g;
+    const IMAGE_MARKER_REGEX  = /\[IMAGE:\s*(.+?)\]/g;
     const SEARCH_MARKER_REGEX = /\[SEARCH:\s*(.+?)\]/g;
 
-    // Chat-State
+    // Chat state
     let isWaitingForResponse = false;
-    let conversationHistory = [];
-    let conversationSummary = '';
-    let displayMessages = [];
+    let conversationHistory  = [];
+    let conversationSummary  = '';
+    let displayMessages      = [];
 
-    // --- localStorage Persistenz ---
+    // ==========================================
+    // PERSISTENCE
+    // ==========================================
     function saveChatState() {
       try {
-        const trimmedDisplay = displayMessages.slice(-CONFIG.MAX_DISPLAY_MESSAGES);
         localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({
           summary: conversationSummary,
           history: conversationHistory,
-          display: trimmedDisplay
+          display: displayMessages.slice(-CONFIG.MAX_DISPLAY_MESSAGES)
         }));
-      } catch (e) {
-        console.warn('Chat-State konnte nicht gespeichert werden:', e);
-      }
+      } catch (e) { console.warn('Chat-State konnte nicht gespeichert werden:', e); }
     }
 
     function loadChatState() {
@@ -1003,56 +1524,41 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         const state = JSON.parse(raw);
         conversationSummary = state.summary || '';
         conversationHistory = Array.isArray(state.history) ? state.history : [];
-        displayMessages = Array.isArray(state.display) ? state.display : [];
-      } catch (e) {
-        console.warn('Chat-State konnte nicht geladen werden:', e);
-      }
+        displayMessages     = Array.isArray(state.display) ? state.display : [];
+      } catch (e) { console.warn('Chat-State konnte nicht geladen werden:', e); }
     }
 
     function restoreDisplayMessages() {
       for (const msg of displayMessages) {
         const msgDiv = addMessageToChat(msg.sender, msg.text, false, true);
-        if (msg.imageUrl) {
-          addImageToMessage(msgDiv, msg.imageUrl);
-        }
-        if (msg.searchSources && msg.searchSources.length > 0) {
-          addSearchSourcesToMessage(msgDiv, msg.searchSources);
-        }
+        if (msg.imageUrl) addImageToMessage(msgDiv, msg.imageUrl);
+        if (msg.searchSources && msg.searchSources.length > 0) addSearchSourcesToMessage(msgDiv, msg.searchSources);
       }
     }
 
-    // Einfacher Markdown-zu-HTML Converter (XSS-sicher)
+    // ==========================================
+    // MARKDOWN PARSER (XSS-safe)
+    // ==========================================
     function parseMarkdown(text) {
-      // Escape HTML zuerst (Sicherheit)
       let html = text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-
-      // Markdown-Formatierung
-      // **Bold**
       html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-      // *Italic*
       html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-
-      // Links [text](url) - Optional
       html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
-
-      // Zeilenumbrüche
       html = html.replace(/\n/g, '<br>');
-
       return html;
     }
 
-    // [IMAGE: prompt] Marker aus Text extrahieren
+    // ==========================================
+    // MARKER HELPERS
+    // ==========================================
     function extractImagePrompts(text) {
       const prompts = [];
       let match;
       const regex = new RegExp(IMAGE_MARKER_REGEX.source, 'g');
-      while ((match = regex.exec(text)) !== null) {
-        prompts.push(match[1].trim());
-      }
+      while ((match = regex.exec(text)) !== null) prompts.push(match[1].trim());
       return prompts;
     }
 
@@ -1064,92 +1570,143 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         .trim();
     }
 
-    // Bild generieren via Backend
-    async function generateImage(prompt) {
-      const response = await fetch(CONFIG.IMAGE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, size: '1024x1024' })
-      });
-
-      if (!response.ok) throw new Error('Image generation failed');
-      const data = await response.json();
-      return data.url;
+    function extractSearchQueries(text) {
+      const queries = [];
+      let match;
+      const regex = new RegExp(SEARCH_MARKER_REGEX.source, 'g');
+      while ((match = regex.exec(text)) !== null) queries.push(match[1].trim());
+      return queries;
     }
 
-    // Hilfsfunktion: Nachricht zum Chat hinzufügen
+    function stripSearchMarkers(text) {
+      return text.replace(SEARCH_MARKER_REGEX, '').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    // ==========================================
+    // DOM HELPERS — new Y2K Fairycore structure
+    // ==========================================
+    function scrollStream() {
+      const stream = document.getElementById('streamArea');
+      if (stream) stream.scrollTop = stream.scrollHeight;
+    }
+
     function addMessageToChat(sender, message, isLoading = false, isRestore = false) {
       const chatBox = document.getElementById('chatMessages');
-      const messageDiv = document.createElement('div');
-      messageDiv.classList.add('chat-message');
-      messageDiv.classList.add(sender === 'user' ? 'user-message' : 'cecilia-message');
-      if (isLoading) messageDiv.classList.add('loading');
 
-      const img = document.createElement('img');
-      img.src = sender === 'user' ? 'img/user-avatar.svg' : 'img/cecilia-avatar.png';
-      img.alt = sender === 'user' ? 'User' : 'Cecilia';
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('msg', sender === 'user' ? 'user' : 'cecilia');
 
-      const contentDiv = document.createElement('div');
-      contentDiv.classList.add('message-content');
-
-      const label = document.createElement('strong');
-      label.textContent = sender === 'user' ? 'Du:' : 'Cecilia:';
-      label.classList.add('message-label');
-
-      const textDiv = document.createElement('div');
-      textDiv.classList.add('message-text');
-
-      if (sender === 'cecilia' && !isLoading) {
-        const cleanText = stripImageMarkers(message);
-        if (cleanText) textDiv.innerHTML = parseMarkdown(cleanText);
+      // Avatar
+      const avatarDiv = document.createElement('div');
+      avatarDiv.classList.add('msg-avatar');
+      if (sender === 'user') {
+        avatarDiv.textContent = 'Du';
       } else {
-        textDiv.textContent = message;
+        const img = document.createElement('img');
+        img.src   = 'img/cecilia-avatar.png';
+        img.alt   = 'Cecilia';
+        img.onerror = () => { img.style.display = 'none'; };
+        avatarDiv.appendChild(img);
       }
 
-      contentDiv.appendChild(label);
-      contentDiv.appendChild(textDiv);
+      // Content wrapper
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('msg-content');
 
-      messageDiv.appendChild(img);
-      messageDiv.appendChild(contentDiv);
-      chatBox.appendChild(messageDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      if (isLoading) {
+        // Typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.classList.add('typing-indicator');
+        typingDiv.innerHTML = `<span class="typing-wand">🪄</span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>`;
+        typingDiv.setAttribute('aria-label', 'Cecilia denkt nach...');
+        contentDiv.appendChild(typingDiv);
+      } else {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble', sender === 'user' ? 'user' : 'cecilia', 'entering');
 
-      return messageDiv;
+        if (sender === 'cecilia') {
+          const sparkle = document.createElement('span');
+          sparkle.className = 'bubble-sparkle';
+          sparkle.textContent = '✦';
+          bubble.appendChild(sparkle);
+        }
+
+        const textDiv = document.createElement('div');
+        textDiv.classList.add('message-text');
+
+        if (sender === 'cecilia' && !isLoading) {
+          const cleanText = stripImageMarkers(message);
+          if (cleanText) textDiv.innerHTML = parseMarkdown(cleanText);
+        } else {
+          textDiv.textContent = message;
+        }
+        bubble.appendChild(textDiv);
+        contentDiv.appendChild(bubble);
+
+        const meta = document.createElement('div');
+        meta.classList.add('msg-meta');
+        meta.textContent = sender === 'user' ? 'Du' : 'Cecilia';
+        contentDiv.appendChild(meta);
+      }
+
+      msgDiv.appendChild(avatarDiv);
+      msgDiv.appendChild(contentDiv);
+      chatBox.appendChild(msgDiv);
+      scrollStream();
+      return msgDiv;
     }
 
-    // Bild im Chat anzeigen (nach Generierung oder aus Restore)
     function addImageToMessage(messageDiv, imageUrl) {
-      const contentDiv = messageDiv.querySelector('.message-content');
-      const container = document.createElement('div');
-      container.classList.add('chat-image-container');
-      const imgEl = document.createElement('img');
-      imgEl.src = imageUrl;
-      imgEl.alt = 'Von Cecilia generiertes Bild';
-      imgEl.loading = 'lazy';
-      imgEl.referrerPolicy = 'no-referrer'; // Verhindert häufige 403 CDN-Blocks
-      
-      imgEl.onerror = () => {
-        imgEl.remove();
-        const errorFallback = document.createElement('div');
-        errorFallback.classList.add('image-error');
-        errorFallback.innerHTML = '🖼️ <em>Dieses AI-Bild aus dem Chat-Archiv ist abgelaufen und wurde vom Server entfernt.</em>';
-        container.appendChild(errorFallback);
-      };
+      const contentDiv = messageDiv.querySelector('.msg-content');
+      if (!contentDiv) return;
 
-      imgEl.addEventListener('click', () => window.open(imageUrl, '_blank'));
-      container.appendChild(imgEl);
-      contentDiv.appendChild(container);
-      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('chat-image-single');
+
+      const tape = document.createElement('div');
+      tape.classList.add('chat-image-single-tape');
+      wrapper.appendChild(tape);
+
+      const img = document.createElement('img');
+      img.src           = imageUrl;
+      img.alt           = 'Von Cecilia gezaubertes Bild';
+      img.loading       = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      img.onerror = () => {
+        img.remove();
+        const errDiv = document.createElement('div');
+        errDiv.classList.add('image-error');
+        errDiv.innerHTML = '🖼️ <em>Dieses Bild ist abgelaufen.</em>';
+        wrapper.appendChild(errDiv);
+      };
+      img.addEventListener('click', () => window.open(imageUrl, '_blank'));
+      wrapper.appendChild(img);
+
+      const caption = document.createElement('div');
+      caption.classList.add('chat-image-single-caption');
+      caption.textContent = '✨ von Cecilia';
+      wrapper.appendChild(caption);
+
+      // Insert before meta
+      const meta = contentDiv.querySelector('.msg-meta');
+      if (meta) contentDiv.insertBefore(wrapper, meta);
+      else contentDiv.appendChild(wrapper);
+
+      scrollStream();
     }
 
-    // Bild-Generierung starten und Loading-State anzeigen
     async function handleImageGeneration(messageDiv, prompt) {
-      const contentDiv = messageDiv.querySelector('.message-content');
-      const loadingEl = document.createElement('div');
+      const contentDiv = messageDiv.querySelector('.msg-content');
+      const loadingEl  = document.createElement('div');
       loadingEl.classList.add('image-loading');
-      loadingEl.textContent = '🎨 Cecilia malt ein Bild...';
-      contentDiv.appendChild(loadingEl);
-      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+      loadingEl.innerHTML = '🎨 Cecilia malt...';
+      const meta = contentDiv.querySelector('.msg-meta');
+      if (meta) contentDiv.insertBefore(loadingEl, meta);
+      else contentDiv.appendChild(loadingEl);
+      scrollStream();
 
       try {
         const imageUrl = await generateImage(prompt);
@@ -1159,30 +1716,72 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       } catch (e) {
         console.error('Bildgenerierung fehlgeschlagen:', e);
         loadingEl.remove();
-        const errorEl = document.createElement('div');
-        errorEl.classList.add('image-error');
-        errorEl.textContent = '🖼️ Bild konnte leider nicht erstellt werden.';
-        contentDiv.appendChild(errorEl);
+        const errEl = document.createElement('div');
+        errEl.classList.add('image-error');
+        errEl.textContent = '🖼️ Bild konnte leider nicht erstellt werden.';
+        const metaEl = contentDiv.querySelector('.msg-meta');
+        if (metaEl) contentDiv.insertBefore(errEl, metaEl);
+        else contentDiv.appendChild(errEl);
         return null;
       }
     }
 
-    // [SEARCH: query] Marker aus Text extrahieren
-    function extractSearchQueries(text) {
-      const queries = [];
-      let match;
-      const regex = new RegExp(SEARCH_MARKER_REGEX.source, 'g');
-      while ((match = regex.exec(text)) !== null) {
-        queries.push(match[1].trim());
+    function addSearchSourcesToMessage(messageDiv, results) {
+      if (!results || results.length === 0) return;
+      const contentDiv = messageDiv.querySelector('.msg-content');
+      if (!contentDiv) return;
+
+      const card = document.createElement('div');
+      card.classList.add('crystal-card');
+
+      const header = document.createElement('div');
+      header.classList.add('crystal-card-header');
+      header.innerHTML = `🔮 <span>Kristallkugel · Quellen</span>`;
+      card.appendChild(header);
+
+      const body = document.createElement('div');
+      body.classList.add('crystal-card-body');
+
+      const sourcesDiv = document.createElement('div');
+      sourcesDiv.classList.add('crystal-sources');
+
+      for (const r of results.slice(0, 5)) {
+        if (!r.url) continue;
+        const a = document.createElement('a');
+        a.href   = r.url;
+        a.target = '_blank';
+        a.rel    = 'noopener';
+        a.classList.add('crystal-source');
+        a.innerHTML = `<span class="crystal-source-dot"></span>${r.title || r.url}`;
+        sourcesDiv.appendChild(a);
       }
-      return queries;
+      body.appendChild(sourcesDiv);
+      card.appendChild(body);
+
+      const meta = contentDiv.querySelector('.msg-meta');
+      if (meta) contentDiv.insertBefore(card, meta);
+      else contentDiv.appendChild(card);
+
+      scrollStream();
     }
 
-    function stripSearchMarkers(text) {
-      return text.replace(SEARCH_MARKER_REGEX, '').replace(/\n{3,}/g, '\n\n').trim();
+    // ==========================================
+    // IMAGE GENERATION
+    // ==========================================
+    async function generateImage(prompt) {
+      const response = await fetch(CONFIG.IMAGE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, size: '1024x1024' })
+      });
+      if (!response.ok) throw new Error('Image generation failed');
+      const data = await response.json();
+      return data.url;
     }
 
-    // Websuche via Backend
+    // ==========================================
+    // SEARCH
+    // ==========================================
     async function performWebSearch(query) {
       const response = await fetch(CONFIG.SEARCH_URL, {
         method: 'POST',
@@ -1194,51 +1793,27 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       return data.results || [];
     }
 
-    // Suchergebnisse als Kontext für den zweiten Chat-Call formatieren
     function formatSearchResultsForContext(query, results) {
       if (results.length === 0) return `Websuche nach "${query}" ergab keine Ergebnisse.`;
       const items = results
         .map((r, i) => {
-           let safeSnippet = (r.snippet || '').trim();
-           if (safeSnippet.length > 500) safeSnippet = safeSnippet.substring(0, 500) + '...';
-           return `${i + 1}. Website: ${r.title}\n   Inhalt/Auszug: ${safeSnippet}\n   Quelle: ${r.url}`;
+          let safeSnippet = (r.snippet || '').trim();
+          if (safeSnippet.length > 500) safeSnippet = safeSnippet.substring(0, 500) + '...';
+          return `${i + 1}. Website: ${r.title}\n   Inhalt/Auszug: ${safeSnippet}\n   Quelle: ${r.url}`;
         })
         .join('\n\n');
       return `Websuche nach "${query}" ergab folgende inhaltliche Auszüge:\n\n${items}`;
     }
 
-    // Quellen-Links unter einer Nachricht anzeigen
-    function addSearchSourcesToMessage(messageDiv, results) {
-      if (!results || results.length === 0) return;
-      const contentDiv = messageDiv.querySelector('.message-content');
-      const sourcesEl = document.createElement('details');
-      sourcesEl.classList.add('search-sources');
-      const summary = document.createElement('summary');
-      summary.textContent = `🔮 ${results.length} Quellen`;
-      sourcesEl.appendChild(summary);
-      for (const r of results.slice(0, 5)) {
-        if (!r.url) continue;
-        const a = document.createElement('a');
-        a.href = r.url;
-        a.target = '_blank';
-        a.rel = 'noopener';
-        a.textContent = r.title || r.url;
-        sourcesEl.appendChild(a);
-      }
-      contentDiv.appendChild(sourcesEl);
-    }
-
-    // Fallback-Antworten (für Offline-Modus oder bei API-Fehler)
-    // ========================
-    // Magic Words – elegante Mikro-Effekte
-    // ========================
+    // ==========================================
+    // MAGIC WORD EFFECTS
+    // ==========================================
     const MAGIC_WORDS = [
       { pattern: /feenstaub/i, type: 'feenstaub' },
       { pattern: /magisch|magie/i, type: 'magie' },
       { pattern: /wünsche?|wunsch/i, type: 'wunsch' },
       { pattern: /träume?|traum/i, type: 'traum' }
     ];
-
     const magicCooldowns = {};
     const MAGIC_COOLDOWN_MS = 3000;
 
@@ -1246,32 +1821,30 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       const now = Date.now();
       if (magicCooldowns[type] && now - magicCooldowns[type] < MAGIC_COOLDOWN_MS) return;
       magicCooldowns[type] = now;
-
       switch (type) {
         case 'feenstaub': spawnFeenstaubParticles(targetEl); break;
-        case 'magie': spawnShimmer(targetEl); break;
-        case 'wunsch': spawnShootingStar(targetEl); break;
-        case 'traum': spawnBokeh(targetEl); break;
+        case 'magie':     spawnShimmer(targetEl);           break;
+        case 'wunsch':    spawnShootingStar(targetEl);      break;
+        case 'traum':     spawnBokeh(targetEl);             break;
       }
     }
 
     function spawnFeenstaubParticles(el) {
-      const rect = el.getBoundingClientRect();
+      const rect   = el.getBoundingClientRect();
       const emojis = ['✨', '⭐', '✧', '·'];
-      const count = 10 + Math.floor(Math.random() * 6);
-
+      const count  = 10 + Math.floor(Math.random() * 6);
       for (let i = 0; i < count; i++) {
         const p = document.createElement('span');
         p.classList.add('magic-particle-feenstaub');
         p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        p.style.left = `${rect.left + Math.random() * rect.width}px`;
-        p.style.top = `${rect.top + rect.height * 0.3}px`;
+        p.style.left  = `${rect.left + Math.random() * rect.width}px`;
+        p.style.top   = `${rect.top + rect.height * 0.3}px`;
         p.style.fontSize = `${0.5 + Math.random() * 0.6}rem`;
         p.style.setProperty('--mx', `${(Math.random() - 0.5) * 60}px`);
         p.style.setProperty('--my', `${-20 - Math.random() * 50}px`);
         p.style.setProperty('--mr', `${(Math.random() - 0.5) * 180}deg`);
         p.style.animationDuration = `${0.8 + Math.random() * 0.6}s`;
-        p.style.animationDelay = `${Math.random() * 0.4}s`;
+        p.style.animationDelay    = `${Math.random() * 0.4}s`;
         document.body.appendChild(p);
         p.addEventListener('animationend', () => p.remove());
       }
@@ -1279,7 +1852,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
     function spawnShimmer(el) {
       el.addEventListener('animationend', () => {
-        el.style.animation = 'none';
+        el.style.animation  = 'none';
         el.style.background = 'none';
       }, { once: true });
     }
@@ -1288,7 +1861,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       const star = document.createElement('span');
       star.classList.add('magic-shootingstar');
       star.style.bottom = '-4px';
-      star.style.left = '-15px';
+      star.style.left   = '-15px';
       star.style.setProperty('--sw', `${el.offsetWidth + 20}px`);
       el.appendChild(star);
       star.addEventListener('animationend', () => star.remove());
@@ -1296,16 +1869,15 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
     function spawnBokeh(el) {
       const colors = ['rgba(180,160,255,0.45)', 'rgba(150,200,255,0.35)', 'rgba(255,180,200,0.4)', 'rgba(255,220,150,0.35)'];
-      const count = 4 + Math.floor(Math.random() * 3);
-
+      const count  = 4 + Math.floor(Math.random() * 3);
       for (let i = 0; i < count; i++) {
-        const dot = document.createElement('span');
+        const dot  = document.createElement('span');
         dot.classList.add('magic-bokeh');
         const size = 10 + Math.random() * 16;
-        dot.style.width = dot.style.height = `${size}px`;
+        dot.style.width  = dot.style.height = `${size}px`;
         dot.style.background = colors[Math.floor(Math.random() * colors.length)];
-        dot.style.left = `${-10 + Math.random() * 110}%`;
-        dot.style.top = `${-40 + Math.random() * 60}%`;
+        dot.style.left   = `${-10 + Math.random() * 110}%`;
+        dot.style.top    = `${-40 + Math.random() * 60}%`;
         dot.style.setProperty('--bo', `${0.5 + Math.random() * 0.3}`);
         dot.style.animationDelay = `${i * 0.1}s`;
         el.appendChild(dot);
@@ -1316,32 +1888,23 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     function scanForMagicWords(messageEl) {
       const textEls = messageEl.querySelectorAll('.message-text');
       if (!textEls.length) return;
-
       const triggered = new Set();
-
       textEls.forEach(textEl => {
-        const html = textEl.innerHTML;
+        let html    = textEl.innerHTML;
         let newHtml = html;
-
         for (const mw of MAGIC_WORDS) {
           if (triggered.has(mw.type)) continue;
           if (!mw.pattern.test(newHtml)) continue;
-
           triggered.add(mw.type);
-          const cls = `magic-word magic-word-${mw.type}`;
-          newHtml = newHtml.replace(mw.pattern, (match) => `<span class="${cls}">${match}</span>`);
+          newHtml = newHtml.replace(mw.pattern, (match) => `<span class="magic-word magic-word-${mw.type}">${match}</span>`);
         }
-
         if (newHtml !== html) textEl.innerHTML = newHtml;
       });
-
       if (triggered.size === 0) return;
-
       const sorted = [...triggered].sort((a, b) => {
         const order = ['feenstaub', 'magie', 'wunsch', 'traum'];
         return order.indexOf(a) - order.indexOf(b);
       });
-
       let delay = 0;
       for (const type of sorted) {
         const el = messageEl.querySelector(`.magic-word-${type}`);
@@ -1351,6 +1914,9 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       }
     }
 
+    // ==========================================
+    // FALLBACK
+    // ==========================================
     function getFallbackResponse() {
       const responses = [
         "Oh, das klingt zauberhaft! ✨",
@@ -1364,119 +1930,101 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       return responses[Math.floor(Math.random() * responses.length)];
     }
 
-    // API-Aufruf an Backend
+    // ==========================================
+    // API
+    // ==========================================
     async function getCeciliaResponseFromAPI(message) {
-      try {
-        const payload = { message, history: conversationHistory };
-        if (conversationSummary) payload.summary = conversationSummary;
-
-        const response = await fetch(CONFIG.API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            throw new Error('Bitte warte einen Moment, bevor du eine neue Nachricht sendest.');
-          }
-          throw new Error('Server-Fehler');
-        }
-
-        const data = await response.json();
-        return data.content || getFallbackResponse();
-      } catch (error) {
-        console.error('API-Fehler:', error);
-        throw error;
+      const payload = { message, history: conversationHistory };
+      if (conversationSummary) payload.summary = conversationSummary;
+      const response = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        if (response.status === 429) throw new Error('Bitte warte einen Moment, bevor du eine neue Nachricht sendest.');
+        throw new Error('Server-Fehler');
       }
+      const data = await response.json();
+      return data.content || getFallbackResponse();
     }
 
-    // Hauptfunktion: Nachricht senden
+    // ==========================================
+    // SEND MESSAGE
+    // ==========================================
     async function sendMessage() {
-      const input = document.getElementById('chatInput');
+      const input   = document.getElementById('chatInput');
       const message = input.value.trim();
-
-      // Validierung
       if (!message) return;
       if (message.length > CONFIG.MAX_MESSAGE_LENGTH) {
         alert(`Nachricht ist zu lang! Maximal ${CONFIG.MAX_MESSAGE_LENGTH} Zeichen erlaubt.`);
         return;
       }
-      if (isWaitingForResponse) {
-        console.log('Warte noch auf Antwort...');
-        return;
-      }
+      if (isWaitingForResponse) return;
 
-      // User-Nachricht anzeigen
       const userMsg = addMessageToChat('user', message);
       scanForMagicWords(userMsg);
       input.value = '';
       isWaitingForResponse = true;
 
-      // Loading-Nachricht
-      const loadingMsg = addMessageToChat('cecilia', 'Denkt nach...', true);
+      const loadingMsg = addMessageToChat('cecilia', '', true);
 
       try {
-        let response;
-        let isAIResponse = false;
+        let response       = null;
+        let isAIResponse   = false;
 
         if (CONFIG.USE_AI) {
           try {
-            response = await getCeciliaResponseFromAPI(message);
+            response     = await getCeciliaResponseFromAPI(message);
             isAIResponse = true;
           } catch (apiError) {
             console.warn('API nicht erreichbar, verwende Fallback:', apiError);
             response = getFallbackResponse();
-
             if (!window.apiWarningShown) {
               window.apiWarningShown = true;
-              const warningDiv = document.createElement('div');
-              warningDiv.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;padding:10px;margin:10px 0;border-radius:5px;font-size:12px;';
-              warningDiv.textContent = '⚠️ Backend-Server nicht erreichbar. Verwende Offline-Modus mit vordefinierten Antworten.';
-              document.getElementById('chatMessages').insertBefore(warningDiv, document.getElementById('chatMessages').firstChild);
+              const warnDiv = document.createElement('div');
+              warnDiv.classList.add('api-warning');
+              warnDiv.textContent = '⚠️ Backend-Server nicht erreichbar. Offline-Modus aktiv.';
+              document.getElementById('chatMessages').insertBefore(warnDiv, document.getElementById('chatMessages').firstChild);
             }
           }
         } else {
           response = getFallbackResponse();
         }
 
-        // Prüfe ob Cecilia eine Websuche machen will
+        // Search handling
         const searchQueries = extractSearchQueries(response);
-        let finalResponse = response;
-        let searchResults = null;
+        let finalResponse   = response;
+        let searchResults   = null;
 
         if (searchQueries.length > 0 && isAIResponse) {
-          // Two-Pass: Suche ausführen, dann Cecilia nochmal fragen
-          const searchQuery = searchQueries[0];
+          const searchQuery     = searchQueries[0];
           const preliminaryText = stripSearchMarkers(response);
-
-          // Loading-Text aktualisieren
-          const loadingText = loadingMsg.querySelector('.message-text');
-          if (loadingText) loadingText.textContent = '🔮 Recherchiert im Web...';
-
+          const typingEl        = loadingMsg.querySelector('.typing-indicator');
+          if (typingEl) {
+            const span = document.createElement('span');
+            span.style.cssText = 'font-size:12px;color:var(--text-3);margin-left:4px';
+            span.textContent = '🔮 Sucht...';
+            typingEl.appendChild(span);
+          }
           try {
             searchResults = await performWebSearch(searchQuery);
             const searchContext = formatSearchResultsForContext(searchQuery, searchResults);
-
-            // Loading-Text aktualisieren
-            if (loadingText) loadingText.textContent = '✨ Verarbeitet Ergebnisse...';
-
-            // Zweiter Chat-Call mit Suchergebnissen als Kontext
+            if (typingEl) {
+              const span = typingEl.querySelector('span[style]');
+              if (span) span.textContent = '✨ Verarbeitet...';
+            }
             const followUpPayload = {
               message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die inhaltlichen Auszüge aus dem Web:\n\n${searchContext}\n\nBitte antworte dem User ausführlich basierend auf diesen Inhalten. Nenne konkrete Fakten und tatsächliche Nachrichten aus den "Inhalt/Auszug"-Texten (bitte berichte die eigentlichen News, anstatt nur die Namen der Webseiten aufzuzählen!). Bleibe in deinem Charakter als Cecilia. Fasse die Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
               history: conversationHistory,
               isSearchFollowUp: true
             };
             if (conversationSummary) followUpPayload.summary = conversationSummary;
-
             const followUpRes = await fetch(CONFIG.API_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(followUpPayload)
             });
-
             if (followUpRes.ok) {
               const followUpData = await followUpRes.json();
               finalResponse = followUpData.content || preliminaryText || response;
@@ -1490,35 +2038,21 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
           }
         }
 
-        // Loading-Nachricht entfernen
         loadingMsg.remove();
 
-        // Sparkle-Animation auslösen
-        const chatbox = document.querySelector('.chatbox');
-        chatbox.classList.remove('sparkle-active');
-        void chatbox.offsetWidth;
-        chatbox.classList.add('sparkle-active');
-        chatbox.addEventListener('animationend', () => chatbox.classList.remove('sparkle-active'), { once: true });
-
-        // Cecilia-Antwort anzeigen (ohne Marker)
         const ceciliaMsg = addMessageToChat('cecilia', finalResponse);
-
-        // Magic-Word-Effekte scannen
         scanForMagicWords(ceciliaMsg);
 
-        // Quellen anzeigen, falls Suche stattfand
         if (searchResults && searchResults.length > 0) {
           addSearchSourcesToMessage(ceciliaMsg, searchResults);
         }
 
-        // Bildgenerierung starten, falls [IMAGE: prompt] vorhanden
-        const imagePrompts = extractImagePrompts(finalResponse);
-        let generatedImageUrl = null;
+        const imagePrompts     = extractImagePrompts(finalResponse);
+        let generatedImageUrl  = null;
         if (imagePrompts.length > 0 && CONFIG.USE_AI) {
           generatedImageUrl = await handleImageGeneration(ceciliaMsg, imagePrompts[0]);
         }
 
-        // Display- und Conversation-History pflegen
         const displayEntry = { sender: 'cecilia', text: finalResponse };
         if (generatedImageUrl) displayEntry.imageUrl = generatedImageUrl;
         if (searchResults && searchResults.length > 0) {
@@ -1531,17 +2065,15 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
         if (isAIResponse) {
           conversationHistory.push(
-            { role: 'user', content: message },
+            { role: 'user',      content: message },
             { role: 'assistant', content: finalResponse }
           );
-
           if (conversationHistory.length >= CONFIG.SUMMARIZE_THRESHOLD) {
             await summarizeConversation();
           }
         }
 
         saveChatState();
-
         if (isAIResponse) checkGalleryTrigger();
 
       } catch (error) {
@@ -1553,21 +2085,20 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       }
     }
 
-    // Zusammenfassung generieren wenn History zu lang wird
+    // ==========================================
+    // SUMMARIZE
+    // ==========================================
     async function summarizeConversation() {
       try {
         console.log(`Zusammenfassung wird erstellt (${conversationHistory.length} Einträge)...`);
         const payload = { history: conversationHistory };
         if (conversationSummary) payload.summary = conversationSummary;
-
         const response = await fetch(CONFIG.SUMMARIZE_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-
         if (!response.ok) throw new Error('Summarize fehlgeschlagen');
-
         const data = await response.json();
         if (data.summary) {
           conversationSummary = data.summary;
@@ -1580,25 +2111,33 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       }
     }
 
-    // Chat leeren
+    // ==========================================
+    // CLEAR CHAT
+    // ==========================================
     function clearChat() {
       conversationHistory = [];
       conversationSummary = '';
-      displayMessages = [];
+      displayMessages     = [];
       document.getElementById('chatMessages').innerHTML = '';
       window.apiWarningShown = false;
       try { localStorage.removeItem(CONFIG.STORAGE_KEY); } catch (e) {}
     }
 
-    // Chat-State beim Laden wiederherstellen
+    function clearChatWithNew() {
+      clearChat();
+      closeSidebar();
+      const input = document.getElementById('chatInput');
+      if (input) input.focus();
+    }
+
+    // ==========================================
+    // INIT
+    // ==========================================
     loadChatState();
     restoreDisplayMessages();
 
-    // Enter-Taste zum Senden
     document.getElementById('chatInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !isWaitingForResponse) {
-        sendMessage();
-      }
+      if (e.key === 'Enter' && !isWaitingForResponse) sendMessage();
     });
   </script>
 </body>
