@@ -105,8 +105,9 @@ export function createAuthRouter(db, { loginLimit = 5 } = {}) {
     res.json({ ok: true, profile: publicProfile(profile) });
   });
 
-  router.post("/admin-unlock", requireFamily, (req, res) => {
+  router.post("/admin-unlock", loginLimiter, requireFamily, (req, res) => {
     if (req.account.role !== "admin") return res.status(403).json({ error: "forbidden" });
+    if (req.account.locked_until > req.now) return res.status(429).json({ error: "too_many_attempts" });
     const { password } = req.body ?? {};
     if (typeof password !== "string" || !verifySecret(password, req.account.password_hash)) {
       accounts.recordLoginFailure(db, req.account.id, req.now);

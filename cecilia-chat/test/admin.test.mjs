@@ -33,7 +33,7 @@ test("Eltern-Konto hat keinen Zugang zur Admin-API", async (t) => {
   assert.equal((await c.req("/admin.html")).location, "/");
 });
 
-test("Konto anlegen, Passwort nur einmal, Anmeldung damit möglich", async (t) => {
+test("Konto anlegen, Passwort nicht in der Liste, Anmeldung damit möglich", async (t) => {
   const app = await startTestApp({ seed: (db) => seedAccount(db, ADMIN) });
   t.after(app.close);
   const c = await adminClient(app);
@@ -133,4 +133,67 @@ test("Kind-Benutzername doppelt → 409", async (t) => {
   const [a, b] = app.seeded.fam.profileIds;
   await c.req(`/api/admin/profiles/${a}/child-login`, { method: "POST", json: { username: "sternchen" } });
   assert.equal((await c.req(`/api/admin/profiles/${b}/child-login`, { method: "POST", json: { username: "sternchen" } })).status, 409);
+});
+
+const FAM = { email: "eltern@example.com", password: "Eltern-Passwort-1" };
+
+test("Kind-Sitzung hat keinen Zugang zur Admin-API", async (t) => {
+  const app = await startTestApp({ seed: (db) => ({ admin: seedAccount(db, ADMIN), fam: seedAccount(db) }) });
+  t.after(app.close);
+  const c = await adminClient(app);
+  const pid = app.seeded.fam.profileIds[0];
+  const kid = await c.req(`/api/admin/profiles/${pid}/child-login`, { method: "POST", json: { username: "kindchen" } });
+  const k = client(app.base);
+  assert.equal((await k.req("/api/auth/child-login", { method: "POST", json: { username: "kindchen", password: kid.data.password } })).status, 200);
+  assert.equal((await k.req("/api/admin/accounts")).status, 403);
+  assert.equal((await k.req("/api/auth/admin-unlock", { method: "POST", json: { password: kid.data.password } })).status, 403);
+});
+
+test("Sperren beendet bestehende Sitzungen des Kontos", async (t) => {
+  const app = await startTestApp({ seed: (db) => ({ admin: seedAccount(db, ADMIN), fam: seedAccount(db) }) });
+  t.after(app.close);
+  const c = await adminClient(app);
+  const fam = client(app.base);
+  await fam.req("/api/auth/login", { method: "POST", json: FAM });
+  assert.equal((await fam.req("/api/auth/session")).data.loggedIn, true);
+  await c.req(`/api/admin/accounts/${app.seeded.fam.accountId}/disable`, { method: "POST", json: {} });
+  assert.equal((await fam.req("/api/auth/session")).data.loggedIn, false);
+});
+
+test("Admin-Freigabe: nach 10 Fehlversuchen gesperrt, nach 15 min wieder möglich", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db, ADMIN) });
+  t.after(app.close);
+  const c = await adminClient(app, { unlock: false });
+  for (let i = 0; i < 10; i++) {
+    assert.equal((await c.req("/api/auth/admin-unlock", { method: "POST", json: { password: "falsch" } })).status, 401);
+  }
+  const locked = await c.req("/api/auth/admin-unlock", { method: "POST", json: { password: ADMIN.password } });
+  assert.equal(locked.status, 429);
+  assert.equal(locked.data.error, "too_many_attempts");
+  app.clock.t += 15 * 60 * 1000 + 1;
+  assert.equal((await c.req("/api/auth/admin-unlock", { method: "POST", json: { password: ADMIN.password } })).status, 200);
+});
+
+test("Entsperren hebt die Anmeldesperre auf", async (t) => {
+  const app = await startTestApp({ seed: (db) => ({ admin: seedAccount(db, ADMIN), fam: seedAccount(db) }) });
+  t.after(app.close);
+  const c = await adminClient(app);
+  const fam = client(app.base);
+  for (let i = 0; i < 10; i++) await fam.req("/api/auth/login", { method: "POST", json: { email: FAM.email, password: "falsch" } });
+  assert.equal((await fam.req("/api/auth/login", { method: "POST", json: FAM })).status, 429);
+  await c.req(`/api/admin/accounts/${app.seeded.fam.accountId}/enable`, { method: "POST", json: {} });
+  assert.equal((await fam.req("/api/auth/login", { method: "POST", json: FAM })).status, 200);
+});
+
+test("Profil löschen beendet dessen Kind-Sitzung", async (t) => {
+  const app = await startTestApp({ seed: (db) => ({ admin: seedAccount(db, ADMIN), fam: seedAccount(db) }) });
+  t.after(app.close);
+  const c = await adminClient(app);
+  const pid = app.seeded.fam.profileIds[0];
+  const kid = await c.req(`/api/admin/profiles/${pid}/child-login`, { method: "POST", json: { username: "kindchen" } });
+  const k = client(app.base);
+  await k.req("/api/auth/child-login", { method: "POST", json: { username: "kindchen", password: kid.data.password } });
+  assert.equal((await k.req("/api/auth/session")).data.loggedIn, true);
+  await c.req(`/api/admin/profiles/${pid}`, { method: "DELETE", json: {} });
+  assert.equal((await k.req("/api/auth/session")).data.loggedIn, false);
 });
