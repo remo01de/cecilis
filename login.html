@@ -108,6 +108,8 @@
     button[type="submit"]:hover { transform: translateY(-1px); }
     button[type="submit"]:disabled { opacity: 0.6; cursor: wait; transform: none; }
     .hint { margin-top: 18px; text-align: center; font-size: 13px; color: var(--text-3); }
+    .hint + .hint { margin-top: 8px; }
+    .hint a { color: var(--text-1); font-weight: 600; text-decoration-color: var(--pink); text-underline-offset: 3px; }
   </style>
 </head>
 <body>
@@ -134,6 +136,7 @@
     </form>
 
     <p class="hint">Deinen Zugang bekommst du von deinen Eltern.</p>
+    <p class="hint"><a href="/willkommen.html">Wer ist Cecilia? Hier stellt sie sich vor</a></p>
   </main>
 
   <script>

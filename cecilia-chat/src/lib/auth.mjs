@@ -73,15 +73,24 @@ export function isLoggedIn(req) {
   return verifyToken(readCookie(req, COOKIE_NAME));
 }
 
-// Öffentlich ohne Login: Login-Seite, Icons, Health-Check, Login-API
+// Öffentlich ohne Login: Vorstellungsseite, Login-Seite, Icons, Health-Check, Login-API
+// und die Figurenbilder in img/web/ (zeigt die Vorstellungsseite).
 const PUBLIC_PATHS = new Set([
-  "/login.html", "/favicon.ico", "/favicon.svg", "/favicon-32.png", "/favicon-192.png",
+  "/willkommen.html", "/login.html", "/favicon.ico", "/favicon.svg", "/favicon-32.png", "/favicon-192.png",
   "/apple-touch-icon.png", "/health", "/api/login", "/api/logout", "/api/session"
 ]);
 
+const PUBLIC_PREFIXES = ["/img/web/"];
+
 export function requireLogin(req, res, next) {
-  if (PUBLIC_PATHS.has(req.path) || isLoggedIn(req)) return next();
+  if (PUBLIC_PATHS.has(req.path) || PUBLIC_PREFIXES.some((p) => req.path.startsWith(p)) || isLoggedIn(req)) {
+    return next();
+  }
   if (req.path.startsWith("/api/")) return res.status(401).json({ error: "login_required" });
+  // Wer nicht angemeldet ist und die Startseite aufruft, lernt zuerst Cecilia kennen
+  if (req.method === "GET" && (req.path === "/" || req.path === "/index.html")) {
+    return res.redirect(302, "/willkommen.html");
+  }
   // Seiten und Dateien: zur Login-Seite, danach zurück an die ursprüngliche Adresse
   const isPage = req.method === "GET" && (req.path === "/" || req.path.endsWith(".html"));
   const target = isPage ? req.originalUrl : "/";

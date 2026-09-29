@@ -36,7 +36,6 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 - [ ] **Vorschlags-Chips** abwechseln statt immer derselben drei
 - [ ] **Spassfaktor:** Cecilias Stimmung im Header, Galeriebilder als Sticker sammeln, kleine Belohnungen
 - [ ] **Screenreader-Test** mit echten Geräten (VoiceOver iOS, TalkBack)
-- [ ] **Open-Graph-Tags** für geteilte Links
 - [ ] **Performance auf günstigen Android-Geräten** prüfen (viele `backdrop-filter`-Ebenen)
 
 ### Ideen für später
@@ -49,6 +48,7 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 - [x] XSS-Schutz Frontend + Backend (2025-11-30), Lücken in Suchquellen/`parseMarkdown` geschlossen (2026-09-29)
 - [x] API-Key nur im Backend, nie im Frontend
 - [x] Login mit einem Zugang aus der `.env`, schützt alle Seiten und die API (2026-09-29)
+- [x] Öffentliche Vorstellungsseite `willkommen.html` mit Open-Graph-Tags (2026-09-29)
 - [x] Rate-Limiting pro IP (2026-01-27); 429 zeigt eine freundliche Pause-Meldung (2026-09-29)
 - [x] Chat-Integration, Conversation Memory, Auto-Zusammenfassung (2026-03-03)
 - [x] Bildgenerierung und Websuche via OpenRouter (2026-03-03 / 2026-09-29)
