@@ -230,7 +230,6 @@
 
       const grid = document.getElementById('grid');
       grid.textContent = '';
-      status.textContent = '';
 
       if (profiles.length === 0) {
         document.getElementById('empty').hidden = false;
@@ -271,7 +270,11 @@
       const session = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({ loggedIn: false }));
       if (!session.loggedIn) return location.replace('/login.html');
       if (session.kind !== 'family') return location.replace('/');
-      await loadProfiles();
+      try {
+        await loadProfiles();
+      } catch (err) {
+        status.textContent = 'Keine Verbindung. Lade die Seite gleich nochmal.';
+      }
     }
     init();
   </script>
