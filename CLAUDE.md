@@ -173,6 +173,14 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - `WORRY_PATTERN` (ritzen, gemobbt, will sterben …) → Hilfe-Karte direkt im Chat, unabhängig von der LLM-Antwort
   - Externe Links im Chat (Antworten + Quellen) → Dialog „Du verlässt Cecilias Welt“ mit Hostname
   - Composer-Hinweis „Cecilia ist eine KI …“; Nachrichten-Chip durch Delfin-Chip ersetzt
+- **Bedienung für Kinder:**
+  - Papierkorb neben dem Senden-Knopf entfernt; Löschen nur noch über „Neuer Zauber“, mit Toast + „Rückgängig“ (8 s, `pendingClear`). Bilder werden erst nach Ablauf aus IndexedDB gelöscht; wer in der Frist schreibt, bestätigt das Löschen.
+  - Begrüssung von Cecilia (`renderGreeting()`) steht immer als erste Blase, wird nicht gespeichert und nicht an die API geschickt
+  - Offline/Serverfehler: keine erfundene Zufallsantwort mehr, sondern ehrliche Meldung; Text bleibt im Eingabefeld (wie bei 429). `getFallbackResponse()` nur noch bei leerer API-Antwort.
+  - `maxlength="1000"` + Zeichenzähler ab 800 Zeichen statt `alert()`
+  - Texte ohne Technik/Englisch: „Nachtmodus/Tagmodus“, „Deine Feenfreundin“, Fehlertexte in Cecilias Ton
+  - Mindestschrift 12px; `--text-4` (Nacht 6.0:1, Tag 4.7:1) und Tag-`--text-3` (5.2:1) auf WCAG AA angehoben; fetter Verlaufstext im Tagmodus als solides Pink
+- `ImageStore` bricht `indexedDB.open()` nach 4 s ab (z.B. blockiert durch anderen Tab), damit die App nicht hängen bleibt
 
 ## Was bereits erledigt ist
 
