@@ -6,8 +6,17 @@
 // Verlauf nicht überschreibt.
 const appReady = (async () => {
   try {
-    if (LEGACY_DEVICE_DATA_CLAIMED) {
-      await ImageStore.claimLegacyImages().catch(e => console.warn('Alte Bilder konnten nicht übernommen werden:', e));
+    // Alte Bilder (aus der Zeit vor den Profilen) übernehmen. Die Markierung bleibt
+    // bei einem Fehlschlag stehen, dann wird beim nächsten Laden erneut versucht.
+    let legacyPending = false;
+    try { legacyPending = localStorage.getItem(profileKey('cecilia_legacy_images_pending')) === '1'; } catch (e) {}
+    if (legacyPending) {
+      try {
+        await ImageStore.claimLegacyImages();
+        try { localStorage.removeItem(profileKey('cecilia_legacy_images_pending')); } catch (e) {}
+      } catch (e) {
+        console.warn('Alte Bilder konnten nicht übernommen werden:', e);
+      }
     }
     await bootGallery();
     await loadChatState();

@@ -6,7 +6,9 @@
 function readCookie(name) {
   for (const part of document.cookie.split(';')) {
     const i = part.indexOf('=');
-    if (i > 0 && part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1).trim());
+    if (i > 0 && part.slice(0, i).trim() === name) {
+      try { return decodeURIComponent(part.slice(i + 1).trim()); } catch (e) { return null; }
+    }
   }
   return null;
 }
@@ -26,6 +28,8 @@ const LEGACY_DEVICE_DATA_CLAIMED = (() => {
       localStorage.setItem(profileKey(k), localStorage.getItem(k));
       localStorage.removeItem(k);
     }
+    // Die Bilder werden erst beim Start übernommen; die Markierung bleibt, bis das gelungen ist
+    localStorage.setItem(profileKey('cecilia_legacy_images_pending'), '1');
     return true;
   } catch (e) {
     return false;

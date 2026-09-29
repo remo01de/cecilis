@@ -76,14 +76,25 @@ const ImageStore = (() => {
   }
 
   // Bilder aus der alten, profillosen Datenbank in die des aktuellen Profils kopieren
-  // (nur aufrufen, wenn LEGACY_DEVICE_DATA_CLAIMED). Gibt die Anzahl zurück.
+  // (nur aufrufen, wenn die Markierung cecilia_legacy_images_pending gesetzt ist). Gibt die Anzahl zurück.
   async function claimLegacyImages() {
-    const legacy = await new Promise((resolve) => {
+    const legacy = await new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('IndexedDB nicht verfügbar'));
+      let timedOut = false, missing = false;
+      const timeout = setTimeout(() => { timedOut = true; reject(new Error('IndexedDB antwortet nicht')); }, 4000);
       const req = indexedDB.open('cecilia_images');
       // Existiert sie nicht, bricht das Anlegen ab statt eine leere DB zu erzeugen
-      req.onupgradeneeded = () => req.transaction.abort();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
+      req.onupgradeneeded = () => { missing = true; req.transaction.abort(); };
+      req.onsuccess = () => {
+        clearTimeout(timeout);
+        if (timedOut) req.result.close(); // kam nach dem Abbruch doch noch
+        else resolve(req.result);
+      };
+      req.onerror = () => {
+        clearTimeout(timeout);
+        if (timedOut) return;
+        if (missing) resolve(null); else reject(req.error);
+      };
     });
     if (!legacy || !legacy.objectStoreNames.contains(STORE)) { legacy?.close(); return 0; }
     const entries = await new Promise((resolve, reject) => {
@@ -92,9 +103,8 @@ const ImageStore = (() => {
       const keysReq = store.getAllKeys();
       const valuesReq = store.getAll();
       tx.oncomplete = () => resolve(keysReq.result.map((k, i) => [k, valuesReq.result[i]]));
-      tx.onerror = () => reject(tx.error);
-    });
-    legacy.close();
+      tx.onabort = tx.onerror = () => reject(tx.error);
+    }).finally(() => legacy.close());
     await run('readwrite', s => { entries.forEach(([k, v]) => s.put(v, k)); return null; });
     indexedDB.deleteDatabase('cecilia_images');
     return entries.length;
