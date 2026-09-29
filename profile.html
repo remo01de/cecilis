@@ -159,7 +159,7 @@
       if (b.hasAttribute('data-del')) { pin = pin.slice(0, -1); return updateDots(); }
       addDigit(b.textContent);
     });
-    document.getElementById('pad').addEventListener('keydown', e => {
+    document.addEventListener('keydown', e => {
       if (overlay.hidden || busy || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
       if (/^\d$/.test(e.key)) { e.preventDefault(); addDigit(e.key); }
       else if (e.key === 'Backspace') { e.preventDefault(); pin = pin.slice(0, -1); updateDots(); }
@@ -176,46 +176,49 @@
     async function choose(profile, pinValue) {
       if (busy) return;
       busy = true;
-      const res = await post('/api/auth/select-profile', pinValue ? { profileId: profile.id, pin: pinValue } : { profileId: profile.id }).catch(() => null);
-      if (current !== profile) { busy = false; return; }
-      if (res && res.ok) return location.replace(nextTarget());
+      try {
+        status.textContent = '';
+        const viaPin = Boolean(pinValue);
+        const res = await post('/api/auth/select-profile', pinValue ? { profileId: profile.id, pin: pinValue } : { profileId: profile.id }).catch(() => null);
+        if (viaPin && current !== profile) return;
+        if (res && res.ok) return location.replace(nextTarget());
 
-      const body = await res?.json().catch(() => ({})) || {};
-      const overlayOpen = !overlay.hidden;
+        const body = await res?.json().catch(() => ({})) || {};
+        const overlayOpen = !overlay.hidden;
 
-      if (!res) {
-        const msg = 'Keine Verbindung. Probier es gleich nochmal.';
-        if (overlayOpen) pinError.textContent = msg;
-        else status.textContent = msg;
-      } else if (res.status === 401) {
-        if (body.error === 'wrong_pin') {
-          pinError.textContent = 'Die PIN stimmt nicht. Probier es nochmal.';
-          pin = ''; updateDots();
-          const card = document.getElementById('pinCard');
-          card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
-        } else {
+        if (!res) {
+          const msg = 'Keine Verbindung. Probier es gleich nochmal.';
+          if (overlayOpen) pinError.textContent = msg;
+          else status.textContent = msg;
+        } else if (res.status === 401) {
+          if (body.error === 'wrong_pin') {
+            pinError.textContent = 'Die PIN stimmt nicht. Probier es nochmal.';
+            pin = ''; updateDots();
+            const card = document.getElementById('pinCard');
+            card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+          } else {
+            location.href = '/login.html';
+            return;
+          }
+        } else if (res.status === 429) {
+          const msg = 'Zu viele Versuche. Warte kurz und probier es dann nochmal.';
+          if (overlayOpen) pinError.textContent = msg;
+          else status.textContent = msg;
+        } else if (res.status === 403) {
           location.href = '/login.html';
-          busy = false;
           return;
+        } else if (res.status === 404) {
+          closePin();
+          status.textContent = 'Dieses Profil gibt es nicht mehr.';
+          await loadProfiles();
+        } else {
+          const msg = 'Das hat nicht geklappt.';
+          if (overlayOpen) pinError.textContent = msg;
+          else status.textContent = msg;
         }
-      } else if (res.status === 429) {
-        const msg = 'Zu viele Versuche. Warte kurz und probier es dann nochmal.';
-        if (overlayOpen) pinError.textContent = msg;
-        else status.textContent = msg;
-      } else if (res.status === 403) {
-        location.href = '/login.html';
+      } finally {
         busy = false;
-        return;
-      } else if (res.status === 404) {
-        closePin();
-        status.textContent = 'Dieses Profil gibt es nicht mehr.';
-        await loadProfiles();
-      } else {
-        const msg = 'Das hat nicht geklappt.';
-        if (overlayOpen) pinError.textContent = msg;
-        else status.textContent = msg;
       }
-      busy = false;
     }
 
     async function loadProfiles() {
@@ -225,6 +228,10 @@
       const isAdmin = role === 'admin';
       document.getElementById('adminLinkBottom').hidden = !isAdmin;
 
+      const grid = document.getElementById('grid');
+      grid.textContent = '';
+      status.textContent = '';
+
       if (profiles.length === 0) {
         document.getElementById('empty').hidden = false;
         document.getElementById('adminLink').hidden = !isAdmin;
@@ -232,9 +239,6 @@
         return;
       }
 
-      const grid = document.getElementById('grid');
-      grid.textContent = '';
-      status.textContent = '';
       document.getElementById('empty').hidden = true;
       document.querySelector('.sub').hidden = false;
 
