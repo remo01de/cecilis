@@ -10,7 +10,8 @@ RUN cd cecilia-chat && npm ci --omit=dev
 COPY cecilia-chat/src ./cecilia-chat/src
 
 # Frontend-Dateien kopieren
-COPY index.html styles.css placeholder-images.js ./
+COPY index.html styles.css chat.css placeholder-images.js ./
+COPY js ./js
 COPY poster.html cecilia-charakter.html xss-test.html ./
 COPY favicon.ico favicon.svg favicon-32.png favicon-192.png apple-touch-icon.png ./
 # Nur die optimierten Bilder, die die Seiten verwenden (img/ enthält ~120 MB Referenzbilder)

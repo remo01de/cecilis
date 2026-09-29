@@ -6,7 +6,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 
 ## Tech-Stack
 
-- **Frontend:** Vanilla HTML/CSS/JS (kein Framework), Google Fonts (Pacifico, Poppins)
+- **Frontend:** Vanilla HTML/CSS/JS (kein Framework), Google Fonts (Chat: Instrument Serif, DM Sans, Caveat; Poster/Charakterseite: Pacifico, Poppins)
 - **Backend:** Node.js (ES Modules), Express 5.1, Port 30000
 - **APIs:** OpenRouter (Chat, Bildgenerierung, Websuche; Modelle per `.env` wählbar)
 - **Sprache:** Deutsch (UI + Konversation), Englische Image-Prompts
@@ -18,14 +18,15 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── Dockerfile                     # Docker-Image (Node 22 Alpine)
 ├── docker-compose.yml             # Docker Compose Konfiguration
 ├── .dockerignore
-├── index.html                     # Hauptseite: Automatische KI-Galerie + Chat
+├── index.html                     # Hauptseite: nur Markup (Chat, Galerie, Dialoge)
+├── chat.css                       # Styles der Hauptseite (Design-Tokens, Nacht/Tag)
+├── js/                            # Scripts der Hauptseite, Reihenfolge siehe unten
 ├── poster.html                    # Character-Poster
 ├── cecilia-charakter.html         # Detailliertes Charakterprofil
-├── styles.css                     # Gemeinsames Stylesheet
+├── styles.css                     # Stylesheet für Poster + Charakterseite
 ├── placeholder-images.js          # SVG-Platzhalter für fehlende Bilder
-├── img/
-│   ├── cecilia-avatar.svg         # Chat-Avatar Cecilia
-│   └── user-avatar.svg            # Chat-Avatar User
+├── img/                           # Referenzbilder (PNG, nicht im Docker-Image)
+│   └── web/                       # Optimierte WebP-Bilder, die die Seiten verwenden
 ├── cecilia-chat/                  # Backend
 │   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2
 │   ├── .env                       # OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_*_TEMPERATURE, OPENROUTER_IMAGE_MODEL, PORT
@@ -75,10 +76,25 @@ Alle Endpoints haben Rate-Limiting und Input-Validierung.
 
 ## Frontend-Architektur (index.html)
 
-Alles in einer einzigen HTML-Datei (Inline-CSS + JS):
+Markup in `index.html`, Styles in `chat.css`, Logik in `js/` als klassische Scripts (kein Build, kein Modul-System). Sie teilen sich den globalen Gültigkeitsbereich, daher ist die **Lade-Reihenfolge wichtig**:
+
+| Datei | Inhalt |
+|---|---|
+| `config.js` | `CONFIG` (API-URLs, Limits) |
+| `ambient.js` | Feenstaub, Schmetterlinge, Nacht/Tag-Umschalter |
+| `ui.js` | Sidebar, Sicherheits-Dialoge (Hilfe, Datenschutz, externe Links), Vorschlags-Chips, Toast, Begrüssung, Zeichenzähler |
+| `image-store.js` | `ImageStore` (IndexedDB), `persistImage()` |
+| `gallery.js` | Automatische Galerie inkl. Willkommensbild |
+| `chat.js` | Marker, Markdown, Nachrichten-DOM, Bild/Suche, Zauberwörter, `sendMessage()`, Zusammenfassung |
+| `conversations.js` | Mehrere Gespräche: Speichern/Laden, Neu/Wechseln/Löschen, Verlauf in der Sidebar |
+| `lightbox.js` | Bild-Popup |
+| `main.js` | Start (`appReady`) |
+
+Neue Dateien in `js/` muss man in `index.html` einbinden. `chat.css` und `js/` werden vom `Dockerfile` kopiert.
+
 - **API-URLs:** Relativ wenn Port 30000, sonst Fallback auf `http://localhost:30000` (funktioniert mit Backend, Live Server und `file://`)
 - **CONFIG-Objekt:** URLs, Limits, Thresholds
-- **Automatische Galerie:** Beim ersten Besuch wird sofort ein Willkommensbild generiert (Jahreszeit + happy/Feenwald/Feenkleid). Danach alle 10-20 Chat-Runden automatisch. Die AI analysiert den Chatverlauf (letzte 6 Nachrichten oder Summary) und bestimmt Stimmung/Ort/Outfit, Jahreszeit kommt vom aktuellen Datum. Prompt-Builder, Loading-Overlay, Thumbnail-Leiste mit Label, Auto-Rotation (6s). localStorage-Persistenz (`cecilia_gallery`, max 30 Bilder). Klick auf Hauptbild öffnet es im neuen Tab.
+- **Automatische Galerie:** Beim ersten Besuch wird sofort ein Willkommensbild generiert (Jahreszeit + happy/Feenwald/Feenkleid). Danach alle 10-20 Chat-Runden automatisch. Die AI analysiert den Chatverlauf (letzte 6 Nachrichten oder Summary) und bestimmt Stimmung/Ort/Outfit, Jahreszeit kommt vom aktuellen Datum. Prompt-Builder, Loading-Overlay, Thumbnail-Leiste mit Label, Auto-Rotation (6s). localStorage-Persistenz (`cecilia_gallery`, max 30 Bilder). Klick auf Hauptbild öffnet die Lightbox.
 - **Chat-Flow:** `sendMessage()` → `getCeciliaResponseFromAPI()` → Marker-Erkennung → ggf. Image/Search → Display + History + Save
 - **Marker-Stripping:** `stripImageMarkers()` entfernt beide Marker-Typen aus dem angezeigten Text
 - **XSS-Schutz:** `parseMarkdown()` escaped HTML vor Markdown-Parsing
@@ -182,6 +198,7 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Mindestschrift 12px; `--text-4` (Nacht 6.0:1, Tag 4.7:1) und Tag-`--text-3` (5.2:1) auf WCAG AA angehoben; fetter Verlaufstext im Tagmodus als solides Pink
 - **Echter Verlauf (mehrere Gespräche):** localStorage-Key `cecilia_chats` = `{ activeChatId, chats: [{ id, title, updatedAt, summary, history, display }] }`, max. 20 Gespräche (älteste fallen samt Bildern weg). Das aktive Gespräch wird weiter über `conversationHistory`/`conversationSummary`/`displayMessages` bearbeitet; `saveChatState()` schreibt zurück und rendert die Sidebar. „Neuer Zauber“ (`newChat()`) behält das alte Gespräch; Löschen per ✕ im Verlauf (`deleteChat()`) mit Rückgängig-Toast. Der alte Key `cecilia_chat_state` wird beim ersten Laden migriert und entfernt. Während Cecilia antwortet, sind Wechseln/Neu/Löschen gesperrt.
 - **Websuche kindgerecht gefiltert** (`routes/search.mjs`): Sperrliste als `exclude_domains` an Exa, zusätzlich Hostnamen-Filter auf die Ergebnisse; optional `SEARCH_INCLUDE_DOMAINS` in der `.env` als reine Positivliste (Beispiel in `.env.example`).
+- **`index.html` aufgeteilt** in `chat.css` + `js/*.js` (reine Verschiebung, Reihenfolge siehe Frontend-Architektur). Poster-/Avatar-Bilder als WebP in `img/web/` (14.5 MB → 1.6 MB); Dockerfile kopiert nur noch `img/web`.
 - **Barrierefreiheit** (axe-core: 0 Verstösse in Nacht- und Tagmodus):
   - Landmarks `main`/`aside`, `h1` im Header, Eingabefeld mit `aria-label`, Chatbereich per Tastatur scrollbar
   - Chat ist `role="log"`; `withQuietLog()` schaltet `aria-live` beim Laden/Wechseln aus, damit nicht der ganze Verlauf vorgelesen wird. Tipp-Anzeige mit Screenreader-Text „Cecilia schreibt …“
