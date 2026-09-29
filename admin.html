@@ -116,6 +116,7 @@
     <p class="meta" id="confirmText"></p>
     <label for="confirmInput">E-Mail zur Bestätigung eintippen</label>
     <input id="confirmInput" autocomplete="off">
+    <div class="notice error" id="confirmError" role="alert" hidden></div>
     <div class="actions" style="margin-top:14px">
       <button type="button" id="confirmCancel">Abbrechen</button>
       <button type="button" class="danger" id="confirmOk">Endgültig löschen</button>
@@ -135,6 +136,7 @@
 
     let selectedId = null;
     let adminEmail = null;
+    let unlockedOnce = false;
 
     // Kleiner Helfer: Element mit Attributen und Kindern (Text wird nie als HTML eingesetzt)
     function h(tag, attrs = {}, ...children) {
@@ -155,7 +157,7 @@
       try { res = await fetch(path, opts); } catch (e) { throw new Error('network'); }
       const data = await res.json().catch(() => ({}));
       if (res.status === 401) { location.href = '/login.html?next=%2Fadmin.html'; throw new Error('login'); }
-      if (data.error === 'admin_reauth_required') { showUnlock(true); throw new Error('reauth'); }
+      if (data.error === 'admin_reauth_required') { showUnlock(unlockedOnce); throw new Error('reauth'); }
       return { ok: res.ok, status: res.status, data: (data && typeof data === 'object') ? data : {} };
     }
 
@@ -166,6 +168,7 @@
       box.hidden = false;
     }
     async function run(fn) {
+      document.getElementById('globalError').hidden = true;
       try { await fn(); }
       catch (e) {
         if (e && (e.message === 'reauth' || e.message === 'login')) return;
@@ -232,7 +235,8 @@
       document.getElementById('unlockExpired').hidden = true;
       document.getElementById('unlock').hidden = true;
       document.getElementById('app').hidden = false;
-      run(async () => { await loadAccounts(); if (selectedId) await selectAccount(selectedId); });
+      unlockedOnce = true;
+      run(async () => { if (selectedId) await selectAccount(selectedId); else await loadAccounts(); });
     });
 
     // ---------- Kontenliste ----------
@@ -319,16 +323,23 @@
       document.getElementById('confirmCancel').onclick = () => dlg.close();
       const ok = document.getElementById('confirmOk');
       ok.disabled = false;
+      const cerr = document.getElementById('confirmError');
+      cerr.hidden = true;
       ok.onclick = async () => {
         ok.disabled = true;
-        await run(async () => {
+        cerr.hidden = true;
+        try {
           const r = await api(`/api/admin/accounts/${a.id}`, { method: 'DELETE', body: { confirmEmail: input.value } });
-          if (!r.ok) { alert(ERRORS[r.data.error] || 'Das hat nicht geklappt.'); ok.disabled = false; return; }
+          if (!r.ok) { cerr.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; cerr.hidden = false; ok.disabled = false; return; }
           dlg.close();
           selectedId = null;
           await loadAccounts();
           document.getElementById('detail').replaceChildren(h('p', { class: 'meta' }, 'Konto gelöscht.'));
-        });
+        } catch (e) {
+          if (e && (e.message === 'reauth' || e.message === 'login')) return;
+          cerr.textContent = e && e.message === 'network' ? 'Keine Verbindung zum Server. Bitte gleich nochmal versuchen.' : 'Das hat nicht geklappt.';
+          cerr.hidden = false;
+        }
         ok.disabled = false;
       };
     }
@@ -441,6 +452,7 @@
       adminEmail = s.account.email;
       try {
         await loadAccounts();
+        unlockedOnce = true;
         document.getElementById('app').hidden = false;
       } catch (e) {
         if (e && e.message === 'reauth') return; // Freischalt-Formular ist bereits sichtbar
