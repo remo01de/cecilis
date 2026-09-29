@@ -330,6 +330,22 @@
     .history-item-sub {
       font-size: 12px; color: var(--text-3); margin-top: 2px;
     }
+    #sidebarHistory { display: grid; gap: 2px; }
+    .history-row { position: relative; display: flex; align-items: center; }
+    .history-row .history-item { padding-right: 40px; }
+    .history-delete {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 30px; height: 30px; border-radius: 10px;
+      display: grid; place-items: center;
+      background: transparent; border: none;
+      color: var(--text-3); font-size: 13px; cursor: pointer;
+      opacity: 0; transition: opacity 160ms, background 160ms;
+    }
+    .history-row:hover .history-delete,
+    .history-delete:focus-visible,
+    .history-item.active + .history-delete { opacity: 1; }
+    .history-delete:hover { background: var(--surface-2); color: var(--text-1); }
+    @media (hover: none) { .history-delete { opacity: 1; } }
 
     /* =========================================================
        CHAT COLUMN
@@ -1099,21 +1115,13 @@
         </div>
       </div>
 
-      <button class="sidebar-cta" onclick="clearChatWithNew()">
+      <button class="sidebar-cta" type="button" onclick="newChat()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg>
         Neuer Zauber
       </button>
 
       <div class="sidebar-section-label">Verlauf</div>
-      <div id="sidebarHistory">
-        <div class="history-item active">
-          <span class="history-item-dot"></span>
-          <div style="min-width:0;flex:1">
-            <div class="history-item-title">Aktuelles Gespräch</div>
-            <div class="history-item-sub">Läuft gerade ✨</div>
-          </div>
-        </div>
-      </div>
+      <div id="sidebarHistory" role="list" aria-label="Deine Gespräche"></div>
 
       <div style="margin-top:auto;display:grid;gap:4px">
         <button class="history-item" type="button" onclick="closeSidebar(); openHelp()">
@@ -1205,7 +1213,7 @@
     </div>
   </div>
 
-  <!-- Toast mit Rückgängig (z.B. nach "Neuer Zauber") -->
+  <!-- Toast mit Rückgängig (z.B. nach dem Löschen eines Gesprächs) -->
   <div class="toast" id="toast" role="status" aria-live="polite" hidden>
     <span id="toastText"></span>
     <button type="button" class="toast-undo" id="toastUndo">Rückgängig</button>
@@ -1219,7 +1227,7 @@
     <p>Cecilia ist eine <strong>KI-Fee</strong>. Sie plaudert mit dir, zaubert Bilder und beantwortet Fragen. Sie ist aber kein Mensch und kann sich auch mal irren.</p>
     <ul class="dialog-list">
       <li><span aria-hidden="true">🔒</span><span>Verrate <strong>keine echten Namen, Adressen, deine Schule oder Telefonnummern</strong> – auch nicht Cecilia.</span></li>
-      <li><span aria-hidden="true">📱</span><span>Dein Chat wird nur auf diesem Gerät gespeichert. Mit „Neuer Zauber“ löschst du ihn.</span></li>
+      <li><span aria-hidden="true">📱</span><span>Deine Chats werden nur auf diesem Gerät gespeichert. Im Verlauf kannst du sie jederzeit mit ✕ löschen.</span></li>
       <li><span aria-hidden="true">💜</span><span>Wenn dich etwas bedrückt, findest du oben beim <strong>💜</strong> Menschen, die dir helfen.</span></li>
     </ul>
     <form method="dialog" class="dialog-actions">
@@ -2003,45 +2011,128 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     // ==========================================
     // PERSISTENCE
     // ==========================================
-    function saveChatState() {
+    // Mehrere Gespräche: alle liegen unter CHATS_KEY. Das aktive Gespräch wird
+    // in den globalen Variablen oben bearbeitet und beim Speichern zurückgeschrieben.
+    const CHATS_KEY = 'cecilia_chats';
+    const MAX_CHATS = 20;
+    let chats        = [];   // [{ id, title, updatedAt, summary, history, display }]
+    let activeChatId = null;
+
+    function createChat() {
+      return {
+        id: 'chat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        title: '', updatedAt: new Date().toISOString(),
+        summary: '', history: [], display: []
+      };
+    }
+
+    function getActiveChat() { return chats.find(c => c.id === activeChatId); }
+
+    function isEmptyChat(c) { return c.display.length === 0 && !c.summary; }
+
+    function chatTitle(c) {
+      const first = c.display.find(m => m.sender === 'user');
+      if (!first) return 'Neues Gespräch';
+      const t = first.text.trim().replace(/\s+/g, ' ');
+      return t.length > 40 ? t.slice(0, 38) + '…' : t;
+    }
+
+    // Globale Variablen des aktiven Gesprächs -> Chat-Objekt
+    function syncActiveChat() {
+      const c = getActiveChat();
+      if (!c) return;
+      c.summary = conversationSummary;
+      c.history = conversationHistory;
+      c.display = displayMessages.slice(-CONFIG.MAX_DISPLAY_MESSAGES);
+      c.title   = chatTitle(c);
+    }
+
+    function persistChats() {
       try {
-        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({
-          summary: conversationSummary,
-          history: conversationHistory,
-          display: displayMessages
-            .slice(-CONFIG.MAX_DISPLAY_MESSAGES)
-            .map(m => (m.imageUrl ? { ...m, imageUrl: persistableUrl(m.imageUrl) } : m))
+        localStorage.setItem(CHATS_KEY, JSON.stringify({
+          activeChatId,
+          // Leere Gespräche nur behalten, wenn sie gerade offen sind
+          chats: chats
+            .filter(c => c.id === activeChatId || !isEmptyChat(c))
+            .map(c => ({
+              ...c,
+              display: c.display.map(m => (m.imageUrl ? { ...m, imageUrl: persistableUrl(m.imageUrl) } : m))
+            }))
         }));
-      } catch (e) { console.warn('Chat-State konnte nicht gespeichert werden:', e); }
+      } catch (e) { console.warn('Chats konnten nicht gespeichert werden:', e); }
+    }
+
+    // touch=false: nur speichern, ohne das Gespräch im Verlauf nach oben zu schieben
+    function saveChatState({ touch = true } = {}) {
+      syncActiveChat();
+      const c = getActiveChat();
+      if (c && touch) c.updatedAt = new Date().toISOString();
+      persistChats();
+      renderSidebarHistory();
     }
 
     async function loadChatState() {
-      let state;
+      let state = null;
       try {
-        const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
-        if (!raw) return;
-        state = JSON.parse(raw);
-      } catch (e) {
-        console.warn('Chat-State konnte nicht geladen werden:', e);
-        return;
+        const raw = localStorage.getItem(CHATS_KEY);
+        if (raw) state = JSON.parse(raw);
+      } catch (e) { console.warn('Chats konnten nicht geladen werden:', e); }
+
+      let migrated = false;
+      if (state && Array.isArray(state.chats)) {
+        chats = state.chats.filter(c => c && c.id).map(c => ({
+          ...createChat(), ...c,
+          history: Array.isArray(c.history) ? c.history : [],
+          display: Array.isArray(c.display) ? c.display : []
+        }));
+        activeChatId = state.activeChatId;
+      } else {
+        // Altbestand: ein einzelnes Gespräch unter CONFIG.STORAGE_KEY
+        try {
+          const legacyRaw = localStorage.getItem(CONFIG.STORAGE_KEY);
+          if (legacyRaw) {
+            const legacy = JSON.parse(legacyRaw);
+            const c = createChat();
+            c.summary = legacy.summary || '';
+            c.history = Array.isArray(legacy.history) ? legacy.history : [];
+            c.display = Array.isArray(legacy.display) ? legacy.display : [];
+            c.title   = chatTitle(c);
+            chats = [c];
+            activeChatId = c.id;
+            migrated = true;
+          }
+        } catch (e) { console.warn('Alter Chat-State konnte nicht gelesen werden:', e); }
       }
-      conversationSummary = state.summary || '';
-      conversationHistory = Array.isArray(state.history) ? state.history : [];
-      displayMessages     = Array.isArray(state.display) ? state.display : [];
 
       // Altbestand: Data-URLs aus dem localStorage nach IndexedDB umziehen
-      let migrated = false;
-      for (const msg of displayMessages) {
-        if (msg.imageUrl && msg.imageUrl.startsWith('data:')) {
-          const stored = await persistImage(msg.imageUrl);
-          if (stored.imageId) {
-            msg.imageId = stored.imageId;
-            delete msg.imageUrl;
-            migrated = true;
+      for (const c of chats) {
+        for (const msg of c.display) {
+          if (msg.imageUrl && msg.imageUrl.startsWith('data:')) {
+            const stored = await persistImage(msg.imageUrl);
+            if (stored.imageId) {
+              msg.imageId = stored.imageId;
+              delete msg.imageUrl;
+              migrated = true;
+            }
           }
         }
       }
-      if (migrated) saveChatState();
+
+      if (!getActiveChat()) {
+        const latest = [...chats].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        if (latest) activeChatId = latest.id;
+        else { const c = createChat(); chats.push(c); activeChatId = c.id; }
+      }
+
+      const active = getActiveChat();
+      conversationSummary = active.summary;
+      conversationHistory = active.history;
+      displayMessages     = active.display;
+
+      if (migrated) {
+        persistChats();
+        try { localStorage.removeItem(CONFIG.STORAGE_KEY); } catch (e) {}
+      }
     }
 
     async function restoreDisplayMessages() {
@@ -2504,7 +2595,6 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       await appReady;
       if (isWaitingForResponse) return;
       if (!(await confirmPersonalData(message))) { input.focus(); return; }
-      finalizePendingClear(); // neuer Chat hat begonnen -> Rückgängig nicht mehr möglich
 
       const userMsg = addMessageToChat('user', message);
       scanForMagicWords(userMsg);
@@ -2663,58 +2753,185 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     }
 
     // ==========================================
-    // CLEAR CHAT
+    // GESPRÄCHE  –  neu, wechseln, löschen
     // ==========================================
+    async function showActiveChat() {
+      const c = getActiveChat();
+      conversationSummary = c.summary;
+      conversationHistory = c.history;
+      displayMessages     = c.display;
+      document.getElementById('chatMessages').innerHTML = '';
+      renderGreeting();
+      await restoreDisplayMessages();
+      renderSidebarHistory();
+    }
+
+    function focusInput() {
+      const input = document.getElementById('chatInput');
+      if (input) input.focus();
+    }
+
+    // „Neuer Zauber“: altes Gespräch bleibt im Verlauf
+    async function newChat() {
+      if (isWaitingForResponse) return;
+      closeSidebar();
+      const current = getActiveChat();
+      if (current && isEmptyChat(current)) { focusInput(); return; }
+      saveChatState({ touch: false });
+      const c = createChat();
+      chats.push(c);
+      activeChatId = c.id;
+      pruneOldChats();
+      persistChats();
+      await showActiveChat();
+      focusInput();
+    }
+
+    async function switchChat(id) {
+      if (isWaitingForResponse || id === activeChatId) { closeSidebar(); return; }
+      saveChatState({ touch: false });
+      // Ein leeres, gerade offenes Gespräch muss nicht im Verlauf bleiben
+      const current = getActiveChat();
+      if (current && isEmptyChat(current)) chats = chats.filter(c => c !== current);
+      activeChatId = id;
+      persistChats();
+      await showActiveChat();
+      closeSidebar();
+      focusInput();
+    }
+
+    // Höchstens MAX_CHATS Gespräche; die ältesten fallen samt Bildern weg
+    function pruneOldChats() {
+      if (chats.length <= MAX_CHATS) return;
+      const removable = chats
+        .filter(c => c.id !== activeChatId)
+        .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
+        .slice(0, chats.length - MAX_CHATS);
+      chats = chats.filter(c => !removable.includes(c));
+      ImageStore.remove(removable.flatMap(c => c.display.map(m => m.imageId))).catch(() => {});
+    }
+
     // Löschen lässt sich ein paar Sekunden lang rückgängig machen. Die Bilder
     // in IndexedDB werden erst danach entfernt (bei einem Reload in der
     // Zwischenzeit räumt das Aufräumen beim Start sie weg).
     const UNDO_MS = 8000;
-    let pendingClear = null; // { snapshot, timer }
+    let pendingDelete = null; // { chat, index, wasActive, timer }
 
-    function finalizePendingClear() {
-      if (!pendingClear) return;
-      clearTimeout(pendingClear.timer);
-      ImageStore.remove(pendingClear.snapshot.display.map(m => m.imageId)).catch(() => {});
-      pendingClear = null;
+    function finalizePendingDelete() {
+      if (!pendingDelete) return;
+      clearTimeout(pendingDelete.timer);
+      ImageStore.remove(pendingDelete.chat.display.map(m => m.imageId)).catch(() => {});
+      pendingDelete = null;
       hideToast();
     }
 
-    function clearChat() {
-      finalizePendingClear();
-      if (displayMessages.length === 0 && !conversationSummary) return;
-      pendingClear = {
-        snapshot: { history: conversationHistory, summary: conversationSummary, display: displayMessages },
-        timer: setTimeout(finalizePendingClear, UNDO_MS)
-      };
-      conversationHistory = [];
-      conversationSummary = '';
-      displayMessages     = [];
-      document.getElementById('chatMessages').innerHTML = '';
-      renderGreeting();
-      try { localStorage.removeItem(CONFIG.STORAGE_KEY); } catch (e) {}
-      showToast('Neuer Zauber – dein alter Chat ist weg.', undoClearChat);
+    async function deleteChat(id) {
+      if (isWaitingForResponse) return;
+      finalizePendingDelete();
+      saveChatState({ touch: false });
+      const index = chats.findIndex(c => c.id === id);
+      if (index < 0) return;
+      const chat      = chats[index];
+      const wasActive = id === activeChatId;
+      chats.splice(index, 1);
+      pendingDelete = { chat, index, wasActive, timer: setTimeout(finalizePendingDelete, UNDO_MS) };
+
+      if (wasActive) {
+        const latest = [...chats].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        if (latest) activeChatId = latest.id;
+        else { const c = createChat(); chats.push(c); activeChatId = c.id; }
+        await showActiveChat();
+      } else {
+        renderSidebarHistory();
+      }
+      persistChats();
+      showToast(`„${chat.title || 'Gespräch'}“ gelöscht.`, undoDeleteChat);
     }
 
-    async function undoClearChat() {
-      if (!pendingClear) return;
-      const { snapshot, timer } = pendingClear;
+    async function undoDeleteChat() {
+      if (!pendingDelete) return;
+      const { chat, index, wasActive, timer } = pendingDelete;
       clearTimeout(timer);
-      pendingClear = null;
+      pendingDelete = null;
       hideToast();
-      conversationHistory = snapshot.history;
-      conversationSummary = snapshot.summary;
-      displayMessages     = snapshot.display;
-      saveChatState();
-      document.getElementById('chatMessages').innerHTML = '';
-      renderGreeting();
-      await restoreDisplayMessages();
+      if (wasActive) {
+        // Das leere Ersatz-Gespräch wieder entfernen
+        const current = getActiveChat();
+        if (current && isEmptyChat(current)) chats = chats.filter(c => c !== current);
+      }
+      chats.splice(Math.min(index, chats.length), 0, chat);
+      if (wasActive) {
+        activeChatId = chat.id;
+        await showActiveChat();
+      } else {
+        renderSidebarHistory();
+      }
+      persistChats();
     }
 
-    function clearChatWithNew() {
-      clearChat();
-      closeSidebar();
-      const input = document.getElementById('chatInput');
-      if (input) input.focus();
+    // ==========================================
+    // VERLAUF IN DER SIDEBAR
+    // ==========================================
+    function formatChatTime(iso) {
+      const d = new Date(iso);
+      if (isNaN(d)) return '';
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const day   = new Date(d);  day.setHours(0, 0, 0, 0);
+      const diff  = Math.round((today - day) / 86400000);
+      const time  = d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+      if (diff === 0) return `heute, ${time}`;
+      if (diff === 1) return `gestern, ${time}`;
+      return d.toLocaleDateString('de-CH', { day: 'numeric', month: 'short' });
+    }
+
+    function renderSidebarHistory() {
+      const list = document.getElementById('sidebarHistory');
+      if (!list) return;
+      list.innerHTML = '';
+      const visible = chats
+        .filter(c => c.id === activeChatId || !isEmptyChat(c))
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+      for (const c of visible) {
+        const isActive = c.id === activeChatId;
+        const title    = c.title || chatTitle(c);
+
+        const row = document.createElement('div');
+        row.className = 'history-row';
+        row.setAttribute('role', 'listitem');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'history-item' + (isActive ? ' active' : '');
+        if (isActive) btn.setAttribute('aria-current', 'true');
+        btn.addEventListener('click', () => switchChat(c.id));
+
+        const dot = document.createElement('span');
+        dot.className = 'history-item-dot';
+        const textWrap = document.createElement('div');
+        textWrap.style.cssText = 'min-width:0;flex:1';
+        const t = document.createElement('div');
+        t.className = 'history-item-title';
+        t.textContent = title;
+        const sub = document.createElement('div');
+        sub.className = 'history-item-sub';
+        sub.textContent = isEmptyChat(c) ? 'läuft gerade ✨' : formatChatTime(c.updatedAt);
+        textWrap.append(t, sub);
+        btn.append(dot, textWrap);
+        row.appendChild(btn);
+
+        if (!isEmptyChat(c)) {
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'history-delete';
+          del.setAttribute('aria-label', `Gespräch „${title}“ löschen`);
+          del.title = 'Gespräch löschen';
+          del.textContent = '✕';
+          del.addEventListener('click', () => deleteChat(c.id));
+          row.appendChild(del);
+        }
+        list.appendChild(row);
+      }
     }
 
     // ==========================================
@@ -2806,12 +3023,13 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         await loadChatState();
         renderGreeting();
         await restoreDisplayMessages();
+        renderSidebarHistory();
 
         // Verwaiste Bilder aufräumen (z.B. aus Chat-Nachrichten jenseits von MAX_DISPLAY_MESSAGES).
         // Erst danach das Willkommensbild erzeugen, sonst könnte es mit weggeräumt werden.
         const referenced = new Set([
           ...galleryState.images.map(e => e.imageId),
-          ...displayMessages.map(m => m.imageId)
+          ...chats.flatMap(c => c.display.map(m => m.imageId))
         ].filter(Boolean));
         await ImageStore.keepOnly(referenced).catch(e => console.warn('Bild-Aufräumen fehlgeschlagen:', e));
       } catch (e) {
