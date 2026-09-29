@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verwaltung · Cecilia</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F7F2FB; --card: #FFFFFF; --ink: #2A0F33; --ink-2: #5A3A66; --ink-3: #7A5A86;
+      --line: #E7DAF0; --pink: #C2287F; --pink-soft: #FCE4F2; --danger: #B3261E; --danger-soft: #FDECEA;
+      --ok: #1E7A4C; --radius: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; }
+    :focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+    header { background: #1D0B3A; color: #fff; padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 20px; font-weight: 700; flex: 1; }
+    header a { color: #fff; font-size: 15px; }
+    main { width: min(1100px, 100% - 32px); margin: 24px auto 60px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .card h2 { font-size: 17px; margin-bottom: 12px; }
+    .card + .card { margin-top: 16px; }
+    label { display: block; font-size: 14px; font-weight: 600; margin: 10px 0 4px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: #fff; color: var(--ink); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .row > input { flex: 1; min-width: 160px; }
+    button { font: inherit; font-weight: 600; font-size: 14px; border-radius: 10px; padding: 9px 14px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+    button.primary { background: var(--pink); border-color: var(--pink); color: #fff; }
+    button.danger { color: var(--danger); border-color: #F2C4C0; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .accounts { list-style: none; margin-top: 12px; max-height: 60vh; overflow: auto; }
+    .accounts button { width: 100%; text-align: left; border: none; border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+    .accounts button[aria-current="true"] { background: var(--pink-soft); }
+    .accounts small { color: var(--ink-3); font-weight: 400; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--ink-2); }
+    .badge.admin { background: #E6D9FF; color: #4B2A8A; }
+    .badge.disabled { background: var(--danger-soft); color: var(--danger); }
+    .meta { color: var(--ink-3); font-size: 14px; margin-bottom: 12px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .profiles { list-style: none; display: grid; gap: 12px; margin-top: 12px; }
+    .profile { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .profile-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .face { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; flex: none; }
+    .profile-head strong { flex: 1; }
+    .avatars { display: flex; flex-wrap: wrap; gap: 6px; }
+    .avatars button { font-size: 20px; padding: 6px 8px; }
+    .avatars button[aria-pressed="true"] { background: var(--pink-soft); border-color: var(--pink); }
+    .notice { padding: 12px 14px; border-radius: 10px; margin-top: 12px; font-size: 14px; }
+    .notice.error { background: var(--danger-soft); color: var(--danger); }
+    .notice.warn { background: #FFF6DA; color: #6A4B00; }
+    .secret { font: 700 20px/1.3 ui-monospace, Menlo, monospace; letter-spacing: 0.04em; padding: 12px; border-radius: 10px; background: var(--pink-soft); margin: 10px 0; word-break: break-all; }
+    dialog { border: none; border-radius: var(--radius); padding: 24px; width: min(440px, calc(100vw - 32px)); }
+    dialog::backdrop { background: rgba(29,11,58,0.5); }
+    .unlock { max-width: 420px; margin: 60px auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cecilia – Verwaltung</h1>
+    <a href="/">Zum Chat</a>
+  </header>
+
+  <section class="card unlock" id="unlock" hidden>
+    <h2>Bitte bestätige dein Passwort</h2>
+    <p class="meta">Die Verwaltung ist 15 Minuten lang freigeschaltet.</p>
+    <form id="unlockForm">
+      <label for="unlockPassword">Passwort</label>
+      <input id="unlockPassword" type="password" autocomplete="current-password" required>
+      <div class="notice error" id="unlockError" role="alert" hidden></div>
+      <p style="margin-top:14px"><button class="primary" type="submit">Freischalten</button></p>
+    </form>
+  </section>
+
+  <main id="app" hidden>
+    <div>
+      <section class="card">
+        <h2>Neues Konto</h2>
+        <form id="createForm" class="row">
+          <input id="newEmail" type="email" placeholder="eltern@beispiel.ch" aria-label="E-Mail des neuen Kontos" required>
+          <button class="primary" type="submit">Anlegen</button>
+        </form>
+        <div class="notice error" id="createError" role="alert" hidden></div>
+      </section>
+      <section class="card">
+        <h2>Konten</h2>
+        <input id="search" type="search" placeholder="Suchen …" aria-label="Konten suchen">
+        <ul class="accounts" id="accountList"></ul>
+      </section>
+    </div>
+    <section class="card" id="detail" aria-live="polite">
+      <p class="meta">Wähle links ein Konto aus.</p>
+    </section>
+  </main>
+
+  <dialog id="secretDialog" aria-labelledby="secretTitle">
+    <h2 id="secretTitle"></h2>
+    <p id="secretText" class="meta"></p>
+    <div class="secret" id="secretValue"></div>
+    <p class="meta">Wird nur jetzt angezeigt. Notiere es oder gib es direkt weiter.</p>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" id="copySecret">Kopieren</button>
+      <button type="button" class="primary" id="closeSecret">Fertig</button>
+    </div>
+  </dialog>
+
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Konto löschen</h2>
+    <p class="meta" id="confirmText"></p>
+    <label for="confirmInput">E-Mail zur Bestätigung eintippen</label>
+    <input id="confirmInput" autocomplete="off">
+    <div class="actions" style="margin-top:14px">
+      <button type="button" id="confirmCancel">Abbrechen</button>
+      <button type="button" class="danger" id="confirmOk">Endgültig löschen</button>
+    </div>
+  </dialog>
+
+  <script>
+    const AVATARS = ['🦄','🐬','🦋','🌙','🐱','🌸','🐰','🦊','🐼','⭐','🌈','🍓'];
+    const COLORS = { pink: '#FF6FCB', lilac: '#C9B4FF', cyan: '#7EE8FA', mint: '#B4F0D6', gold: '#FFD86B', peach: '#FFB89A' };
+    const COLOR_NAMES = { pink: 'Pink', lilac: 'Lila', cyan: 'Türkis', mint: 'Mint', gold: 'Gold', peach: 'Pfirsich' };
+    const ERRORS = {
+      invalid_email: 'Diese E-Mail-Adresse ist ungültig.', email_taken: 'Für diese E-Mail gibt es schon ein Konto.',
+      invalid_profile: 'Bitte Name (1–20 Zeichen), Avatar und Farbe angeben.', invalid_pin: 'Die PIN muss genau 4 Ziffern haben.',
+      invalid_username: 'Benutzername: 3–20 Zeichen, nur a–z, 0–9, Punkt und Unterstrich.', username_taken: 'Dieser Benutzername ist schon vergeben.',
+      cannot_modify_self: 'Dein eigenes Konto kannst du hier nicht sperren, abmelden oder löschen.', confirm_mismatch: 'Die E-Mail stimmt nicht überein.'
+    };
+
+    let selectedId = null;
+
+    // Kleiner Helfer: Element mit Attributen und Kindern (Text wird nie als HTML eingesetzt)
+    function h(tag, attrs = {}, ...children) {
+      const el = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+        else if (v === true) el.setAttribute(k, '');
+        else if (v !== false && v != null) el.setAttribute(k, v);
+      }
+      for (const c of children.flat()) if (c != null) el.append(c);
+      return el;
+    }
+
+    async function api(path, { method = 'GET', body } = {}) {
+      const opts = { method, headers: {} };
+      if (method !== 'GET') { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
+      const res = await fetch(path, opts);
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) { location.href = '/login.html?next=%2Fadmin.html'; throw new Error('login'); }
+      if (data.error === 'admin_reauth_required') { showUnlock(); throw new Error('reauth'); }
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    const fmtDate = (ms) => ms ? new Date(ms).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' }) : 'noch nie';
+
+    function showSecret(title, text, value) {
+      document.getElementById('secretTitle').textContent = title;
+      document.getElementById('secretText').textContent = text;
+      document.getElementById('secretValue').textContent = value;
+      document.getElementById('secretDialog').showModal();
+    }
+    document.getElementById('copySecret').addEventListener('click', async (e) => {
+      await navigator.clipboard.writeText(document.getElementById('secretValue').textContent).catch(() => {});
+      e.target.textContent = 'Kopiert ✓';
+      setTimeout(() => { e.target.textContent = 'Kopieren'; }, 1500);
+    });
+    document.getElementById('closeSecret').addEventListener('click', () => document.getElementById('secretDialog').close());
+
+    // ---------- Freischalten ----------
+    function showUnlock() {
+      document.getElementById('app').hidden = true;
+      document.getElementById('unlock').hidden = false;
+      document.getElementById('unlockPassword').focus();
+    }
+    document.getElementById('unlockForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('unlockError');
+      const res = await fetch('/api/auth/admin-unlock', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: document.getElementById('unlockPassword').value })
+      });
+      if (!res.ok) { err.textContent = res.status === 429 ? 'Zu viele Versuche. Bitte später nochmal.' : 'Das Passwort stimmt nicht.'; err.hidden = false; return; }
+      err.hidden = true;
+      document.getElementById('unlockPassword').value = '';
+      document.getElementById('unlock').hidden = true;
+      document.getElementById('app').hidden = false;
+      loadAccounts();
+    });
+
+    // ---------- Kontenliste ----------
+    async function loadAccounts() {
+      const q = document.getElementById('search').value.trim();
+      const { data } = await api('/api/admin/accounts?q=' + encodeURIComponent(q));
+      const list = document.getElementById('accountList');
+      list.replaceChildren(...data.accounts.map(a => h('li', {},
+        h('button', { type: 'button', 'aria-current': String(a.id === selectedId), onclick: () => selectAccount(a.id) },
+          h('span', {}, a.email, ' ', a.role === 'admin' ? h('span', { class: 'badge admin' }, 'Admin') : null,
+            a.status === 'disabled' ? h('span', { class: 'badge disabled' }, 'gesperrt') : null),
+          h('small', {}, `${a.profileCount} Profil${a.profileCount === 1 ? '' : 'e'} · letzte Anmeldung ${fmtDate(a.lastLoginAt)}`)
+        )
+      )));
+      if (data.accounts.length === 0) list.replaceChildren(h('li', { class: 'meta' }, 'Keine Konten gefunden.'));
+      return data.accounts;
+    }
+    let searchTimer;
+    document.getElementById('search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadAccounts, 250); });
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('createError');
+      const email = document.getElementById('newEmail').value.trim();
+      const r = await api('/api/admin/accounts', { method: 'POST', body: { email } });
+      if (!r.ok) { err.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; err.hidden = false; return; }
+      err.hidden = true;
+      document.getElementById('newEmail').value = '';
+      await loadAccounts();
+      await selectAccount(r.data.account.id);
+      showSecret('Konto angelegt', `Startpasswort für ${r.data.account.email}:`, r.data.password);
+    });
+
+    // ---------- Konto-Detail ----------
+    async function selectAccount(id) {
+      selectedId = id;
+      const accountsNow = await loadAccounts();
+      const a = accountsNow.find(x => x.id === id);
+      const detail = document.getElementById('detail');
+      if (!a) { detail.replaceChildren(h('p', { class: 'meta' }, 'Wähle links ein Konto aus.')); return; }
+      const { data } = await api(`/api/admin/accounts/${id}/profiles`);
+      const message = h('div', { class: 'notice error', role: 'alert', hidden: true });
+      const fail = (r) => { message.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; message.hidden = false; };
+      const action = (label, fn, cls = '') => h('button', { type: 'button', class: cls, onclick: fn }, label);
+
+      detail.replaceChildren(
+        h('h2', {}, a.email),
+        h('p', { class: 'meta' }, `${a.role === 'admin' ? 'Admin' : 'Eltern-Konto'} · ${a.status === 'disabled' ? 'gesperrt' : 'aktiv'} · erstellt ${fmtDate(a.createdAt)} · letzte Anmeldung ${fmtDate(a.lastLoginAt)}`),
+        h('div', { class: 'actions' },
+          action('Passwort zurücksetzen', async () => {
+            const r = await api(`/api/admin/accounts/${id}/reset-password`, { method: 'POST' });
+            if (!r.ok) return fail(r);
+            showSecret('Neues Passwort', `Für ${a.email}. Alle Geräte dieses Kontos wurden abgemeldet.`, r.data.password);
+          }),
+          a.status === 'active'
+            ? action('Sperren', async () => { const r = await api(`/api/admin/accounts/${id}/disable`, { method: 'POST' }); r.ok ? selectAccount(id) : fail(r); }, 'danger')
+            : action('Entsperren', async () => { const r = await api(`/api/admin/accounts/${id}/enable`, { method: 'POST' }); r.ok ? selectAccount(id) : fail(r); }),
+          action('Alle Geräte abmelden', async () => { const r = await api(`/api/admin/accounts/${id}/logout-all`, { method: 'POST' }); if (!r.ok) fail(r); }),
+          action('Konto löschen', () => confirmDelete(a), 'danger')
+        ),
+        message,
+        h('h2', { style: 'margin-top:24px' }, 'Profile'),
+        h('ul', { class: 'profiles' }, data.profiles.map(p => profileCard(p, () => selectAccount(id)))),
+        newProfileForm(id)
+      );
+    }
+
+    function confirmDelete(a) {
+      const dlg = document.getElementById('confirmDialog');
+      const input = document.getElementById('confirmInput');
+      document.getElementById('confirmText').textContent =
+        `Löscht ${a.email} mit allen Profilen und Anmeldungen. Chats auf den Geräten der Familie bleiben dort, bis sie im Verlauf gelöscht werden.`;
+      input.value = '';
+      dlg.showModal();
+      document.getElementById('confirmCancel').onclick = () => dlg.close();
+      document.getElementById('confirmOk').onclick = async () => {
+        const r = await api(`/api/admin/accounts/${a.id}`, { method: 'DELETE', body: { confirmEmail: input.value } });
+        if (!r.ok) { alert(ERRORS[r.data.error] || 'Das hat nicht geklappt.'); return; }
+        dlg.close();
+        selectedId = null;
+        await loadAccounts();
+        document.getElementById('detail').replaceChildren(h('p', { class: 'meta' }, 'Konto gelöscht.'));
+      };
+    }
+
+    function avatarPicker(current, onPick) {
+      let value = current;
+      const wrap = h('div', { class: 'avatars', role: 'group', 'aria-label': 'Avatar' });
+      const render = () => wrap.replaceChildren(...AVATARS.map(av => h('button', {
+        type: 'button', 'aria-pressed': String(av === value), 'aria-label': `Avatar ${av}`,
+        onclick: () => { value = av; onPick(av); render(); }
+      }, av)));
+      render();
+      return wrap;
+    }
+
+    function colorSelect(current) {
+      return h('select', {}, Object.keys(COLORS).map(c => h('option', { value: c, selected: c === current }, COLOR_NAMES[c])));
+    }
+
+    function looksLikeRealName(u) {
+      const parts = u.split(/[._]/);
+      return parts.length === 2 && parts.every(p => /^[a-zäöü]{3,}$/.test(p));
+    }
+
+    function profileCard(p, refresh) {
+      const msg = h('div', { class: 'notice error', role: 'alert', hidden: true });
+      const fail = (r) => { msg.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; msg.hidden = false; };
+      let avatar = p.avatar;
+      const nameInput = h('input', { value: p.name, maxlength: '20', 'aria-label': 'Name des Profils' });
+      const color = colorSelect(p.color);
+      const pinInput = h('input', { inputmode: 'numeric', maxlength: '4', placeholder: '4 Ziffern', 'aria-label': 'Neue PIN' });
+      const userInput = h('input', { value: p.childUsername || '', placeholder: 'z. B. sternchen', 'aria-label': 'Benutzername für den Kind-Login', autocapitalize: 'none' });
+      const warn = h('div', { class: 'notice warn', hidden: true }, 'Das sieht wie ein echter Name aus. Besser ein Spitzname, z. B. „sternchen“.');
+      userInput.addEventListener('input', () => { warn.hidden = !looksLikeRealName(userInput.value.trim().toLowerCase()); });
+
+      return h('li', { class: 'profile' },
+        h('div', { class: 'profile-head' },
+          h('span', { class: 'face', style: `background:${COLORS[p.color]}` }, p.avatar),
+          h('strong', {}, p.name),
+          p.hasPin ? h('span', { class: 'badge' }, 'PIN') : null,
+          p.childUsername ? h('span', { class: 'badge' }, `Kind-Login: ${p.childUsername}`) : null
+        ),
+        h('label', {}, 'Name'), nameInput,
+        h('label', {}, 'Avatar'), avatarPicker(p.avatar, v => { avatar = v; }),
+        h('label', {}, 'Farbe'), color,
+        h('div', { class: 'actions', style: 'margin-top:10px' },
+          h('button', { type: 'button', class: 'primary', onclick: async () => {
+            const r = await api(`/api/admin/profiles/${p.id}`, { method: 'PATCH', body: { name: nameInput.value, avatar, color: color.value } });
+            r.ok ? refresh() : fail(r);
+          } }, 'Speichern'),
+          h('button', { type: 'button', class: 'danger', onclick: async () => {
+            if (!confirm(`Profil „${p.name}“ löschen?`)) return;
+            const r = await api(`/api/admin/profiles/${p.id}`, { method: 'DELETE' });
+            r.ok ? refresh() : fail(r);
+          } }, 'Profil löschen')
+        ),
+        h('label', {}, 'PIN'),
+        h('div', { class: 'row' }, pinInput,
+          h('button', { type: 'button', onclick: async () => {
+            const r = await api(`/api/admin/profiles/${p.id}/pin`, { method: 'POST', body: { pin: pinInput.value } });
+            r.ok ? refresh() : fail(r);
+          } }, p.hasPin ? 'PIN ändern' : 'PIN setzen'),
+          p.hasPin ? h('button', { type: 'button', onclick: async () => {
+            const r = await api(`/api/admin/profiles/${p.id}/pin`, { method: 'DELETE' });
+            r.ok ? refresh() : fail(r);
+          } }, 'PIN entfernen') : null
+        ),
+        h('label', {}, 'Kind-Login (für andere Geräte)'),
+        h('div', { class: 'row' }, userInput,
+          h('button', { type: 'button', onclick: async () => {
+            const r = await api(`/api/admin/profiles/${p.id}/child-login`, { method: 'POST', body: { username: userInput.value } });
+            if (!r.ok) return fail(r);
+            showSecret('Kind-Login', `Benutzername: ${r.data.username}. Ältere Anmeldungen mit diesem Kind-Login wurden beendet.`, r.data.password);
+            refresh();
+          } }, p.childUsername ? 'Passwort neu' : 'Einrichten'),
+          p.childUsername ? h('button', { type: 'button', onclick: async () => {
+            const r = await api(`/api/admin/profiles/${p.id}/child-login`, { method: 'DELETE' });
+            r.ok ? refresh() : fail(r);
+          } }, 'Abschalten') : null
+        ),
+        warn,
+        msg
+      );
+    }
+
+    function newProfileForm(accountId) {
+      let avatar = AVATARS[0];
+      const name = h('input', { maxlength: '20', placeholder: 'Spitzname, kein echter Name', 'aria-label': 'Name des neuen Profils' });
+      const color = colorSelect('pink');
+      const msg = h('div', { class: 'notice error', role: 'alert', hidden: true });
+      return h('div', { class: 'profile', style: 'margin-top:12px' },
+        h('strong', {}, 'Neues Profil'),
+        h('label', {}, 'Name'), name,
+        h('label', {}, 'Avatar'), avatarPicker(avatar, v => { avatar = v; }),
+        h('label', {}, 'Farbe'), color,
+        h('p', { style: 'margin-top:10px' }, h('button', { type: 'button', class: 'primary', onclick: async () => {
+          const r = await api(`/api/admin/accounts/${accountId}/profiles`, { method: 'POST', body: { name: name.value, avatar, color: color.value } });
+          if (!r.ok) { msg.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; msg.hidden = false; return; }
+          selectAccount(accountId);
+        } }, 'Profil anlegen')),
+        msg
+      );
+    }
+
+    // ---------- Start ----------
+    (async () => {
+      const s = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({}));
+      if (!s.loggedIn) return location.replace('/login.html?next=%2Fadmin.html');
+      if (s.kind !== 'family' || s.account.role !== 'admin') return location.replace('/');
+      try {
+        await loadAccounts();
+        document.getElementById('app').hidden = false;
+      } catch (e) { /* showUnlock() wurde bereits aufgerufen */ }
+    })();
+  </script>
+</body>
+</html>
