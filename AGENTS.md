@@ -24,8 +24,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── styles.css                     # Gemeinsames Stylesheet
 ├── placeholder-images.js          # SVG-Platzhalter für fehlende Bilder
 ├── img/
-│   ├── cecilia-avatar.svg         # Chat-Avatar Cecilia
-│   └── user-avatar.svg            # Chat-Avatar User
+│   └── web/                       # WebP-Bilder für Poster und Chat-Avatar (einzige Bilder im Projekt)
 ├── cecilia-chat/                  # Backend
 │   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2
 │   ├── .env                       # OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_*_TEMPERATURE, OPENROUTER_IMAGE_MODEL, PORT
@@ -218,7 +217,7 @@ Siehe `TODO.md` für die vollständige Liste. Highlights:
 ## Hinweise
 
 - Galerie nutzt jetzt KI-generierte Bilder statt statische `img/cecilia1-10.png`
-- Statische Bilder im `img/`-Ordner (z.B. `Cecilia-Frühling.png`) sind Referenzbilder, nicht mehr in der Galerie-Rotation
+- Die alten PNG-Referenzbilder in `img/` wurden am 2026-09-29 gelöscht (liegen noch in der Git-Historie); verwendet werden nur `img/web/*.webp`
 - Frontend API-URLs: Relativ wenn Port 30000, sonst explizit `http://localhost:30000`
 - `npm run dev` im `cecilia-chat/` Ordner startet Backend mit Auto-Reload (nodemon)
 - `server.mjs` serviert statische Frontend-Dateien via `PUBLIC_DIR` (default: Projekt-Root)

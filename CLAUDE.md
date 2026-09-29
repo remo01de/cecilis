@@ -25,8 +25,8 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── cecilia-charakter.html         # Detailliertes Charakterprofil
 ├── styles.css                     # Stylesheet für Poster + Charakterseite
 ├── placeholder-images.js          # SVG-Platzhalter für fehlende Bilder
-├── img/                           # Referenzbilder (PNG, nicht im Docker-Image)
-│   └── web/                       # Optimierte WebP-Bilder, die die Seiten verwenden
+├── img/
+│   └── web/                       # WebP-Bilder für Poster und Chat-Avatar (einzige Bilder im Projekt)
 ├── cecilia-chat/                  # Backend
 │   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2
 │   ├── .env                       # OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_*_TEMPERATURE, OPENROUTER_IMAGE_MODEL, PORT
@@ -198,7 +198,7 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Mindestschrift 12px; `--text-4` (Nacht 6.0:1, Tag 4.7:1) und Tag-`--text-3` (5.2:1) auf WCAG AA angehoben; fetter Verlaufstext im Tagmodus als solides Pink
 - **Echter Verlauf (mehrere Gespräche):** localStorage-Key `cecilia_chats` = `{ activeChatId, chats: [{ id, title, updatedAt, summary, history, display }] }`, max. 20 Gespräche (älteste fallen samt Bildern weg). Das aktive Gespräch wird weiter über `conversationHistory`/`conversationSummary`/`displayMessages` bearbeitet; `saveChatState()` schreibt zurück und rendert die Sidebar. „Neuer Zauber“ (`newChat()`) behält das alte Gespräch; Löschen per ✕ im Verlauf (`deleteChat()`) mit Rückgängig-Toast. Der alte Key `cecilia_chat_state` wird beim ersten Laden migriert und entfernt. Während Cecilia antwortet, sind Wechseln/Neu/Löschen gesperrt.
 - **Websuche kindgerecht gefiltert** (`routes/search.mjs`): Sperrliste als `exclude_domains` an Exa, zusätzlich Hostnamen-Filter auf die Ergebnisse; optional `SEARCH_INCLUDE_DOMAINS` in der `.env` als reine Positivliste (Beispiel in `.env.example`).
-- **`index.html` aufgeteilt** in `chat.css` + `js/*.js` (reine Verschiebung, Reihenfolge siehe Frontend-Architektur). Poster-/Avatar-Bilder als WebP in `img/web/` (14.5 MB → 1.6 MB); Dockerfile kopiert nur noch `img/web`.
+- **`index.html` aufgeteilt** in `chat.css` + `js/*.js` (reine Verschiebung, Reihenfolge siehe Frontend-Architektur). Poster-/Avatar-Bilder als WebP in `img/web/` (14.5 MB → 1.6 MB); Dockerfile kopiert nur noch `img/web`. Alle 45 PNG/SVG direkt in `img/` gelöscht (127 MB, davon 17 Duplikate). Poster-Beschriftungen korrigiert: `cecilia5` = Herbst, `cecilia10` = Feenkleid.
 - **Barrierefreiheit** (axe-core: 0 Verstösse in Nacht- und Tagmodus):
   - Landmarks `main`/`aside`, `h1` im Header, Eingabefeld mit `aria-label`, Chatbereich per Tastatur scrollbar
   - Chat ist `role="log"`; `withQuietLog()` schaltet `aria-live` beim Laden/Wechseln aus, damit nicht der ganze Verlauf vorgelesen wird. Tipp-Anzeige mit Screenreader-Text „Cecilia schreibt …“
@@ -266,7 +266,7 @@ Siehe `TODO.md` für die vollständige Liste. Highlights:
 ## Hinweise
 
 - Galerie nutzt jetzt KI-generierte Bilder statt statische `img/cecilia1-10.png`
-- Statische Bilder im `img/`-Ordner (z.B. `Cecilia-Frühling.png`) sind Referenzbilder, nicht mehr in der Galerie-Rotation
+- Die alten PNG-Referenzbilder in `img/` wurden am 2026-09-29 gelöscht (liegen noch in der Git-Historie); verwendet werden nur `img/web/*.webp`
 - Frontend API-URLs: Relativ wenn Port 30000, sonst explizit `http://localhost:30000`
 - `npm run dev` im `cecilia-chat/` Ordner startet Backend mit Auto-Reload (nodemon)
 - `server.mjs` serviert statische Frontend-Dateien via `PUBLIC_DIR` (default: Projekt-Root)
