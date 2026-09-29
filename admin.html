@@ -20,8 +20,8 @@
     header { background: #1D0B3A; color: #fff; padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
     header h1 { font-size: 20px; font-weight: 700; flex: 1; }
     header a { color: #fff; font-size: 15px; }
-    main { width: min(1100px, 100% - 32px); margin: 24px auto 60px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
-    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+    #app { width: min(1100px, 100% - 32px); margin: 24px auto 60px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 860px) { #app { grid-template-columns: 1fr; } }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
     .card h2 { font-size: 17px; margin-bottom: 12px; }
     .card + .card { margin-top: 16px; }
@@ -56,7 +56,7 @@
     .secret { font: 700 20px/1.3 ui-monospace, Menlo, monospace; letter-spacing: 0.04em; padding: 12px; border-radius: 10px; background: var(--pink-soft); margin: 10px 0; word-break: break-all; }
     dialog { border: none; border-radius: var(--radius); padding: 24px; width: min(440px, calc(100vw - 32px)); }
     dialog::backdrop { background: rgba(29,11,58,0.5); }
-    .unlock { max-width: 420px; margin: 60px auto; }
+    .unlock { margin: 60px auto; width: min(420px, 100% - 32px); }
   </style>
 </head>
 <body>
@@ -65,6 +65,7 @@
     <a href="/">Zum Chat</a>
   </header>
 
+  <main>
   <section class="card unlock" id="unlock" hidden>
     <h2>Bitte bestätige dein Passwort</h2>
     <p class="meta">Die Verwaltung ist 15 Minuten lang freigeschaltet.</p>
@@ -79,7 +80,7 @@
 
   <div class="notice error" id="globalError" role="alert" hidden style="width:min(1100px, 100% - 32px); margin:16px auto 0"></div>
 
-  <main id="app" hidden>
+  <div id="app" hidden>
     <div>
       <section class="card">
         <h2>Neues Konto</h2>
@@ -98,6 +99,7 @@
     <section class="card" id="detail" aria-live="polite">
       <p class="meta">Wähle links ein Konto aus.</p>
     </section>
+  </div>
   </main>
 
   <dialog id="secretDialog" aria-labelledby="secretTitle">

@@ -103,7 +103,7 @@
       font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
     }
     .tabs button[aria-selected="true"] { background: var(--grad-magic); color: #2A0526; }
-    form[hidden] { display: none; }
+    [role="tabpanel"][hidden] { display: none; }
     .error {
       margin-top: 16px; padding: 10px 14px;
       border-radius: 14px; background: var(--error-bg); color: var(--error);
@@ -132,11 +132,12 @@
     <p class="intro">Melde dich an, um mit Cecilia zu plaudern.</p>
 
     <div class="tabs" role="tablist" aria-label="Wie meldest du dich an?">
-      <button type="button" role="tab" id="tabFamily" aria-selected="true" aria-controls="familyForm">Familie</button>
-      <button type="button" role="tab" id="tabChild" aria-selected="false" aria-controls="childForm" tabindex="-1">Mein Kind-Login</button>
+      <button type="button" role="tab" id="tabFamily" aria-selected="true" aria-controls="familyPanel">Familie</button>
+      <button type="button" role="tab" id="tabChild" aria-selected="false" aria-controls="childPanel" tabindex="-1">Mein Kind-Login</button>
     </div>
 
-    <form id="familyForm" role="tabpanel" aria-labelledby="tabFamily" novalidate>
+    <div role="tabpanel" id="familyPanel" aria-labelledby="tabFamily">
+    <form id="familyForm" novalidate>
       <label for="email">E-Mail</label>
       <div class="field"><input id="email" type="email" autocomplete="username" inputmode="email" required></div>
       <label for="password">Passwort</label>
@@ -147,8 +148,10 @@
       <p class="error" data-error role="alert" hidden></p>
       <button type="submit">Anmelden ✨</button>
     </form>
+    </div>
 
-    <form id="childForm" role="tabpanel" aria-labelledby="tabChild" novalidate hidden>
+    <div role="tabpanel" id="childPanel" aria-labelledby="tabChild" hidden>
+    <form id="childForm" novalidate>
       <label for="username">Benutzername</label>
       <div class="field"><input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
       <label for="childPassword">Passwort</label>
@@ -159,6 +162,7 @@
       <p class="error" data-error role="alert" hidden></p>
       <button type="submit">Los geht's ✨</button>
     </form>
+    </div>
 
     <p class="hint">Deinen Zugang bekommst du von deinen Eltern.</p>
     <p class="hint"><a href="/willkommen.html">Wer ist Cecilia? Hier stellt sie sich vor</a></p>

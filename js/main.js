@@ -60,6 +60,7 @@ async function renderSessionInfo() {
     document.getElementById('sidebarProfileName').textContent = s.profile.name;
     box.hidden = false;
     document.getElementById('switchProfileBtn').hidden = s.kind !== 'family';
+    document.getElementById('adminLinkBtn').hidden = !(s.kind === 'family' && s.account && s.account.role === 'admin');
   } catch (e) {
     console.warn('Profil konnte nicht geladen werden:', e);
   }
