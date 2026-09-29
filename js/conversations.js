@@ -3,7 +3,7 @@
 // ==========================================
 // Mehrere Gespräche: alle liegen unter CHATS_KEY. Das aktive Gespräch wird
 // in den globalen Variablen oben bearbeitet und beim Speichern zurückgeschrieben.
-const CHATS_KEY = 'cecilia_chats';
+const CHATS_KEY = profileKey('cecilia_chats');
 const MAX_CHATS = 20;
 let chats        = [];   // [{ id, title, updatedAt, summary, history, display }]
 let activeChatId = null;

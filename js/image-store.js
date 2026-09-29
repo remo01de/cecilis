@@ -6,7 +6,7 @@
 // still und der Chat ist nach dem Neuladen weg. Deshalb liegen die Bilder als
 // Blob in IndexedDB; Galerie- und Chat-State speichern nur noch die imageId.
 const ImageStore = (() => {
-  const DB_NAME = 'cecilia_images';
+  const DB_NAME = profileKey('cecilia_images');
   const STORE   = 'images';
   const objectUrls = new Map(); // imageId -> blob:-URL
   let dbPromise = null;
@@ -75,7 +75,32 @@ const ImageStore = (() => {
     await remove(stale);
   }
 
-  return { put, getUrl, remove, keepOnly };
+  // Bilder aus der alten, profillosen Datenbank in die des aktuellen Profils kopieren
+  // (nur aufrufen, wenn LEGACY_DEVICE_DATA_CLAIMED). Gibt die Anzahl zurück.
+  async function claimLegacyImages() {
+    const legacy = await new Promise((resolve) => {
+      const req = indexedDB.open('cecilia_images');
+      // Existiert sie nicht, bricht das Anlegen ab statt eine leere DB zu erzeugen
+      req.onupgradeneeded = () => req.transaction.abort();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+    if (!legacy || !legacy.objectStoreNames.contains(STORE)) { legacy?.close(); return 0; }
+    const entries = await new Promise((resolve, reject) => {
+      const tx = legacy.transaction(STORE, 'readonly');
+      const store = tx.objectStore(STORE);
+      const keysReq = store.getAllKeys();
+      const valuesReq = store.getAll();
+      tx.oncomplete = () => resolve(keysReq.result.map((k, i) => [k, valuesReq.result[i]]));
+      tx.onerror = () => reject(tx.error);
+    });
+    legacy.close();
+    await run('readwrite', s => { entries.forEach(([k, v]) => s.put(v, k)); return null; });
+    indexedDB.deleteDatabase('cecilia_images');
+    return entries.length;
+  }
+
+  return { put, getUrl, remove, keepOnly, claimLegacyImages };
 })();
 
 // Legt Data-URLs in IndexedDB ab. Liefert { imageId, url } (url = blob:-URL

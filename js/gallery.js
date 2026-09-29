@@ -1,7 +1,7 @@
 // ==========================================
 // GALLERY
 // ==========================================
-const GALLERY_STORAGE_KEY = 'cecilia_gallery';
+const GALLERY_STORAGE_KEY = profileKey('cecilia_gallery');
 
 // Einträge aus der Zeit, als die Galerie noch nicht kindgerecht war
 const GALLERY_RETIRED = {

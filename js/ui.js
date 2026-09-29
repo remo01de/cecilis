@@ -55,7 +55,7 @@ function openHelp() { openDialog(document.getElementById('helpDialog')); }
 
 // Beim ersten Besuch erklären, was Cecilia ist und was privat bleiben soll
 (function showWelcomeOnce() {
-  const KEY = 'cecilia_welcome_seen';
+  const KEY = profileKey('cecilia_welcome_seen');
   let seen = false;
   try { seen = localStorage.getItem(KEY) === '1'; } catch (e) {}
   if (seen) return;

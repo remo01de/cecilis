@@ -107,7 +107,7 @@
 // Standard: an – ausser das System wünscht reduzierte Bewegung.
 let effectsOn = (() => {
   let saved = null;
-  try { saved = localStorage.getItem('cecilia_effects'); } catch (e) {}
+  try { saved = localStorage.getItem(profileKey('cecilia_effects')); } catch (e) {}
   if (saved === 'on' || saved === 'off') return saved === 'on';
   return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 })();
@@ -123,7 +123,7 @@ function applyEffects(on) {
 
 function toggleEffects() {
   applyEffects(!effectsOn);
-  try { localStorage.setItem('cecilia_effects', effectsOn ? 'on' : 'off'); } catch (e) {}
+  try { localStorage.setItem(profileKey('cecilia_effects'), effectsOn ? 'on' : 'off'); } catch (e) {}
 }
 
 applyEffects(effectsOn);
@@ -131,7 +131,7 @@ applyEffects(effectsOn);
 // ==========================================
 // THEME TOGGLE
 // ==========================================
-let currentTheme = localStorage.getItem('cecilia_theme') || 'night';
+let currentTheme = localStorage.getItem(profileKey('cecilia_theme')) || 'night';
 
 function applyTheme(t) {
   currentTheme = t;
@@ -146,7 +146,7 @@ function applyTheme(t) {
       ? `<circle cx="12" cy="12" r="4"/><path d="M12 2V4M12 20V22M4 12H2M22 12H20M5 5L6.5 6.5M19 19L17.5 17.5M5 19L6.5 17.5M19 5L17.5 6.5"/>`
       : `<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>`;
   }
-  localStorage.setItem('cecilia_theme', t);
+  localStorage.setItem(profileKey('cecilia_theme'), t);
 }
 
 function toggleTheme() { applyTheme(currentTheme === 'day' ? 'night' : 'day'); }

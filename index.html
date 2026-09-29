@@ -30,6 +30,10 @@
           <div class="sidebar-brand-tag">Deine Feenfreundin</div>
         </div>
       </div>
+      <div class="sidebar-profile" id="sidebarProfile" hidden>
+        <span class="sidebar-profile-avatar" id="sidebarProfileAvatar" aria-hidden="true"></span>
+        <span class="sidebar-profile-name" id="sidebarProfileName"></span>
+      </div>
 
       <button class="sidebar-cta" type="button" onclick="newChat()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg>
@@ -65,6 +69,12 @@
               <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>
             </svg>
             <span id="themeLabel" style="font-size:13px;color:var(--text-1);font-weight:600">Nachtmodus</span>
+          </span>
+        </button>
+        <button class="history-item" id="switchProfileBtn" type="button" onclick="location.href = API_BASE + '/profile.html'" hidden>
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <span aria-hidden="true" style="font-size:16px">🔄</span>
+            <span style="font-size:13px;color:var(--text-1);font-weight:600">Profil wechseln</span>
           </span>
         </button>
         <button class="history-item" type="button" onclick="logout()">
