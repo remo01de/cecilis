@@ -48,3 +48,5 @@ img/twitter.png
 
 # SQLite-Datenbank (Konten) – nie committen
 data/
+# Test-Fixture: Köder-Datei für die Traversal-Tests, muss im Git sein
+!cecilia-chat/test/fixtures/public/data/

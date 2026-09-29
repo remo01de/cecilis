@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { startTestApp, client, seedAccount, rawGet } from "./helpers.mjs";
 import { setAccountStatus } from "../src/db/accounts.mjs";
 import { createSession } from "../src/db/sessions.mjs";
@@ -299,6 +300,8 @@ const TRAVERSALS = [
 ];
 
 test("Pfad-Traversal liefert die Datenbank nicht aus – ohne und mit Sitzung", async (t) => {
+  // Ohne Köder-Datei wäre der Test wertlos (404 statt 200 auch ohne Schutz)
+  assert.ok(readFileSync(new URL("./fixtures/public/data/secret.db", import.meta.url), "utf8").includes("secret"));
   const app = await startTestApp({ seed: (db) => seedAccount(db) });
   t.after(app.close);
   const c = client(app.base);
