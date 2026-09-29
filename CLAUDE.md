@@ -166,6 +166,13 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 - **`/api/image` hängt serverseitig `SAFETY_SUFFIX` an jeden Prompt** (gilt für Galerie und Chat-Bilder).
 - **Bilder in IndexedDB statt localStorage** (`ImageStore` in `index.html`, DB `cecilia_images`): Base64-Bilder sprengten das ~5-MB-Limit, danach schlug jedes Speichern still fehl. Galerie/Chat speichern nur noch `imageId`; Altbestand mit Data-URLs wird beim Laden migriert, verwaiste Bilder werden aufgeräumt. Start ist dadurch async (`appReady`), `sendMessage()` wartet darauf.
 - **Bugfixes:** Vorschlags-Chip schnitt das erste Zeichen ab („al mir…“) → `data-text`; XSS über Titel von Suchquellen (`innerHTML`) → `textContent`; `parseMarkdown` escaped jetzt Anführungszeichen und lässt nur `http(s)`-Links zu; 429 zeigt eine freundliche Pause-Meldung statt Offline-Modus und legt den Text zurück ins Eingabefeld; Eingabefeld 16px gegen iOS-Zoom.
+- **Sicherheits-UI (native `<dialog>`, Helper `openDialog()` liefert `returnValue`):**
+  - Willkommens-Dialog beim ersten Besuch (KI-Hinweis, keine persönlichen Daten, Chat nur lokal), Flag `cecilia_welcome_seen`; erneut aufrufbar über „Sicher chatten“ in der Sidebar
+  - Hilfe-Knopf 💜 im Header (+ Sidebar) → Dialog mit 147 (CH/AT), 116 111 (DE), 112
+  - Vor dem Senden: `detectPersonalData()` (E-Mail, Telefonnummer, Strassenadresse) → „Nochmal ändern“ / „Trotzdem senden“
+  - `WORRY_PATTERN` (ritzen, gemobbt, will sterben …) → Hilfe-Karte direkt im Chat, unabhängig von der LLM-Antwort
+  - Externe Links im Chat (Antworten + Quellen) → Dialog „Du verlässt Cecilias Welt“ mit Hostname
+  - Composer-Hinweis „Cecilia ist eine KI …“; Nachrichten-Chip durch Delfin-Chip ersetzt
 
 ## Was bereits erledigt ist
 

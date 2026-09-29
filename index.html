@@ -922,6 +922,103 @@
     }
     .clear-btn:hover { background: var(--surface-2); color: var(--text-1); }
 
+    .composer-note {
+      margin-top: 8px; text-align: center;
+      font-size: 12px; color: var(--text-3);
+    }
+
+    /* =========================================================
+       HILFE-KNOPF
+       ========================================================= */
+    .help-btn {
+      width: auto; padding: 0 14px; gap: 6px;
+      display: inline-flex; align-items: center;
+      border-radius: var(--r-pill);
+      border-color: var(--stroke-hot);
+      font: 600 13px/1 var(--font-body); color: var(--text-1);
+    }
+    @media (max-width: 420px) { .help-btn-label { display: none; } .help-btn { padding: 0; width: 38px; justify-content: center; } }
+
+    /* =========================================================
+       DIALOGE  –  Willkommen, Hilfe, externer Link, persönliche Daten
+       ========================================================= */
+    .fairy-dialog {
+      margin: auto;
+      width: min(440px, calc(100vw - 32px));
+      max-height: calc(100dvh - 32px);
+      overflow-y: auto;
+      padding: 28px 24px 22px;
+      border-radius: var(--r-xl);
+      border: 1px solid var(--stroke-hot);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255,111,203,0.18), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(126,232,250,0.14), transparent 55%),
+        var(--bg-night);
+      color: var(--text-2);
+      box-shadow: var(--shadow-pop);
+      font: 400 15px/1.55 var(--font-body);
+    }
+    .fairy-dialog[open] { animation: lightbox-pop 260ms var(--ease-magic) both; }
+    .fairy-dialog::backdrop {
+      background: rgba(15,4,32,0.7);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    .fairy-dialog-icon { font-size: 40px; line-height: 1; margin-bottom: 10px; text-align: center; }
+    .fairy-dialog h2 {
+      font: 400 30px/1.1 var(--font-display);
+      color: var(--text-1); text-align: center; margin-bottom: 12px;
+    }
+    .fairy-dialog p + p { margin-top: 10px; }
+    .fairy-dialog strong { color: var(--text-1); }
+    .fairy-dialog a { color: var(--pink-300); }
+    [data-theme="day"] .fairy-dialog a { color: var(--pink-700); }
+    .dialog-list { list-style: none; margin: 14px 0 4px; display: grid; gap: 10px; }
+    .dialog-list li {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px;
+      border-radius: var(--r-md);
+      background: var(--surface-1);
+      border: 1px solid var(--stroke-soft);
+    }
+    .dialog-list li > span:first-child { font-size: 20px; line-height: 1.2; flex: none; }
+    .help-number {
+      display: block;
+      font: 700 22px/1.2 var(--font-body);
+      color: var(--text-1) !important; text-decoration: none;
+    }
+    .help-number-sub { font-size: 13px; color: var(--text-3); }
+    .dialog-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+    .dialog-btn {
+      min-height: 44px; padding: 0 20px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--stroke);
+      background: var(--surface-2);
+      color: var(--text-1);
+      font: 600 15px/1 var(--font-body);
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), box-shadow 160ms;
+    }
+    .dialog-btn:hover { transform: translateY(-1px); }
+    .dialog-btn.primary {
+      background: var(--grad-magic); border-color: transparent;
+      color: #2A0526; box-shadow: var(--shadow-glow-pink);
+    }
+
+    /* Hilfe-Karte im Chat (bei Sorgen-Stichworten) */
+    .help-card {
+      align-self: stretch;
+      padding: 16px 18px;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--stroke-hot);
+      background: linear-gradient(135deg, rgba(255,111,203,0.16), rgba(201,180,255,0.10));
+      color: var(--text-1);
+      font-size: 14px; line-height: 1.55;
+      animation: bubble-in 480ms var(--ease-magic) both;
+    }
+    .help-card strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    .help-card .dialog-btn { margin-top: 12px; min-height: 40px; font-size: 14px; }
+
     /* =========================================================
        MAGIC WORD EFFECTS (preserved from original)
        ========================================================= */
@@ -1004,7 +1101,19 @@
         </div>
       </div>
 
-      <div style="margin-top:auto">
+      <div style="margin-top:auto;display:grid;gap:4px">
+        <button class="history-item" type="button" onclick="closeSidebar(); openHelp()">
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <span aria-hidden="true" style="font-size:16px">💜</span>
+            <span style="font-size:13px;color:var(--text-1);font-weight:600">Hilfe &amp; Sorgentelefon</span>
+          </span>
+        </button>
+        <button class="history-item" type="button" onclick="closeSidebar(); openDialog(document.getElementById('welcomeDialog'))">
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <span aria-hidden="true" style="font-size:16px">🔒</span>
+            <span style="font-size:13px;color:var(--text-1);font-weight:600">Sicher chatten</span>
+          </span>
+        </button>
         <button class="history-item" id="themeToggle" onclick="toggleTheme()">
           <span style="display:inline-flex;align-items:center;gap:10px">
             <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -1034,6 +1143,9 @@
             online · im Feenwald
           </span>
         </div>
+        <button class="icon-btn help-btn" type="button" onclick="openHelp()" aria-label="Hilfe, wenn dich etwas bedrückt">
+          <span aria-hidden="true">💜</span><span class="help-btn-label">Hilfe</span>
+        </button>
       </header>
 
       <!-- Gallery bar -->
@@ -1063,7 +1175,7 @@
           <div class="suggestion-row" id="suggestionRow">
             <button class="suggestion-chip" data-text="Mal mir eine Katze mit Flügeln" onclick="useSuggestion(this)">✨ Mal mir eine Katze mit Flügeln</button>
             <button class="suggestion-chip" data-text="Gute-Nacht-Geschichte" onclick="useSuggestion(this)">🌙 Gute-Nacht-Geschichte</button>
-            <button class="suggestion-chip" data-text="Was ist heute in den Nachrichten?" onclick="useSuggestion(this)">🔮 Was ist heute in den Nachrichten?</button>
+            <button class="suggestion-chip" data-text="Erzähl mir was Spannendes über Delfine" onclick="useSuggestion(this)">🐬 Erzähl mir was über Delfine</button>
           </div>
           <div class="input-shell">
             <input type="text" id="chatInput" placeholder="Erzähl Cecilia, was du sehen willst..." autocomplete="off">
@@ -1078,10 +1190,64 @@
               </svg>
             </button>
           </div>
+          <p class="composer-note">Cecilia ist eine KI und kann sich irren · Verrate keine persönlichen Daten 🔒</p>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Dialoge: native <dialog> bringt Fokusfalle und Esc-Schliessen mit.
+       Buttons in <form method="dialog"> setzen dialog.returnValue. -->
+  <dialog class="fairy-dialog" id="welcomeDialog" aria-labelledby="welcomeTitle">
+    <div class="fairy-dialog-icon" aria-hidden="true">✨</div>
+    <h2 id="welcomeTitle">Willkommen bei Cecilia!</h2>
+    <p>Cecilia ist eine <strong>KI-Fee</strong>. Sie plaudert mit dir, zaubert Bilder und beantwortet Fragen. Sie ist aber kein Mensch und kann sich auch mal irren.</p>
+    <ul class="dialog-list">
+      <li><span aria-hidden="true">🔒</span><span>Verrate <strong>keine echten Namen, Adressen, deine Schule oder Telefonnummern</strong> – auch nicht Cecilia.</span></li>
+      <li><span aria-hidden="true">📱</span><span>Dein Chat wird nur auf diesem Gerät gespeichert. Mit „Neuer Zauber“ löschst du ihn.</span></li>
+      <li><span aria-hidden="true">💜</span><span>Wenn dich etwas bedrückt, findest du oben beim <strong>💜</strong> Menschen, die dir helfen.</span></li>
+    </ul>
+    <form method="dialog" class="dialog-actions">
+      <button class="dialog-btn primary" value="ok">Alles klar, los geht's ✨</button>
+    </form>
+  </dialog>
+
+  <dialog class="fairy-dialog" id="helpDialog" aria-labelledby="helpTitle">
+    <div class="fairy-dialog-icon" aria-hidden="true">💜</div>
+    <h2 id="helpTitle">Du bist nicht allein</h2>
+    <p>Wenn dich etwas traurig macht, dir Angst macht oder dich jemand schlecht behandelt: Sprich mit einer erwachsenen Person, der du vertraust. Oder melde dich hier – <strong>kostenlos und anonym</strong>:</p>
+    <ul class="dialog-list">
+      <li><span aria-hidden="true">🇨🇭</span><span><a class="help-number" href="tel:147">147</a><span class="help-number-sub">Schweiz · Pro Juventute – Telefon, Chat und SMS</span></span></li>
+      <li><span aria-hidden="true">🇩🇪</span><span><a class="help-number" href="tel:116111">116 111</a><span class="help-number-sub">Deutschland · Nummer gegen Kummer</span></span></li>
+      <li><span aria-hidden="true">🇦🇹</span><span><a class="help-number" href="tel:147">147</a><span class="help-number-sub">Österreich · Rat auf Draht</span></span></li>
+    </ul>
+    <p style="text-align:center;margin-top:12px">Im Notfall: <a href="tel:112"><strong>112</strong></a></p>
+    <form method="dialog" class="dialog-actions">
+      <button class="dialog-btn primary" value="ok">Okay 💜</button>
+    </form>
+  </dialog>
+
+  <dialog class="fairy-dialog" id="leaveDialog" aria-labelledby="leaveTitle">
+    <div class="fairy-dialog-icon" aria-hidden="true">🌍</div>
+    <h2 id="leaveTitle">Du verlässt Cecilias Welt</h2>
+    <p>Dieser Link führt zu einer anderen Webseite: <strong id="leaveHost"></strong></p>
+    <p>Dort gelten andere Regeln, und Cecilia kann nicht aufpassen, was du dort siehst. Wenn dir etwas komisch vorkommt: Seite schliessen und einer erwachsenen Person Bescheid sagen.</p>
+    <form method="dialog" class="dialog-actions">
+      <button class="dialog-btn primary" value="">Hier bleiben</button>
+      <button class="dialog-btn" value="go">Weiter zur Seite</button>
+    </form>
+  </dialog>
+
+  <dialog class="fairy-dialog" id="privacyDialog" aria-labelledby="privacyTitle">
+    <div class="fairy-dialog-icon" aria-hidden="true">🔒</div>
+    <h2 id="privacyTitle">Moment mal!</h2>
+    <p>Deine Nachricht sieht aus, als stünde darin <strong id="privacyWhat"></strong>.</p>
+    <p>So etwas solltest du im Internet nicht verraten – auch nicht Cecilia. Magst du es lieber rausnehmen?</p>
+    <form method="dialog" class="dialog-actions">
+      <button class="dialog-btn primary" value="">Nochmal ändern</button>
+      <button class="dialog-btn" value="send">Trotzdem senden</button>
+    </form>
+  </dialog>
 
   <!-- Lightbox: Bild im Popup statt Download / neuem Tab.
        Steht bewusst VOR dem Script, damit getElementById() die
@@ -1181,6 +1347,97 @@
       document.getElementById('sidebarOverlay').classList.remove('visible');
     }
     document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+    // ==========================================
+    // SICHERHEIT  –  Dialoge, Hilfe, Datenschutz, externe Links
+    // ==========================================
+    // Öffnet einen <dialog> und liefert dessen returnValue ('' = abgebrochen).
+    function openDialog(dialogEl) {
+      return new Promise(resolve => {
+        dialogEl.returnValue = '';
+        dialogEl.addEventListener('close', () => resolve(dialogEl.returnValue), { once: true });
+        dialogEl.showModal();
+      });
+    }
+
+    // Klick auf den abgedunkelten Hintergrund schliesst (= abbrechen)
+    document.querySelectorAll('.fairy-dialog').forEach(d => {
+      d.addEventListener('click', (e) => { if (e.target === d) d.close(''); });
+    });
+
+    function openHelp() { openDialog(document.getElementById('helpDialog')); }
+
+    // Beim ersten Besuch erklären, was Cecilia ist und was privat bleiben soll
+    (function showWelcomeOnce() {
+      const KEY = 'cecilia_welcome_seen';
+      let seen = false;
+      try { seen = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      if (seen) return;
+      openDialog(document.getElementById('welcomeDialog')).then(() => {
+        try { localStorage.setItem(KEY, '1'); } catch (e) {}
+        document.getElementById('chatInput').focus();
+      });
+    })();
+
+    // Erkennt persönliche Daten, bevor sie ans Backend gehen. Bewusst grob:
+    // lieber einmal zu oft nachfragen – das Kind kann trotzdem senden.
+    const PERSONAL_DATA_PATTERNS = [
+      { what: 'eine E-Mail-Adresse', re: /[^\s@]+@[^\s@]+\.[a-z]{2,}/i },
+      { what: 'eine Telefonnummer',  re: /(?:\+|\b00|\b0)\d(?:[\s\/.-]?\d){6,}/ },
+      { what: 'eine Adresse',        re: /[a-zäöüß-]{3,}(?:strasse|straße|str\.|weg|gasse|platz|allee|ring)\s*\d+/i }
+    ];
+
+    function detectPersonalData(text) {
+      const hit = PERSONAL_DATA_PATTERNS.find(p => p.re.test(text));
+      return hit ? hit.what : null;
+    }
+
+    async function confirmPersonalData(text) {
+      const what = detectPersonalData(text);
+      if (!what) return true;
+      document.getElementById('privacyWhat').textContent = what;
+      return (await openDialog(document.getElementById('privacyDialog'))) === 'send';
+    }
+
+    // Stichworte, bei denen zusätzlich zur Antwort von Cecilia sofort
+    // Hilfe-Nummern angezeigt werden – unabhängig davon, was das LLM antwortet.
+    const WORRY_PATTERN = new RegExp([
+      'ritz(e|en|t)', 'umbringen', 'suizid', 'selbstmord',
+      'nicht mehr leben', 'will sterben', 'sterben will', 'mich verletzen', 'mir weh tun',
+      'gemobbt', 'mobb(t|en) mich', 'schl(ä|a)g(t|en) mich', 'missbrauch',
+      'belästigt', 'erpresst', 'nacktbild', 'nacktfoto'
+    ].join('|'), 'i');
+
+    function addHelpCard() {
+      const card = document.createElement('div');
+      card.className = 'help-card';
+      card.setAttribute('role', 'note');
+      const title = document.createElement('strong');
+      title.textContent = '💜 Das klingt, als ginge es dir gerade nicht gut.';
+      const text = document.createElement('div');
+      text.textContent = 'Du musst das nicht alleine schaffen. Echte Menschen hören dir zu – kostenlos und anonym, rund um die Uhr: 147 (Schweiz, Österreich) oder 116 111 (Deutschland).';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dialog-btn primary';
+      btn.textContent = 'Hilfe-Nummern ansehen';
+      btn.addEventListener('click', openHelp);
+      card.append(title, text, btn);
+      document.getElementById('chatMessages').appendChild(card);
+      scrollStream();
+    }
+
+    // Alle externen Links im Chat (Antworten + Kristallkugel-Quellen) laufen über den Hinweis
+    document.getElementById('chatMessages').addEventListener('click', async (e) => {
+      const link = e.target.closest('a[href^="http"]');
+      if (!link) return;
+      e.preventDefault();
+      let host = link.href;
+      try { host = new URL(link.href).hostname.replace(/^www\./, ''); } catch (err) {}
+      document.getElementById('leaveHost').textContent = host;
+      if ((await openDialog(document.getElementById('leaveDialog'))) === 'go') {
+        window.open(link.href, '_blank', 'noopener,noreferrer');
+      }
+    });
 
     // ==========================================
     // SUGGESTION CHIPS
@@ -2229,9 +2486,11 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       }
       await appReady;
       if (isWaitingForResponse) return;
+      if (!(await confirmPersonalData(message))) { input.focus(); return; }
 
       const userMsg = addMessageToChat('user', message);
       scanForMagicWords(userMsg);
+      if (WORRY_PATTERN.test(message)) addHelpCard();
       input.value = '';
       isWaitingForResponse = true;
 
