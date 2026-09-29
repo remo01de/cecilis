@@ -893,7 +893,8 @@
       flex: 1; min-width: 0;
       background: transparent; border: none; outline: none;
       color: var(--text-1);
-      font: 400 15px/1.4 var(--font-body);
+      /* mind. 16px, sonst zoomt iOS Safari beim Fokussieren ins Feld */
+      font: 400 16px/1.4 var(--font-body);
       padding: 8px 0;
     }
     .input-shell input::placeholder { color: var(--text-4); }
@@ -1060,9 +1061,9 @@
       <div class="composer">
         <div class="composer-inner">
           <div class="suggestion-row" id="suggestionRow">
-            <button class="suggestion-chip" onclick="useSuggestion(this)">✨ Mal mir eine Katze mit Flügeln</button>
-            <button class="suggestion-chip" onclick="useSuggestion(this)">🌙 Gute-Nacht-Geschichte</button>
-            <button class="suggestion-chip" onclick="useSuggestion(this)">🔮 Was ist heute in den Nachrichten?</button>
+            <button class="suggestion-chip" data-text="Mal mir eine Katze mit Flügeln" onclick="useSuggestion(this)">✨ Mal mir eine Katze mit Flügeln</button>
+            <button class="suggestion-chip" data-text="Gute-Nacht-Geschichte" onclick="useSuggestion(this)">🌙 Gute-Nacht-Geschichte</button>
+            <button class="suggestion-chip" data-text="Was ist heute in den Nachrichten?" onclick="useSuggestion(this)">🔮 Was ist heute in den Nachrichten?</button>
           </div>
           <div class="input-shell">
             <input type="text" id="chatInput" placeholder="Erzähl Cecilia, was du sehen willst..." autocomplete="off">
@@ -1185,15 +1186,124 @@
     // SUGGESTION CHIPS
     // ==========================================
     function useSuggestion(btn) {
-      const text = btn.textContent.replace(/^[\s\S]{0,3}/, '').trim();
+      // Der Emoji-Präfix ist je nach Zeichen 1 oder 2 UTF-16-Einheiten lang,
+      // deshalb steht der eigentliche Text separat in data-text.
+      const text = btn.dataset.text || btn.textContent.trim();
       document.getElementById('chatInput').value = text;
       sendMessage();
+    }
+
+    // ==========================================
+    // IMAGE STORE  –  Bilder in IndexedDB statt localStorage
+    // ==========================================
+    // OpenRouter liefert Bilder als Base64-Data-URL (mehrere MB). Im localStorage
+    // (~5 MB) sprengen schon 1–2 davon das Limit, danach scheitert jedes Speichern
+    // still und der Chat ist nach dem Neuladen weg. Deshalb liegen die Bilder als
+    // Blob in IndexedDB; Galerie- und Chat-State speichern nur noch die imageId.
+    const ImageStore = (() => {
+      const DB_NAME = 'cecilia_images';
+      const STORE   = 'images';
+      const objectUrls = new Map(); // imageId -> blob:-URL
+      let dbPromise = null;
+
+      function openDb() {
+        if (!dbPromise) {
+          dbPromise = new Promise((resolve, reject) => {
+            if (!window.indexedDB) return reject(new Error('IndexedDB nicht verfügbar'));
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror   = () => reject(req.error);
+          });
+        }
+        return dbPromise;
+      }
+
+      async function run(mode, fn) {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const tx  = db.transaction(STORE, mode);
+          const req = fn(tx.objectStore(STORE));
+          tx.oncomplete = () => resolve(req ? req.result : undefined);
+          tx.onerror = tx.onabort = () => reject(tx.error);
+        });
+      }
+
+      async function put(dataUrl) {
+        const blob = await (await fetch(dataUrl)).blob();
+        const id   = 'img_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        await run('readwrite', s => s.put(blob, id));
+        objectUrls.set(id, URL.createObjectURL(blob));
+        return id;
+      }
+
+      async function getUrl(id) {
+        if (objectUrls.has(id)) return objectUrls.get(id);
+        const blob = await run('readonly', s => s.get(id));
+        if (!blob) return null;
+        const url = URL.createObjectURL(blob);
+        objectUrls.set(id, url);
+        return url;
+      }
+
+      function forget(id) {
+        const url = objectUrls.get(id);
+        if (url) URL.revokeObjectURL(url);
+        objectUrls.delete(id);
+      }
+
+      async function remove(ids) {
+        const list = ids.filter(Boolean);
+        if (!list.length) return;
+        list.forEach(forget);
+        await run('readwrite', s => { list.forEach(id => s.delete(id)); return null; });
+      }
+
+      // Löscht alle Bilder, die weder Galerie noch Chat noch referenzieren
+      async function keepOnly(keepIds) {
+        const keys  = await run('readonly', s => s.getAllKeys());
+        const stale = (keys || []).filter(k => !keepIds.has(k));
+        await remove(stale);
+      }
+
+      return { put, getUrl, remove, keepOnly };
+    })();
+
+    // Legt Data-URLs in IndexedDB ab. Liefert { imageId, url } (url = blob:-URL
+    // zum Anzeigen) bzw. { url } für normale http-URLs. Klappt IndexedDB nicht
+    // (z.B. privater Modus), bleibt das Bild nur für diese Sitzung sichtbar.
+    async function persistImage(url) {
+      if (!url || !url.startsWith('data:')) return { url };
+      try {
+        const imageId = await ImageStore.put(url);
+        return { imageId, url: await ImageStore.getUrl(imageId) };
+      } catch (e) {
+        console.warn('Bild konnte nicht gespeichert werden:', e);
+        return { url };
+      }
+    }
+
+    // Beim Speichern: blob:-URLs sind nur zur Laufzeit gültig, Data-URLs zu gross.
+    function persistableUrl(url) {
+      return url && /^https?:\/\//i.test(url) ? url : undefined;
     }
 
     // ==========================================
     // GALLERY
     // ==========================================
     const GALLERY_STORAGE_KEY = 'cecilia_gallery';
+
+    // Einträge aus der Zeit, als die Galerie noch nicht kindgerecht war
+    const GALLERY_RETIRED = {
+      mood: new Set(['romantic']),
+      location: new Set(['bar']),
+      outfit: new Set(['bikini', 'elegant', 'school-uniform'])
+    };
+    function isRetiredGalleryEntry(e) {
+      return GALLERY_RETIRED.mood.has(e.mood)
+        || GALLERY_RETIRED.location.has(e.location)
+        || GALLERY_RETIRED.outfit.has(e.outfit);
+    }
     const GALLERY_MAX_IMAGES  = 30;
     const GALLERY_MIN_ROUNDS  = 10;
     const GALLERY_MAX_ROUNDS  = 20;
@@ -1244,9 +1354,9 @@
       }
 
       const analysisPrompt = `Bestimme aus diesem Chat mood/location/outfit für Cecilia.
-mood: happy|sad|thoughtful|playful|dreamy|excited|romantic|shy|confident|mischievous
-location: fairy-forest|beach|bar|garden|city|mountain|library|lake|castle|meadow
-outfit: dress|bikini|coat|casual|elegant|fairy-outfit|kimono|sportswear|pajamas|school-uniform
+mood: happy|sad|thoughtful|playful|dreamy|excited|curious|shy|confident|mischievous
+location: fairy-forest|beach|treehouse|garden|city|mountain|library|lake|castle|meadow
+outfit: dress|raincoat|coat|casual|hoodie|fairy-outfit|kimono|sportswear|pajamas|explorer
 Chat: ${context}
 Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
@@ -1271,12 +1381,12 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     function buildAutoGalleryPrompt(analysis, season) {
       const moodDescriptions = {
         happy: 'smiling radiantly, eyes sparkling with joy, cheerful expression',
-        sad: 'looking melancholic, soft tears, bittersweet gentle expression',
+        sad: 'looking a little sad, gentle comforting expression, hugging a soft plushie',
         thoughtful: 'pensive gaze, hand on chin, contemplative serene expression',
         playful: 'winking mischievously, tongue out slightly, fun energetic pose',
         dreamy: 'eyes half-closed, peaceful dreaming expression, serene smile',
         excited: 'eyes wide open, big bright smile, energetic enthusiastic pose',
-        romantic: 'blushing cheeks, gentle loving smile, soft warm gaze, heart-shaped sparkles',
+        curious: 'wide curious eyes, head tilted, examining a glowing magical object with wonder',
         shy: 'hiding half behind hands, blushing deeply, adorable shy expression',
         confident: 'hands on hips, bold confident smile, powerful elegant stance',
         mischievous: 'sly grin, one eyebrow raised, playful scheming expression'
@@ -1284,7 +1394,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       const locationDescriptions = {
         'fairy-forest': 'enchanted magical fairy forest, glowing mushrooms, fireflies, ethereal mist, ancient trees with luminous vines',
         beach: 'beautiful tropical beach, turquoise ocean waves, white sand, palm trees, golden hour light',
-        bar: 'cozy stylish bar interior, warm ambient lighting, elegant cocktails, wooden counter',
+        treehouse: 'cozy magical treehouse high in an ancient tree, fairy lights, rope bridge, cushions and books',
         garden: 'blooming flower garden, roses and lavender, stone path, butterfly, gazebo',
         city: 'modern city rooftop at twilight, sparkling city lights, skyline panorama',
         mountain: 'majestic mountain peaks, alpine meadow, crystal clear lake reflection, dramatic clouds',
@@ -1295,19 +1405,19 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       };
       const outfitDescriptions = {
         dress: 'wearing a beautiful flowing dress with delicate lace details and ribbon accents',
-        bikini: 'wearing a cute stylish bikini with floral pattern',
+        raincoat: 'wearing a bright yellow raincoat, colorful rubber boots and holding a transparent umbrella',
         coat: 'wearing a fashionable long winter coat with fur-trimmed hood and scarf',
-        casual: 'wearing a casual trendy outfit with crop top and high-waisted jeans',
-        elegant: 'wearing a stunning elegant evening gown with sparkly details',
+        casual: 'wearing a casual trendy outfit with a pastel t-shirt, denim overalls and sneakers',
+        hoodie: 'wearing an oversized pastel hoodie with a unicorn print and comfy leggings',
         'fairy-outfit': 'wearing a magical shimmering fairy dress with translucent wings and flower crown',
         kimono: 'wearing a beautiful traditional kimono with floral patterns and elegant obi',
         sportswear: 'wearing a cute sporty outfit with pastel-colored hoodie and sneakers',
         pajamas: 'wearing adorable cozy pajamas with star patterns and fluffy slippers',
-        'school-uniform': 'wearing a cute school uniform with plaid skirt and bow tie'
+        explorer: 'wearing an adventurer outfit with a khaki vest, shorts over leggings, a small backpack and a magnifying glass'
       };
 
       const parts = [
-        'A beautiful anime-style fairy girl named Cecilia, age 17-19, with long flowing pastel-colored hair adorned with small flowers and magical sparkles, large expressive eyes, delicate translucent fairy wings'
+        'A cheerful anime-style teenage fairy girl named Cecilia, 17 years old, with long flowing pastel-colored hair adorned with small flowers and magical sparkles, large expressive eyes, delicate translucent fairy wings'
       ];
       const mood     = moodDescriptions[analysis.mood]     || moodDescriptions.happy;
       const location = locationDescriptions[analysis.location] || locationDescriptions['fairy-forest'];
@@ -1320,9 +1430,9 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
     function buildAnalysisLabel(analysis, season) {
       const labels = {
-        mood: { happy:'Glücklich', sad:'Traurig', thoughtful:'Nachdenklich', playful:'Verspielt', dreamy:'Verträumt', excited:'Aufgeregt', romantic:'Romantisch', shy:'Schüchtern', confident:'Selbstbewusst', mischievous:'Frech' },
-        location: { 'fairy-forest':'Feenwald', beach:'Strand', bar:'Bar', garden:'Garten', city:'Stadt', mountain:'Berge', library:'Bibliothek', lake:'See', castle:'Schloss', meadow:'Wiese' },
-        outfit: { dress:'Kleid', bikini:'Bikini', coat:'Mantel', casual:'Casual', elegant:'Elegant', 'fairy-outfit':'Feenkleid', kimono:'Kimono', sportswear:'Sportlich', pajamas:'Pyjama', 'school-uniform':'Schuluniform' }
+        mood: { happy:'Glücklich', sad:'Traurig', thoughtful:'Nachdenklich', playful:'Verspielt', dreamy:'Verträumt', excited:'Aufgeregt', curious:'Neugierig', shy:'Schüchtern', confident:'Selbstbewusst', mischievous:'Frech' },
+        location: { 'fairy-forest':'Feenwald', beach:'Strand', treehouse:'Baumhaus', garden:'Garten', city:'Stadt', mountain:'Berge', library:'Bibliothek', lake:'See', castle:'Schloss', meadow:'Wiese' },
+        outfit: { dress:'Kleid', raincoat:'Regenmantel', coat:'Mantel', casual:'Casual', hoodie:'Hoodie', 'fairy-outfit':'Feenkleid', kimono:'Kimono', sportswear:'Sportlich', pajamas:'Pyjama', explorer:'Entdeckerin' }
       };
       const parts = [];
       if (analysis.mood)     parts.push(labels.mood[analysis.mood]         || analysis.mood);
@@ -1360,24 +1470,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         const data = await response.json();
         if (!data.url) throw new Error('Keine Bild-URL erhalten');
 
-        const entry = {
-          url: data.url,
-          label: buildAnalysisLabel(finalAnalysis, season),
-          mood: finalAnalysis.mood,
-          location: finalAnalysis.location,
-          outfit: finalAnalysis.outfit,
-          season,
-          createdAt: new Date().toISOString()
-        };
-        galleryState.images.push(entry);
-        if (galleryState.images.length > GALLERY_MAX_IMAGES) {
-          galleryState.images = galleryState.images.slice(-GALLERY_MAX_IMAGES);
-        }
-        galleryState.currentIndex = galleryState.images.length - 1;
-        saveGalleryState();
-        renderGalleryMain();
-        renderGalleryThumbnails();
-        startGalleryRotation();
+        const entry = await addGalleryImage(data.url, finalAnalysis, season);
         console.log('🎨 Galerie-Bild erfolgreich generiert:', entry.label);
       } catch (err) {
         console.warn('Galerie-Bildgenerierung fehlgeschlagen:', err);
@@ -1385,6 +1478,31 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         overlay.remove();
         galleryState.isGenerating = false;
       }
+    }
+
+    async function addGalleryImage(url, analysis, season) {
+      const stored = await persistImage(url);
+      const entry  = {
+        ...stored,
+        label: buildAnalysisLabel(analysis, season),
+        mood: analysis.mood,
+        location: analysis.location,
+        outfit: analysis.outfit,
+        season,
+        createdAt: new Date().toISOString()
+      };
+      galleryState.images.push(entry);
+      if (galleryState.images.length > GALLERY_MAX_IMAGES) {
+        const evicted = galleryState.images.slice(0, -GALLERY_MAX_IMAGES);
+        galleryState.images = galleryState.images.slice(-GALLERY_MAX_IMAGES);
+        ImageStore.remove(evicted.map(e => e.imageId)).catch(() => {});
+      }
+      galleryState.currentIndex = galleryState.images.length - 1;
+      saveGalleryState();
+      renderGalleryMain();
+      renderGalleryThumbnails();
+      startGalleryRotation();
+      return entry;
     }
 
     function checkGalleryTrigger() {
@@ -1400,7 +1518,10 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     function saveGalleryState() {
       try {
         localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify({
-          images: galleryState.images.slice(-GALLERY_MAX_IMAGES),
+          images: galleryState.images
+            .slice(-GALLERY_MAX_IMAGES)
+            .map(e => ({ ...e, url: persistableUrl(e.url) }))
+            .filter(e => e.imageId || e.url),
           currentIndex: galleryState.currentIndex,
           roundsSinceLastImage: galleryState.roundsSinceLastImage,
           nextImageThreshold: galleryState.nextImageThreshold
@@ -1408,20 +1529,46 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       } catch (e) { console.warn('Galerie-State konnte nicht gespeichert werden:', e); }
     }
 
-    function loadGalleryState() {
+    async function loadGalleryState() {
+      let data;
       try {
         const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
         if (!raw) { pickNextThreshold(); return; }
-        const data = JSON.parse(raw);
-        galleryState.images               = Array.isArray(data.images) ? data.images : [];
-        galleryState.currentIndex         = typeof data.currentIndex === 'number' ? data.currentIndex : galleryState.images.length - 1;
-        galleryState.roundsSinceLastImage = data.roundsSinceLastImage || 0;
-        galleryState.nextImageThreshold   = data.nextImageThreshold  || 0;
-        if (!galleryState.nextImageThreshold) pickNextThreshold();
+        data = JSON.parse(raw);
       } catch (e) {
         console.warn('Galerie-State konnte nicht geladen werden:', e);
         pickNextThreshold();
+        return;
       }
+
+      const all     = Array.isArray(data.images) ? data.images : [];
+      const retired = all.filter(isRetiredGalleryEntry);
+      let migrated  = retired.length > 0;
+      ImageStore.remove(retired.map(e => e.imageId)).catch(() => {});
+
+      const images = [];
+      for (const entry of all) {
+        if (isRetiredGalleryEntry(entry)) continue;
+        if (entry.imageId) {
+          const url = await ImageStore.getUrl(entry.imageId).catch(() => null);
+          if (url) images.push({ ...entry, url });
+        } else if (entry.url && entry.url.startsWith('data:')) {
+          // Altbestand: Data-URL aus dem localStorage nach IndexedDB umziehen
+          images.push({ ...entry, ...(await persistImage(entry.url)) });
+          migrated = true;
+        } else if (entry.url) {
+          images.push(entry);
+        }
+      }
+
+      galleryState.images               = images;
+      galleryState.currentIndex         = typeof data.currentIndex === 'number'
+        ? Math.min(data.currentIndex, images.length - 1)
+        : images.length - 1;
+      galleryState.roundsSinceLastImage = data.roundsSinceLastImage || 0;
+      galleryState.nextImageThreshold   = data.nextImageThreshold  || 0;
+      if (!galleryState.nextImageThreshold) pickNextThreshold();
+      if (migrated) saveGalleryState();
     }
 
     function renderGalleryMain() {
@@ -1513,9 +1660,6 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     // ==========================================
     // CONFIG
     // ==========================================
-    // Steht bewusst VOR dem Galerie-Boot darunter: der Willkommensbild-Fetch
-    // nutzt CONFIG.IMAGE_URL. Weiter unten (nach dem Boot) liefe das in eine
-    // TDZ-ReferenceError: "Cannot access 'CONFIG' before initialization".
     const BACKEND_PORT = '30000';
     const isLocalhost  = ['localhost', '127.0.0.1'].includes(window.location.hostname);
     const API_BASE     = isLocalhost && window.location.port !== BACKEND_PORT
@@ -1533,12 +1677,14 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       STORAGE_KEY: 'cecilia_chat_state'
     };
 
-    loadGalleryState();
-    renderGalleryMain();
-    renderGalleryThumbnails();
-    if (galleryState.images.length >= 2) startGalleryRotation();
+    async function bootGallery() {
+      await loadGalleryState();
+      renderGalleryMain();
+      renderGalleryThumbnails();
+      if (galleryState.images.length >= 2) startGalleryRotation();
+    }
 
-    if (galleryState.images.length === 0) {
+    async function generateWelcomeImage() {
       const season          = getCurrentSeason();
       const defaultAnalysis = { mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit' };
       const prompt          = buildAutoGalleryPrompt(defaultAnalysis, season);
@@ -1550,27 +1696,23 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       overlay.innerHTML = '<div class="spinner"></div><span>malt...</span>';
       mainEl.appendChild(overlay);
 
-      fetch(
-        CONFIG.IMAGE_URL,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, size: '1024x1024' }) }
-      )
-        .then(r => { if (!r.ok) throw new Error('Fehler'); return r.json(); })
-        .then(data => {
-          if (!data.url) throw new Error('Keine URL');
-          galleryState.images.push({
-            url: data.url,
-            label: buildAnalysisLabel(defaultAnalysis, season),
-            mood: 'happy', location: 'fairy-forest', outfit: 'fairy-outfit', season,
-            createdAt: new Date().toISOString()
-          });
-          galleryState.currentIndex = 0;
-          saveGalleryState();
-          renderGalleryMain();
-          renderGalleryThumbnails();
-          console.log('🎨 Willkommensbild generiert');
-        })
-        .catch(err => console.warn('Willkommensbild fehlgeschlagen:', err))
-        .finally(() => { overlay.remove(); galleryState.isGenerating = false; });
+      try {
+        const r = await fetch(CONFIG.IMAGE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, size: '1024x1024' })
+        });
+        if (!r.ok) throw new Error('Fehler');
+        const data = await r.json();
+        if (!data.url) throw new Error('Keine URL');
+        await addGalleryImage(data.url, defaultAnalysis, season);
+        console.log('🎨 Willkommensbild generiert');
+      } catch (err) {
+        console.warn('Willkommensbild fehlgeschlagen:', err);
+      } finally {
+        overlay.remove();
+        galleryState.isGenerating = false;
+      }
     }
 
     const IMAGE_MARKER_REGEX  = /\[IMAGE:\s*(.+?)\]/g;
@@ -1590,26 +1732,50 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({
           summary: conversationSummary,
           history: conversationHistory,
-          display: displayMessages.slice(-CONFIG.MAX_DISPLAY_MESSAGES)
+          display: displayMessages
+            .slice(-CONFIG.MAX_DISPLAY_MESSAGES)
+            .map(m => (m.imageUrl ? { ...m, imageUrl: persistableUrl(m.imageUrl) } : m))
         }));
       } catch (e) { console.warn('Chat-State konnte nicht gespeichert werden:', e); }
     }
 
-    function loadChatState() {
+    async function loadChatState() {
+      let state;
       try {
         const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
         if (!raw) return;
-        const state = JSON.parse(raw);
-        conversationSummary = state.summary || '';
-        conversationHistory = Array.isArray(state.history) ? state.history : [];
-        displayMessages     = Array.isArray(state.display) ? state.display : [];
-      } catch (e) { console.warn('Chat-State konnte nicht geladen werden:', e); }
+        state = JSON.parse(raw);
+      } catch (e) {
+        console.warn('Chat-State konnte nicht geladen werden:', e);
+        return;
+      }
+      conversationSummary = state.summary || '';
+      conversationHistory = Array.isArray(state.history) ? state.history : [];
+      displayMessages     = Array.isArray(state.display) ? state.display : [];
+
+      // Altbestand: Data-URLs aus dem localStorage nach IndexedDB umziehen
+      let migrated = false;
+      for (const msg of displayMessages) {
+        if (msg.imageUrl && msg.imageUrl.startsWith('data:')) {
+          const stored = await persistImage(msg.imageUrl);
+          if (stored.imageId) {
+            msg.imageId = stored.imageId;
+            delete msg.imageUrl;
+            migrated = true;
+          }
+        }
+      }
+      if (migrated) saveChatState();
     }
 
-    function restoreDisplayMessages() {
+    async function restoreDisplayMessages() {
       for (const msg of displayMessages) {
         const msgDiv = addMessageToChat(msg.sender, msg.text, false, true);
-        if (msg.imageUrl) addImageToMessage(msgDiv, msg.imageUrl);
+        const imageUrl = msg.imageId
+          ? await ImageStore.getUrl(msg.imageId).catch(() => null)
+          : msg.imageUrl;
+        if (imageUrl) addImageToMessage(msgDiv, imageUrl);
+        else if (msg.imageId) addImageErrorToMessage(msgDiv);
         if (msg.searchSources && msg.searchSources.length > 0) addSearchSourcesToMessage(msgDiv, msg.searchSources);
       }
     }
@@ -1621,10 +1787,17 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       let html = text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
       html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-      html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+      // Nur http(s)-Links zulassen, sonst bleibt der Linktext als reiner Text stehen
+      html = html.replace(/\[(.+?)\]\((.+?)\)/g, (match, label, url) =>
+        /^https?:\/\//i.test(url)
+          ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`
+          : label
+      );
       html = html.replace(/\n/g, '<br>');
       return html;
     }
@@ -1776,6 +1949,18 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       scrollStream();
     }
 
+    function addImageErrorToMessage(messageDiv) {
+      const contentDiv = messageDiv.querySelector('.msg-content');
+      if (!contentDiv) return;
+      const errDiv = document.createElement('div');
+      errDiv.classList.add('image-error');
+      errDiv.textContent = '🖼️ Dieses Bild ist nicht mehr da.';
+      const meta = contentDiv.querySelector('.msg-meta');
+      if (meta) contentDiv.insertBefore(errDiv, meta);
+      else contentDiv.appendChild(errDiv);
+    }
+
+    // Liefert { imageId?, url } oder null
     async function handleImageGeneration(messageDiv, prompt) {
       const contentDiv = messageDiv.querySelector('.msg-content');
       const loadingEl  = document.createElement('div');
@@ -1787,10 +1972,10 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       scrollStream();
 
       try {
-        const imageUrl = await generateImage(prompt);
+        const stored = await persistImage(await generateImage(prompt));
         loadingEl.remove();
-        addImageToMessage(messageDiv, imageUrl);
-        return imageUrl;
+        addImageToMessage(messageDiv, stored.url);
+        return stored;
       } catch (e) {
         console.error('Bildgenerierung fehlgeschlagen:', e);
         loadingEl.remove();
@@ -1828,9 +2013,12 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         const a = document.createElement('a');
         a.href   = r.url;
         a.target = '_blank';
-        a.rel    = 'noopener';
+        a.rel    = 'noopener noreferrer';
         a.classList.add('crystal-source');
-        a.innerHTML = `<span class="crystal-source-dot"></span>${r.title || r.url}`;
+        // Titel stammen von fremden Webseiten -> nur als Text einsetzen
+        const dot = document.createElement('span');
+        dot.className = 'crystal-source-dot';
+        a.append(dot, document.createTextNode(r.title || r.url));
         sourcesDiv.appendChild(a);
       }
       body.appendChild(sourcesDiv);
@@ -2020,8 +2208,9 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        if (response.status === 429) throw new Error('Bitte warte einen Moment, bevor du eine neue Nachricht sendest.');
-        throw new Error('Server-Fehler');
+        const err = new Error(response.status === 429 ? 'Rate-Limit erreicht' : 'Server-Fehler');
+        err.rateLimited = response.status === 429;
+        throw err;
       }
       const data = await response.json();
       return data.content || getFallbackResponse();
@@ -2038,6 +2227,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         alert(`Nachricht ist zu lang! Maximal ${CONFIG.MAX_MESSAGE_LENGTH} Zeichen erlaubt.`);
         return;
       }
+      await appReady;
       if (isWaitingForResponse) return;
 
       const userMsg = addMessageToChat('user', message);
@@ -2056,6 +2246,15 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
             response     = await getCeciliaResponseFromAPI(message);
             isAIResponse = true;
           } catch (apiError) {
+            if (apiError.rateLimited) {
+              // Kein Offline-Modus: Server ist da, nur zu viele Nachrichten auf einmal.
+              // Nachricht zurück ins Feld, damit sie gleich nochmal gesendet werden kann.
+              loadingMsg.remove();
+              userMsg.remove();
+              input.value = message;
+              addMessageToChat('cecilia', 'Puh, so viele Nachrichten auf einmal! 🦋 Lass mich kurz durchatmen – schick deine Nachricht in einer Minute nochmal.');
+              return;
+            }
             console.warn('API nicht erreichbar, verwende Fallback:', apiError);
             response = getFallbackResponse();
             if (!window.apiWarningShown) {
@@ -2126,13 +2325,16 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         }
 
         const imagePrompts     = extractImagePrompts(finalResponse);
-        let generatedImageUrl  = null;
+        let generatedImage     = null;
         if (imagePrompts.length > 0 && CONFIG.USE_AI) {
-          generatedImageUrl = await handleImageGeneration(ceciliaMsg, imagePrompts[0]);
+          generatedImage = await handleImageGeneration(ceciliaMsg, imagePrompts[0]);
         }
 
         const displayEntry = { sender: 'cecilia', text: finalResponse };
-        if (generatedImageUrl) displayEntry.imageUrl = generatedImageUrl;
+        if (generatedImage) {
+          if (generatedImage.imageId) displayEntry.imageId = generatedImage.imageId;
+          else displayEntry.imageUrl = generatedImage.url;
+        }
         if (searchResults && searchResults.length > 0) {
           displayEntry.searchSources = searchResults.slice(0, 5).map(r => ({ title: r.title, url: r.url }));
         }
@@ -2193,6 +2395,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     // CLEAR CHAT
     // ==========================================
     function clearChat() {
+      ImageStore.remove(displayMessages.map(m => m.imageId)).catch(() => {});
       conversationHistory = [];
       conversationSummary = '';
       displayMessages     = [];
@@ -2248,8 +2451,27 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     // ==========================================
     // INIT
     // ==========================================
-    loadChatState();
-    restoreDisplayMessages();
+    // Galerie und Chat laden Bilder asynchron aus IndexedDB. sendMessage()
+    // wartet auf appReady, damit ein früh abgeschickter Text den geladenen
+    // Verlauf nicht überschreibt.
+    const appReady = (async () => {
+      try {
+        await bootGallery();
+        await loadChatState();
+        await restoreDisplayMessages();
+
+        // Verwaiste Bilder aufräumen (z.B. aus Chat-Nachrichten jenseits von MAX_DISPLAY_MESSAGES).
+        // Erst danach das Willkommensbild erzeugen, sonst könnte es mit weggeräumt werden.
+        const referenced = new Set([
+          ...galleryState.images.map(e => e.imageId),
+          ...displayMessages.map(m => m.imageId)
+        ].filter(Boolean));
+        await ImageStore.keepOnly(referenced).catch(e => console.warn('Bild-Aufräumen fehlgeschlagen:', e));
+      } catch (e) {
+        console.error('Start fehlgeschlagen:', e);
+      }
+      if (galleryState.images.length === 0) generateWelcomeImage();
+    })();
 
     document.getElementById('chatInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !isWaitingForResponse) sendMessage();

@@ -20,6 +20,12 @@ function validatePrompt(prompt) {
   return true;
 }
 
+// Zielgruppe sind Mädchen von 10–16 Jahren: jeder Prompt (Galerie und Chat) bekommt
+// serverseitig diesen Zusatz, damit er sich nicht über das LLM aushebeln lässt.
+const SAFETY_SUFFIX =
+  "Wholesome, family-friendly, age-appropriate illustration for children. " +
+  "Characters fully and modestly clothed, no suggestive poses, no swimwear, no alcohol, no violence.";
+
 const ALLOWED_SIZES = new Set(["512x512", "768x768", "1024x1024", "1280x1280"]);
 
 router.post("/", imageLimiter, async (req, res) => {
@@ -47,7 +53,7 @@ router.post("/", imageLimiter, async (req, res) => {
       },
       body: JSON.stringify({
         model: process.env.OPENROUTER_IMAGE_MODEL || "bytedance-seed/seedream-4.5",
-        prompt,
+        prompt: `${prompt}\n\n${SAFETY_SUFFIX}`,
         n: 1,
         aspect_ratio: "1:1",
         output_format: "png"

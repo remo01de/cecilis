@@ -2,7 +2,7 @@
 
 ## Was ist das?
 
-Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17–19, warmherzig, verspielt, frech). Anime-Stil, Pastellfarben, magische Atmosphäre. Erstellt von Remo Schiklinski.
+Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, verspielt, frech). Anime-Stil, Pastellfarben, magische Atmosphäre. Erstellt von Remo Schiklinski.
 
 ## Tech-Stack
 

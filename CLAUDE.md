@@ -2,7 +2,7 @@
 
 ## Was ist das?
 
-Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17–19, warmherzig, verspielt, frech). Anime-Stil, Pastellfarben, magische Atmosphäre. Erstellt von Remo Schiklinski.
+Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, verspielt, frech). Anime-Stil, Pastellfarben, magische Atmosphäre. Erstellt von Remo Schiklinski.
 
 ## Tech-Stack
 
@@ -158,6 +158,14 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 - **Bilder:** `POST /api/image` nutzt `/api/v1/images` (Standard: `bytedance-seed/seedream-4.5`, mind. 2K, quadratisch). Antwort ist eine Base64-Data-URL statt CDN-Link; `size` wird nicht mehr ausgewertet.
 - **Websuche:** Web-Plugin von OpenRouter (Exa), Quellen aus `url_citation`-Annotationen. Der `recency`-Filter entfällt.
 - `test-openai-image.mjs` entfernt.
+
+### Runde 9 (2026-09-29) – Zielgruppe Mädchen 10–16: Jugendschutz + Frontend-Bugs
+- **Galerie kindgerecht:** `romantic`, `bar`, `bikini`, `elegant`, `school-uniform` ersetzt durch `curious`, `treehouse`, `raincoat`, `hoodie`, `explorer`. Alte Einträge mit diesen Werten werden beim Laden aus der Galerie und aus IndexedDB entfernt (`GALLERY_RETIRED`).
+- **Alter einheitlich 17** (System-Prompt, Galerie-Prompt, Poster, Charakterseite, Doku).
+- **System-Prompt:** Abschnitt „Your audience“ (altersgerecht, keine persönlichen Daten erfragen, bei Sorgen auf 147 / 116 111 verweisen).
+- **`/api/image` hängt serverseitig `SAFETY_SUFFIX` an jeden Prompt** (gilt für Galerie und Chat-Bilder).
+- **Bilder in IndexedDB statt localStorage** (`ImageStore` in `index.html`, DB `cecilia_images`): Base64-Bilder sprengten das ~5-MB-Limit, danach schlug jedes Speichern still fehl. Galerie/Chat speichern nur noch `imageId`; Altbestand mit Data-URLs wird beim Laden migriert, verwaiste Bilder werden aufgeräumt. Start ist dadurch async (`appReady`), `sendMessage()` wartet darauf.
+- **Bugfixes:** Vorschlags-Chip schnitt das erste Zeichen ab („al mir…“) → `data-text`; XSS über Titel von Suchquellen (`innerHTML`) → `textContent`; `parseMarkdown` escaped jetzt Anführungszeichen und lässt nur `http(s)`-Links zu; 429 zeigt eine freundliche Pause-Meldung statt Offline-Modus und legt den Text zurück ins Eingabefeld; Eingabefeld 16px gegen iOS-Zoom.
 
 ## Was bereits erledigt ist
 
