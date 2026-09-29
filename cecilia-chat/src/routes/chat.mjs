@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import rateLimit from "express-rate-limit";
-import { openai } from "../lib/openai.mjs";
+import { openrouter, CHAT_MODEL, temperatureParam } from "../lib/openrouter.mjs";
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +13,7 @@ const systemPromptPath = path.join(__dirname, "..", "prompts", "system_cecilia_s
 const systemPrompt = fs.readFileSync(systemPromptPath, "utf8");
 
 const MAX_MESSAGE_LENGTH = 1000;
+const MAX_ASSISTANT_HISTORY_LENGTH = 10000;
 const MAX_SUMMARY_LENGTH = 5000;
 const MAX_HISTORY_LENGTH = 50;
 const ALLOWED_ROLES = new Set(["user", "assistant"]);
@@ -29,12 +30,15 @@ function validateHistory(history) {
 
   const trimmed = history.slice(-MAX_HISTORY_LENGTH);
 
+  // Antworten von Cecilia (z.B. nach einer Websuche) sind oft laenger als eine User-Nachricht.
+  // Wuerden sie hier verworfen, bliebe die zugehoerige User-Frage unbeantwortet im Verlauf.
   return trimmed.filter(
     (msg) =>
       msg &&
       ALLOWED_ROLES.has(msg.role) &&
       typeof msg.content === "string" &&
-      msg.content.length <= MAX_MESSAGE_LENGTH &&
+      msg.content.length <=
+        (msg.role === "assistant" ? MAX_ASSISTANT_HISTORY_LENGTH : MAX_MESSAGE_LENGTH) &&
       !/<script|javascript:|on\w+=/i.test(msg.content)
   );
 }
@@ -78,10 +82,10 @@ router.post("/", chatLimiter, async (req, res) => {
     const validHistory = validateHistory(history);
     const messages = buildMessages(summary, validHistory, message);
 
-    const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? "gpt-5",
+    const response = await openrouter.chat.completions.create({
+      model: CHAT_MODEL(),
       messages,
-      temperature: 0.9
+      ...temperatureParam("OPENROUTER_TEMPERATURE")
     });
 
     const out = response.choices?.[0]?.message?.content ?? "";
@@ -110,8 +114,8 @@ router.post("/summarize", chatLimiter, async (req, res) => {
       ? `Bisherige Zusammenfassung:\n${summary}\n\nNeues Gespräch:\n`
       : "";
 
-    const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? "gpt-5",
+    const response = await openrouter.chat.completions.create({
+      model: CHAT_MODEL(),
       messages: [
         {
           role: "system",
@@ -125,7 +129,7 @@ router.post("/summarize", chatLimiter, async (req, res) => {
           content: `${previousContext}${historyText}`
         }
       ],
-      temperature: 0.3
+      ...temperatureParam("OPENROUTER_SUMMARY_TEMPERATURE")
     });
 
     const out = response.choices?.[0]?.message?.content ?? "";

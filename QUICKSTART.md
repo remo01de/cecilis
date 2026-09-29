@@ -5,7 +5,7 @@ Willkommen zum Cecilia-Projekt! Diese Anleitung hilft dir, das Projekt in wenige
 ## 📋 Voraussetzungen
 
 - **Node.js** (Version 18 oder höher) - [Download](https://nodejs.org/)
-- **OpenAI API-Key** (optional, für AI-Chat) - [OpenAI Platform](https://platform.openai.com/)
+- **OpenRouter API-Key** (optional, für AI-Chat, Bilder und Websuche) - [OpenRouter](https://openrouter.ai/keys)
 - Einen modernen Webbrowser (Chrome, Firefox, Edge, Safari)
 
 ## 🎯 Schnellstart (3 Schritte)
@@ -48,8 +48,8 @@ npm install
 # Erstelle .env Datei
 cp .env.example .env
 
-# Öffne .env und füge deinen OpenAI API-Key ein
-# OPENAI_API_KEY=sk-...
+# Öffne .env und füge deinen OpenRouter API-Key ein
+# OPENROUTER_API_KEY=sk-or-...
 
 # Starte den Server
 npm start
@@ -100,8 +100,11 @@ const CONFIG = {
 Bearbeite `cecilia-chat/.env`:
 
 ```env
-OPENAI_API_KEY=sk-...        # Dein API-Key
-OPENAI_MODEL=gpt-4           # Oder gpt-3.5-turbo (günstiger)
+OPENROUTER_API_KEY=sk-or-...     # Dein API-Key
+OPENROUTER_MODEL=deepseek/deepseek-v4.1-flash   # beliebige OpenRouter-Modell-ID
+OPENROUTER_TEMPERATURE=1.0       # leer lassen, wenn das Modell den Parameter ablehnt
+OPENROUTER_SUMMARY_TEMPERATURE=0.3
+OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
 PORT=30000                     # Server-Port
 NODE_ENV=development          # development oder production
 ```
@@ -118,10 +121,10 @@ NODE_ENV=development          # development oder production
 
 ### "Invalid API Key" oder "Server Error 500"
 
-**Problem:** OpenAI API-Key fehlt oder ist ungültig
+**Problem:** OpenRouter API-Key fehlt oder ist ungültig
 **Lösung:**
-1. Prüfe `.env` Datei: `OPENAI_API_KEY=sk-...`
-2. Verifiziere Key auf [OpenAI Platform](https://platform.openai.com/)
+1. Prüfe `.env` Datei: `OPENROUTER_API_KEY=sk-or-...`
+2. Verifiziere Key auf [OpenRouter](https://openrouter.ai/keys)
 3. Starte Server neu: `npm start`
 
 ### Bilder werden nicht angezeigt
@@ -166,7 +169,7 @@ NODE_ENV=development          # development oder production
     ├── src/
     │   ├── server.mjs           # Express Server
     │   ├── routes/chat.mjs      # Chat API
-    │   ├── lib/openai.mjs       # OpenAI Client
+    │   ├── lib/openrouter.mjs   # OpenRouter Client
     │   └── prompts/
     │       └── system_cecilia_storycrafter.txt
     ├── package.json

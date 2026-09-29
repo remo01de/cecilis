@@ -8,7 +8,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17–19, warmher
 
 - **Frontend:** Vanilla HTML/CSS/JS (kein Framework), Google Fonts (Pacifico, Poppins)
 - **Backend:** Node.js (ES Modules), Express 5.1, Port 30000
-- **APIs:** OpenAI (Chat, gpt-5.1), Z.AI (Bildgenerierung `glm-image`, Websuche `search-prime`)
+- **APIs:** OpenRouter (Chat, Bildgenerierung, Websuche; Modelle per `.env` wählbar)
 - **Sprache:** Deutsch (UI + Konversation), Englische Image-Prompts
 
 ## Projektstruktur
@@ -27,16 +27,16 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17–19, warmher
 │   ├── cecilia-avatar.svg         # Chat-Avatar Cecilia
 │   └── user-avatar.svg            # Chat-Avatar User
 ├── cecilia-chat/                  # Backend
-│   ├── package.json               # Express 5.1, OpenAI 6.6, express-rate-limit 8.2
-│   ├── .env                       # OPENAI_API_KEY, Z_AI_API_KEY, OPENAI_MODEL, PORT
+│   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2
+│   ├── .env                       # OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_*_TEMPERATURE, OPENROUTER_IMAGE_MODEL, PORT
 │   ├── .env.example               # Template für .env
 │   └── src/
 │       ├── server.mjs             # Express-Server, statisches File-Serving, API-Routen
-│       ├── lib/openai.mjs         # OpenAI Client-Instanz
+│       ├── lib/openrouter.mjs     # OpenRouter Client + Temperatur-Helper
 │       ├── routes/
 │       │   ├── chat.mjs           # POST /api/chat + POST /api/chat/summarize
-│       │   ├── image.mjs          # POST /api/image (Z.AI glm-image)
-│       │   └── search.mjs         # POST /api/search (Z.AI search-prime)
+│       │   ├── image.mjs          # POST /api/image (OpenRouter Images API)
+│       │   └── search.mjs         # POST /api/search (OpenRouter Web-Plugin)
 │       └── prompts/
 │           └── system_cecilia_storycrafter.txt  # System-Prompt
 ├── QUICKSTART.md
@@ -53,8 +53,8 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17–19, warmher
 | `/health` | GET | Health-Check |
 | `/api/chat` | POST | Chat mit Cecilia. Body: `{ message, history?, summary? }` |
 | `/api/chat/summarize` | POST | History zusammenfassen. Body: `{ history, summary? }` |
-| `/api/image` | POST | Bild generieren via Z.AI. Body: `{ prompt, size? }` |
-| `/api/search` | POST | Websuche via Z.AI. Body: `{ query, count?, recency? }` |
+| `/api/image` | POST | Bild generieren via OpenRouter. Body: `{ prompt }` |
+| `/api/search` | POST | Websuche via OpenRouter. Body: `{ query, count? }` |
 
 Alle Endpoints haben Rate-Limiting und Input-Validierung.
 
@@ -70,7 +70,7 @@ Alle Endpoints haben Rate-Limiting und Input-Validierung.
 - `conversationSummary` akkumuliert Zusammenfassungen vergangener Gespräche
 - `displayMessages[]` speichert alle sichtbaren Nachrichten (inkl. imageUrl, searchSources)
 - Alles in `localStorage` unter Key `cecilia_chat_state` persistiert
-- **Auto-Summarize** nach 30 History-Einträgen: Backend fasst via OpenAI zusammen, History wird zurückgesetzt
+- **Auto-Summarize** nach 30 History-Einträgen: Backend fasst via OpenRouter zusammen, History wird zurückgesetzt
 - Seite neuladen → Chat wird vollständig wiederhergestellt (Text, Bilder, Quellen)
 
 ## Frontend-Architektur (index.html)
@@ -86,9 +86,12 @@ Alles in einer einzigen HTML-Datei (Inline-CSS + JS):
 ## .env Variablen (cecilia-chat/.env)
 
 ```
-OPENAI_API_KEY=sk-...
-Z_AI_API_KEY=...
-OPENAI_MODEL=gpt-5.1
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=deepseek/deepseek-v4.1-flash
+OPENROUTER_TEMPERATURE=1.0            # leer lassen, wenn das Modell den Parameter ablehnt
+OPENROUTER_SUMMARY_TEMPERATURE=0.3
+OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
+# optional: OPENROUTER_SEARCH_MODEL, OPENROUTER_SEARCH_ENGINE (exa)
 PORT=30000
 NODE_ENV=development
 ```
@@ -111,8 +114,8 @@ Erste grosse Überarbeitung durch Codex + Remo. Ausgangslage war ein Prototyp mi
 - Conversation Memory: `conversationHistory` + `conversationSummary` + `displayMessages` in localStorage
 - Auto-Zusammenfassung nach 30 History-Einträgen via `/api/chat/summarize`
 - Chat-State wird über Sessions hinweg persistiert und beim Laden wiederhergestellt
-- Bildgenerierung via Z.AI API (`glm-image`, `[IMAGE: prompt]` Marker)
-- Websuche via Z.AI API (`search-prime`, `[SEARCH: query]` Marker, Two-Pass-Flow)
+- Bildgenerierung via OpenRouter (`[IMAGE: prompt]` Marker)
+- Websuche via OpenRouter Web-Plugin (`[SEARCH: query]` Marker, Two-Pass-Flow)
 - Drei neue Backend-Routen: `/api/image`, `/api/search`, `/api/chat/summarize`
 - System-Prompt erweitert um Bild- und Suchfähigkeiten
 
@@ -147,6 +150,14 @@ Erste grosse Überarbeitung durch Codex + Remo. Ausgangslage war ein Prototyp mi
 - **Bild-Klick öffnet Popup statt Download:** `window.open(src, '_blank')` auf Galerie- und Chat-Bildern ersetzt durch eine In-Page-Lightbox (`#lightbox`): bildschirmfüllendes Overlay mit Blur, Schliessen per Klick, Kreuz-Button oder `Esc`, Fokus-Rückgabe, Scroll-Sperre am Body, `draggable="false"`. Grund: Z.AI-CDN-Bilder wurden über `window.open()` als Download heruntergeladen statt angezeigt. Die Lightbox steht im Markup **vor** dem Inline-Script, sonst ist `getElementById('lightbox')` beim Registrieren der Handler `null`.
 - **Auch auf `poster.html`:** Hero-Bild und Outfit-Kacheln öffnen die Lightbox (CSS in `styles.css`, Markup/JS inline).
 - **Tastaturbedienung:** Galerie-Hauptbild ist jetzt `role="button" tabindex="0"` und öffnet per Enter/Space.
+
+### Runde 8 (2026-09-29) – Umstellung auf OpenRouter
+- **Ein Provider für alles:** Chat, Zusammenfassung, Bildgenerierung und Websuche laufen über OpenRouter (`OPENROUTER_API_KEY`). OpenAI, Z.AI und der Perplexity-Fallback sind entfernt.
+- **Chat/Zusammenfassung:** OpenAI-SDK mit `baseURL` von OpenRouter (`lib/openrouter.mjs`). Modell frei wählbar über `OPENROUTER_MODEL`.
+- **Temperatur in der `.env`:** `OPENROUTER_TEMPERATURE` (Chat) und `OPENROUTER_SUMMARY_TEMPERATURE` (Zusammenfassung). Leer = Parameter wird nicht gesendet (nötig bei Modellen, die ihn ablehnen).
+- **Bilder:** `POST /api/image` nutzt `/api/v1/images` (Standard: `bytedance-seed/seedream-4.5`, mind. 2K, quadratisch). Antwort ist eine Base64-Data-URL statt CDN-Link; `size` wird nicht mehr ausgewertet.
+- **Websuche:** Web-Plugin von OpenRouter (Exa), Quellen aus `url_citation`-Annotationen. Der `recency`-Filter entfällt.
+- `test-openai-image.mjs` entfernt.
 
 ## Was bereits erledigt ist
 

@@ -1,9 +1,8 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { openrouter, CHAT_MODEL } from "../lib/openrouter.mjs";
 
 const router = Router();
-
-const Z_AI_SEARCH_URL = "https://api.z.ai/api/paas/v4/web_search";
 
 const searchLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -20,14 +19,14 @@ function validateQuery(query) {
   return true;
 }
 
+// Websuche ueber das OpenRouter-Web-Plugin: die Quellen kommen als url_citation-Annotationen zurueck.
 router.post("/", searchLimiter, async (req, res) => {
   try {
-    const apiKey = process.env.Z_AI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Z_AI_API_KEY not configured" });
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: "OPENROUTER_API_KEY not configured" });
     }
 
-    const { query, count = 10, recency } = req.body ?? {};
+    const { query, count = 10 } = req.body ?? {};
 
     if (!validateQuery(query)) {
       return res.status(400).json({ error: "Invalid search query" });
@@ -35,91 +34,34 @@ router.post("/", searchLimiter, async (req, res) => {
 
     const safeCount = Math.min(Math.max(parseInt(count) || 10, 1), 25);
 
-    const body = {
-      search_engine: "search-prime",
-      search_query: query,
-      count: safeCount
-    };
-
-    if (recency && ["oneDay", "oneWeek", "oneMonth", "oneYear"].includes(recency)) {
-      body.search_recency_filter = recency;
-    }
-
-    let data = null;
-    let fallbackToPerplexity = false;
-
-    try {
-      const response = await fetch(Z_AI_SEARCH_URL, {
-        method: "POST",
-        headers: {
-          "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (response.ok) {
-        data = await response.json();
-        const zResults = data?.search_result || data?.results || data?.data || [];
-        if (zResults.length === 0) {
-          console.warn("Z.AI returned 0 results. Falling back to Perplexity.");
-          fallbackToPerplexity = true;
+    const response = await openrouter.chat.completions.create({
+      model: process.env.OPENROUTER_SEARCH_MODEL || CHAT_MODEL(),
+      messages: [{ role: "user", content: query }],
+      plugins: [
+        {
+          id: "web",
+          engine: process.env.OPENROUTER_SEARCH_ENGINE || "exa",
+          max_results: safeCount
         }
-      } else {
-        const errorText = await response.text().catch(() => "unknown");
-        console.warn("Z.AI Search error:", response.status, errorText, "- Falling back to Perplexity.");
-        fallbackToPerplexity = true;
-      }
-    } catch (zError) {
-      console.warn("Z.AI Fetch error:", zError.message, "- Falling back to Perplexity.");
-      fallbackToPerplexity = true;
-    }
+      ]
+    });
 
-    if (fallbackToPerplexity) {
-      const perplexityKey = process.env.PERPLEXITY_API_KEY;
-      if (!perplexityKey) {
-        console.error("PERPLEXITY_API_KEY not configured for fallback.");
-        return res.status(500).json({ error: "Search failed and fallback key missing." });
-      }
-
-      try {
-        const perpRes = await fetch("https://api.perplexity.ai/search", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${perplexityKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ query: [query] })
-        });
-
-        if (!perpRes.ok) {
-          const perpErr = await perpRes.text().catch(() => "unknown");
-          console.error("Perplexity fallback error:", perpRes.status, perpErr);
-          return res.status(502).json({ error: "Web search failed (both primary and fallback)." });
-        }
-
-        data = await perpRes.json();
-      } catch (pError) {
-        console.error("Perplexity Fetch error:", pError);
-        return res.status(502).json({ error: "Web search failed completely." });
-      }
-    }
-
-    const rawResults = data?.search_result || data?.results || data?.data || [];
-    const results = rawResults
-      .slice(0, safeCount)
-      .map((r) => ({
-        title: r.title || "",
-        url: r.link || r.url || "",
-        snippet: r.content || r.snippet || r.description || ""
+    const annotations = response.choices?.[0]?.message?.annotations ?? [];
+    const seen = new Set();
+    const results = annotations
+      .filter((a) => a?.type === "url_citation" && a.url_citation?.url)
+      .map((a) => ({
+        title: a.url_citation.title || "",
+        url: a.url_citation.url,
+        snippet: a.url_citation.content || ""
       }))
-      .filter((r) => r.title || r.snippet);
+      .filter((r) => (r.title || r.snippet) && !seen.has(r.url) && seen.add(r.url))
+      .slice(0, safeCount);
 
     res.json({ ok: true, results });
   } catch (err) {
     console.error("Search error:", err);
-    res.status(500).json({ error: "server_error" });
+    res.status(502).json({ error: "Web search failed" });
   }
 });
 

@@ -8,7 +8,7 @@
   - Backend: Input-Validierung und HTML-Sanitization
   - Test-Suite erstellt (xss-test.html)
   - Dokumentation in SECURITY.md
-- [ ] **API-Key-Sicherheit:** OpenAI API-Key niemals im Frontend exponieren
+- [ ] **API-Key-Sicherheit:** OpenRouter API-Key niemals im Frontend exponieren
 - [x] **Rate-Limiting verbessern:** ✅ (2026-01-27)
   - `express-rate-limit` Package installiert und konfiguriert
   - Pro IP-Adresse limitiert (max 20 Requests/Minute)
@@ -49,10 +49,10 @@
 ### Backend
 - [x] **Conversation Memory:** ✅ (2026-03-03)
   - Frontend: `conversationHistory`-Array pflegt User- und Assistant-Nachrichten
-  - Backend: Akzeptiert `history`- und `summary`-Felder, validiert, leitet an OpenAI weiter
+  - Backend: Akzeptiert `history`- und `summary`-Felder, validiert, leitet an OpenRouter weiter
   - Persistenz via `localStorage` – Chat überlebt Seitenneuladen und Sessions
   - Auto-Zusammenfassung nach 30 History-Einträgen via `/api/chat/summarize`
-  - Zusammenfassung wird als Kontext an OpenAI mitgegeben, History wird zurückgesetzt
+  - Zusammenfassung wird als Kontext an OpenRouter mitgegeben, History wird zurückgesetzt
   - Chat-Nachrichten werden beim Seitenaufruf wiederhergestellt
   - "Chat leeren"-Button setzt History, Summary und localStorage zurück
 - [ ] **Logging:** Strukturiertes Logging hinzufügen (z.B. Winston oder Pino)
@@ -77,7 +77,7 @@
 ### Unit Tests
 - [ ] Backend-Tests mit Jest/Vitest
   - Chat-Route-Tests
-  - OpenAI-Client-Mock-Tests
+  - LLM-Client-Mock-Tests
   - Rate-Limiter-Tests
 - [ ] Frontend-Tests
   - Chat-Funktionalität
@@ -117,7 +117,7 @@
 - [ ] **Error-Tracking:** Sentry oder ähnliches integrieren
 - [ ] **Analytics:** Privacy-freundliches Analytics (z.B. Plausible)
 - [ ] **Uptime-Monitoring:** UptimeRobot oder Pingdom
-- [ ] **Cost-Monitoring:** OpenAI API-Kosten überwachen
+- [ ] **Cost-Monitoring:** OpenRouter-Kosten überwachen
 
 ## Dokumentation
 
@@ -131,14 +131,14 @@
 
 ### Content
 - [x] **Bildgenerierung:** ✅ (2026-03-03)
-  - Cecilia kann Bilder erstellen via Z.AI API (`glm-image` Modell)
+  - Cecilia kann Bilder erstellen via OpenRouter (Bildmodell per `.env`)
   - Backend: `POST /api/image` Endpoint mit Prompt-Validierung und Rate-Limiting
   - System-Prompt erweitert: Cecilia nutzt `[IMAGE: prompt]` Marker
   - Frontend erkennt Marker, zeigt Loading-State, generiert Bild und zeigt es im Chat
   - Bilder werden in localStorage persistiert und beim Seitenaufruf wiederhergestellt
   - Klick auf Bild öffnet es in neuem Tab
 - [x] **Websuche:** ✅ (2026-03-03)
-  - Cecilia kann im Web recherchieren via Z.AI Search API (`search-prime`)
+  - Cecilia kann im Web recherchieren via OpenRouter Web-Suche
   - Backend: `POST /api/search` Endpoint mit Query-Validierung und Rate-Limiting
   - System-Prompt erweitert: Cecilia nutzt `[SEARCH: query]` Marker ("Kristallkugel")
   - Two-Pass-Flow: Cecilia erkennt Suchbedarf → Frontend führt Suche durch → zweiter Chat-Call mit Ergebnissen → informierte Antwort

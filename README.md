@@ -23,10 +23,10 @@ Das Cecilia-Projekt besteht aus mehreren Komponenten:
 - **styles.css** - Gemeinsames Stylesheet mit magischen Animationen
 
 ### Backend (Node.js/Express)
-Der `cecilia-chat` Ordner enthält einen Express-Server, der mit der OpenAI API integriert ist:
+Der `cecilia-chat` Ordner enthält einen Express-Server, der über OpenRouter mit KI-Modellen verbunden ist:
 - **server.mjs** - Express-Server mit CORS und Health-Check
 - **routes/chat.mjs** - Chat-Endpoint mit Rate-Limiting
-- **lib/openai.mjs** - OpenAI Client-Konfiguration
+- **lib/openrouter.mjs** - OpenRouter Client-Konfiguration
 - **prompts/system_cecilia_storycrafter.txt** - System-Prompt für den AI-Charakter
 
 ## Charakterprofil: Cecilia
@@ -59,7 +59,7 @@ Blühende Wälder, versteckte Lichtungen, magische Strände bei Sonnenuntergang,
 
 ### Chat-System
 **Intelligentes Chat-System mit Fallback:**
-- **AI-Modus:** OpenAI API-Integration mit dem "Cecilia Visual Story Crafter" Charakter
+- **AI-Modus:** OpenRouter-Integration (Modell frei wählbar) mit dem "Cecilia Visual Story Crafter" Charakter
 - **Offline-Modus:** Automatischer Fallback auf vordefinierte Antworten wenn Backend nicht erreichbar
 - **Seamless Integration:** Frontend erkennt automatisch Backend-Verfügbarkeit
 - **XSS-geschützt:** Sichere Handhabung von User-Input (siehe SECURITY.md)
@@ -100,8 +100,11 @@ npm install
 2. **Umgebungsvariablen konfigurieren:**
 Erstellen Sie eine `.env` Datei:
 ```env
-OPENAI_API_KEY=ihr_openai_api_key
-OPENAI_MODEL=gpt-4
+OPENROUTER_API_KEY=ihr_openrouter_api_key
+OPENROUTER_MODEL=deepseek/deepseek-v4.1-flash
+OPENROUTER_TEMPERATURE=1.0
+OPENROUTER_SUMMARY_TEMPERATURE=0.3
+OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
 PORT=30000
 ```
 
@@ -162,7 +165,7 @@ Health-Check Endpoint
 **Backend:**
 - Node.js
 - Express 5.1.0
-- OpenAI SDK 6.6.0
+- OpenAI SDK 6.6.0 (gegen die OpenRouter-API)
 - CORS-Support
 - dotenv für Umgebungsvariablen
 

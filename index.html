@@ -2093,7 +2093,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
               if (span) span.textContent = '✨ Verarbeitet...';
             }
             const followUpPayload = {
-              message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die inhaltlichen Auszüge aus dem Web:\n\n${searchContext}\n\nBitte antworte dem User ausführlich basierend auf diesen Inhalten. Nenne konkrete Fakten und tatsächliche Nachrichten aus den "Inhalt/Auszug"-Texten (bitte berichte die eigentlichen News, anstatt nur die Namen der Webseiten aufzuzählen!). Bleibe in deinem Charakter als Cecilia. Fasse die Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
+              message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die inhaltlichen Auszüge aus dem Web:\n\n${searchContext}\n\nBitte antworte dem User ausführlich basierend auf diesen Inhalten. Nenne konkrete Fakten aus den "Inhalt/Auszug"-Texten (bitte berichte die eigentlichen Inhalte, anstatt nur die Namen der Webseiten aufzuzählen!). Beantworte ausschließlich diese eine Frage und wiederhole keine früheren Antworten. Bleibe in deinem Charakter als Cecilia. Fasse die Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
               history: conversationHistory,
               isSearchFollowUp: true
             };

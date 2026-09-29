@@ -83,7 +83,7 @@ function parseMarkdown(text) {
 ```
 User Input
   → Backend: Validierung (gefährliche Patterns blockieren)
-  → OpenAI API (bekommt raw input)
+  → OpenRouter API (bekommt raw input)
   → Frontend: parseMarkdown() escaped HTML
   → Sichere Darstellung im Browser
 ```
@@ -213,7 +213,7 @@ input.maxLength = 1000;
 
 ### Mittel-Priorität
 
-5. **API-Key-Rotation:** Regelmäßig OpenAI API-Key wechseln
+5. **API-Key-Rotation:** Regelmäßig OpenRouter API-Key wechseln
 6. **Request-Logging:** Verdächtige Aktivitäten loggen
 7. **Error-Handling:** Keine Stack-Traces in Production
 8. **Dependency-Scanning:** npm audit regelmäßig ausführen

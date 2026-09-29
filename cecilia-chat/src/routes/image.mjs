@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 
 const router = Router();
 
-const Z_AI_URL = "https://api.z.ai/api/paas/v4/images/generations";
+const IMAGE_URL = "https://openrouter.ai/api/v1/images";
 
 const imageLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -24,9 +24,9 @@ const ALLOWED_SIZES = new Set(["512x512", "768x768", "1024x1024", "1280x1280"]);
 
 router.post("/", imageLimiter, async (req, res) => {
   try {
-    const apiKey = process.env.Z_AI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "Z_AI_API_KEY not configured" });
+      return res.status(500).json({ error: "OPENROUTER_API_KEY not configured" });
     }
 
     const { prompt, size = "1024x1024" } = req.body ?? {};
@@ -39,31 +39,37 @@ router.post("/", imageLimiter, async (req, res) => {
       return res.status(400).json({ error: `Invalid size. Allowed: ${[...ALLOWED_SIZES].join(", ")}` });
     }
 
-    const response = await fetch(Z_AI_URL, {
+    const response = await fetch(IMAGE_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "glm-image",
+        model: process.env.OPENROUTER_IMAGE_MODEL || "bytedance-seed/seedream-4.5",
         prompt,
-        size
+        n: 1,
+        aspect_ratio: "1:1",
+        output_format: "png"
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "unknown");
-      console.error("Z.AI API error:", response.status, errorText);
+      console.error("OpenRouter image error:", response.status, errorText);
       return res.status(502).json({ error: "Image generation failed" });
     }
 
     const data = await response.json();
 
-    const imageUrl = data?.data?.[0]?.url;
+    // OpenRouter liefert Base64 statt CDN-URL -> als Data-URL an das Frontend geben.
+    const img = data?.data?.[0];
+    const imageUrl = img?.b64_json
+      ? `data:${img.media_type || "image/png"};base64,${img.b64_json}`
+      : img?.url;
     if (!imageUrl) {
-      console.error("Z.AI API: unexpected response format", data);
-      return res.status(502).json({ error: "No image URL in response" });
+      console.error("OpenRouter image: unexpected response format", JSON.stringify(data).slice(0, 500));
+      return res.status(502).json({ error: "No image in response" });
     }
 
     res.json({ ok: true, url: imageUrl });
