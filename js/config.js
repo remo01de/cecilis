@@ -24,9 +24,26 @@ const LEGACY_DEVICE_DATA_CLAIMED = (() => {
     const hasOwn = PROFILE_BASE_KEYS.some(k => localStorage.getItem(profileKey(k)) !== null);
     const legacy = PROFILE_BASE_KEYS.filter(k => localStorage.getItem(k) !== null);
     if (hasOwn || legacy.length === 0) return false;
+    // Pro Schlüssel erst alt entfernen, dann neu schreiben – so liegen die Daten nie
+    // doppelt im knappen Speicher. Scheitert ein Schreiben (z.B. QuotaExceededError),
+    // alles zurück auf die alten Schlüssel: sonst blockiert hasOwn jeden neuen Versuch
+    // und die alten Chats wären unsichtbar.
+    const moved = [];
     for (const k of legacy) {
-      localStorage.setItem(profileKey(k), localStorage.getItem(k));
+      const v = localStorage.getItem(k);
       localStorage.removeItem(k);
+      try {
+        localStorage.setItem(profileKey(k), v);
+        moved.push(k);
+      } catch (e) {
+        localStorage.setItem(k, v);
+        for (const m of moved) {
+          const mv = localStorage.getItem(profileKey(m));
+          localStorage.removeItem(profileKey(m));
+          localStorage.setItem(m, mv);
+        }
+        return false; // keine Bilder-Markierung: die Übernahme ist nicht passiert
+      }
     }
     // Die Bilder werden erst beim Start übernommen; die Markierung bleibt, bis das gelungen ist
     localStorage.setItem(profileKey('cecilia_legacy_images_pending'), '1');
