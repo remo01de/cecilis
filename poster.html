@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cecilia Character Poster</title>
-  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -93,6 +96,42 @@
       star.style.transform = `translateY(${scrollY * speed}px)`;
     });
   });
+
+  // Bilder im Popup öffnen (statt Browser-Download / neuem Tab)
+  (function () {
+    const overlay = document.createElement('div');
+    overlay.className = 'lightbox';
+    overlay.id = 'lightbox';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Bildansicht');
+    overlay.innerHTML =
+      '<button class="lightbox-close" type="button" aria-label="Bild schliessen">&times;</button>' +
+      '<img id="lightboxImg" alt="" draggable="false">' +
+      '<div class="lightbox-hint">Klick oder Esc zum Schliessen</div>';
+    document.body.appendChild(overlay);
+
+    const imgEl = overlay.querySelector('#lightboxImg');
+    function openLightbox(url, altText) {
+      if (!url) return;
+      imgEl.src = url;
+      imgEl.alt = altText || 'Bild';
+      overlay.classList.add('open');
+      document.body.classList.add('lightbox-open');
+    }
+    function closeLightbox() {
+      overlay.classList.remove('open');
+      document.body.classList.remove('lightbox-open');
+      window.setTimeout(() => imgEl.removeAttribute('src'), 240);
+    }
+    overlay.addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+    document.querySelectorAll('.hero-image, .outfit img').forEach((img) => {
+      img.classList.add('zoomable');
+      img.addEventListener('click', () => openLightbox(img.currentSrc || img.src, img.alt));
+    });
+  })();
 </script>
 
 </body>

@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Cecilia · Chat</title>
-  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
   <script src="placeholder-images.js"></script>
   <style>
@@ -461,6 +465,56 @@
     }
 
     /* =========================================================
+       LIGHTBOX  –  Bilder im Popup, kein Download / neuer Tab
+       ========================================================= */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 1000;
+      display: none;
+      align-items: center; justify-content: center;
+      background: rgba(15, 4, 32, 0.88);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+      cursor: zoom-out;
+      opacity: 0; transition: opacity 220ms ease;
+    }
+    .lightbox.open { display: flex; opacity: 1; }
+    .lightbox img {
+      max-width: min(1400px, 94vw);
+      max-height: 88vh;
+      width: auto; height: auto;
+      object-fit: contain;
+      border-radius: var(--r-md);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 30px 90px rgba(0,0,0,0.65), var(--shadow-glow-pink);
+      animation: lightbox-pop 260ms var(--ease-magic) both;
+      -webkit-user-drag: none; user-select: none;
+    }
+    @keyframes lightbox-pop {
+      from { transform: scale(0.92); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    .lightbox-close {
+      position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px;
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; line-height: 1; color: var(--text-1);
+      background: var(--surface-2);
+      border: 1px solid var(--stroke);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 180ms, transform 180ms;
+    }
+    .lightbox-close:hover { background: var(--surface-3); transform: scale(1.06); }
+    .lightbox-hint {
+      position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px; letter-spacing: 0.04em; color: var(--text-3);
+      pointer-events: none; white-space: nowrap;
+    }
+    body.lightbox-open { overflow: hidden; }
+
+    /* =========================================================
        STREAM
        ========================================================= */
     .stream {
@@ -694,7 +748,10 @@
     .chat-image-single img {
       width: 160px; height: 160px;
       border-radius: 3px; object-fit: cover; display: block;
+      cursor: zoom-in;
+      -webkit-user-drag: none; user-select: none;
     }
+
     .chat-image-single-caption {
       font-family: var(--font-hand);
       font-size: 16px; color: #2A0F33;
@@ -981,7 +1038,7 @@
       <!-- Gallery bar -->
       <div class="gallery-wrapper" id="gallerySection">
         <div class="gallery-inner">
-          <div class="gallery-main" id="galleryMain">
+          <div class="gallery-main" id="galleryMain" role="button" tabindex="0" aria-label="Aktuelles Galeriebild gross anzeigen">
             <div class="gallery-placeholder" id="galleryPlaceholder">
               <span>🎨</span>
               <span>Bilder</span>
@@ -1023,6 +1080,15 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Lightbox: Bild im Popup statt Download / neuem Tab.
+       Steht bewusst VOR dem Script, damit getElementById() die
+       Elemente beim Auswerten der Handler schon findet. -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Bildansicht">
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Bild schliessen">&times;</button>
+    <img id="lightboxImg" alt="" draggable="false">
+    <div class="lightbox-hint">Klick oder Esc zum Schliessen</div>
   </div>
 
   <script>
@@ -1432,8 +1498,40 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
     }
 
     document.getElementById('galleryMain').addEventListener('click', (e) => {
-      if (e.target.tagName === 'IMG' && e.target.src) window.open(e.target.src, '_blank');
+      if (e.target.tagName === 'IMG' && e.target.src) {
+        openLightbox(e.target.src, e.target.alt || 'Cecilia');
+      }
     });
+    document.getElementById('galleryMain').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const imgEl = document.getElementById('galleryMain').querySelector('img');
+      if (!imgEl || !imgEl.src) return;
+      e.preventDefault();
+      openLightbox(imgEl.src, imgEl.alt || 'Cecilia');
+    });
+
+    // ==========================================
+    // CONFIG
+    // ==========================================
+    // Steht bewusst VOR dem Galerie-Boot darunter: der Willkommensbild-Fetch
+    // nutzt CONFIG.IMAGE_URL. Weiter unten (nach dem Boot) liefe das in eine
+    // TDZ-ReferenceError: "Cannot access 'CONFIG' before initialization".
+    const BACKEND_PORT = '30000';
+    const isLocalhost  = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const API_BASE     = isLocalhost && window.location.port !== BACKEND_PORT
+      ? `http://localhost:${BACKEND_PORT}`
+      : '';
+    const CONFIG = {
+      API_URL:        API_BASE + '/api/chat',
+      SUMMARIZE_URL:  API_BASE + '/api/chat/summarize',
+      IMAGE_URL:      API_BASE + '/api/image',
+      SEARCH_URL:     API_BASE + '/api/search',
+      USE_AI:         true,
+      MAX_MESSAGE_LENGTH: 1000,
+      SUMMARIZE_THRESHOLD: 30,
+      MAX_DISPLAY_MESSAGES: 100,
+      STORAGE_KEY: 'cecilia_chat_state'
+    };
 
     loadGalleryState();
     renderGalleryMain();
@@ -1453,7 +1551,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       mainEl.appendChild(overlay);
 
       fetch(
-        (window.location.port === '30000' ? '' : 'http://localhost:30000') + '/api/image',
+        CONFIG.IMAGE_URL,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, size: '1024x1024' }) }
       )
         .then(r => { if (!r.ok) throw new Error('Fehler'); return r.json(); })
@@ -1474,26 +1572,6 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         .catch(err => console.warn('Willkommensbild fehlgeschlagen:', err))
         .finally(() => { overlay.remove(); galleryState.isGenerating = false; });
     }
-
-    // ==========================================
-    // CONFIG
-    // ==========================================
-    const BACKEND_PORT = '30000';
-    const isLocalhost  = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    const API_BASE     = isLocalhost && window.location.port !== BACKEND_PORT
-      ? `http://localhost:${BACKEND_PORT}`
-      : '';
-    const CONFIG = {
-      API_URL:        API_BASE + '/api/chat',
-      SUMMARIZE_URL:  API_BASE + '/api/chat/summarize',
-      IMAGE_URL:      API_BASE + '/api/image',
-      SEARCH_URL:     API_BASE + '/api/search',
-      USE_AI:         true,
-      MAX_MESSAGE_LENGTH: 1000,
-      SUMMARIZE_THRESHOLD: 30,
-      MAX_DISPLAY_MESSAGES: 100,
-      STORAGE_KEY: 'cecilia_chat_state'
-    };
 
     const IMAGE_MARKER_REGEX  = /\[IMAGE:\s*(.+?)\]/g;
     const SEARCH_MARKER_REGEX = /\[SEARCH:\s*(.+?)\]/g;
@@ -1682,7 +1760,7 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
         errDiv.innerHTML = '🖼️ <em>Dieses Bild ist abgelaufen.</em>';
         wrapper.appendChild(errDiv);
       };
-      img.addEventListener('click', () => window.open(imageUrl, '_blank'));
+      img.addEventListener('click', () => openLightbox(imageUrl, 'Von Cecilia gezaubertes Bild'));
       wrapper.appendChild(img);
 
       const caption = document.createElement('div');
@@ -2129,6 +2207,43 @@ Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
       const input = document.getElementById('chatInput');
       if (input) input.focus();
     }
+
+    // ==========================================
+    // LIGHTBOX  –  Bilder im Popup-Fenster
+    // ==========================================
+    // Ersetzt window.open(): Chrome/Safari laden CDN-Bilder mit
+    // Content-Disposition: attachment sonst als Download herunter.
+    const lightboxEl  = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const lightboxCloseBtn = document.getElementById('lightboxClose');
+    let lightboxReturnFocus = null;
+
+    function openLightbox(url, altText) {
+      if (!url) return;
+      lightboxReturnFocus = document.activeElement;
+      lightboxImg.src = url;
+      lightboxImg.alt = altText || 'Bild';
+      lightboxEl.classList.add('open');
+      document.body.classList.add('lightbox-open');
+      lightboxCloseBtn.focus();
+    }
+
+    function closeLightbox() {
+      if (!lightboxEl.classList.contains('open')) return;
+      lightboxEl.classList.remove('open');
+      document.body.classList.remove('lightbox-open');
+      window.setTimeout(() => {
+        if (!lightboxEl.classList.contains('open')) lightboxImg.removeAttribute('src');
+      }, 240);
+      if (lightboxReturnFocus && lightboxReturnFocus.focus) lightboxReturnFocus.focus();
+      lightboxReturnFocus = null;
+    }
+
+    lightboxEl.addEventListener('click', closeLightbox);
+    lightboxImg.addEventListener('dragstart', (e) => e.preventDefault());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
 
     // ==========================================
     // INIT

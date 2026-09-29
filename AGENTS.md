@@ -135,6 +135,19 @@ Erste grosse Überarbeitung durch Codex + Remo. Ausgangslage war ein Prototyp mi
 - **Websuche-Fallback via Perplexity:** `/api/search` weicht automatisch auf die Perplexity API aus, wenn Z.AI keine Ergebnisse liefert.
 - **Backend-Validierung angepasst:** Zweiter LLM-Lauf nach Websuche umgeht nun das 1000-Zeichen-Limit (`isSearchFollowUp: true`), gekappte Snippets (500 Zeichen) im Frontend zwingen die KI zur inhaltlichen Zusammenfassung.
 
+### Runde 6 (2026-05-20) – Y2K Fairycore Design
+- **Vollständige UI-Überarbeitung** (Commit `8139667`): Design-Tokens für Nightshade (#0F0420) und Day Dream als CSS-Custom-Properties, Schriften Instrument Serif x DM Sans x Caveat
+- Aurora-Hintergrund mit animiertem Sternfeld, Feenstaub-Partikel, zwei flatternde Schmetterlinge
+- Neue Chat-Bubbles, Polaroid-Bildkarten mit Klebeband, Kristallkugel-Suchkarten (Glassmorphism), Pillen-Composer mit Vorschlags-Chips
+- Sidebar mit Brand-Mark, "Neuer Zauber", Verlauf und Theme-Toggle (Nightshade <-> Day Dream, in localStorage persistiert)
+- **Nicht in dieser Datei dokumentiert worden** – hier nachgetragen am 2026-09-27
+
+### Runde 7 (2026-09-27) – Heutige Session
+- **Echtes `favicon.ico`:** Die alte Datei war eine umbenannte SVG und wurde vom Express-Container gar nicht ausgeliefert (`GET /favicon.ico` → 404), weil der `Dockerfile` sie nicht mit `COPY` ins Image nahm. Jetzt: echtes Multi-Size-ICO (16/32/48/64, BMP/DIB-Einträge) aus dem Cecilia-Motiv (pinke Kachel, Gesicht, Stern), plus `favicon.svg`, `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`. `Dockerfile` kopiert alle Icon-Dateien, alle drei HTML-Seiten verweisen darauf.
+- **Bild-Klick öffnet Popup statt Download:** `window.open(src, '_blank')` auf Galerie- und Chat-Bildern ersetzt durch eine In-Page-Lightbox (`#lightbox`): bildschirmfüllendes Overlay mit Blur, Schliessen per Klick, Kreuz-Button oder `Esc`, Fokus-Rückgabe, Scroll-Sperre am Body, `draggable="false"`. Grund: Z.AI-CDN-Bilder wurden über `window.open()` als Download heruntergeladen statt angezeigt. Die Lightbox steht im Markup **vor** dem Inline-Script, sonst ist `getElementById('lightbox')` beim Registrieren der Handler `null`.
+- **Auch auf `poster.html`:** Hero-Bild und Outfit-Kacheln öffnen die Lightbox (CSS in `styles.css`, Markup/JS inline).
+- **Tastaturbedienung:** Galerie-Hauptbild ist jetzt `role="button" tabindex="0"` und öffnet per Enter/Space.
+
 ## Was bereits erledigt ist
 
 - [x] XSS-Schutz (Frontend + Backend) – 2025-11-30
@@ -154,6 +167,8 @@ Erste grosse Überarbeitung durch Codex + Remo. Ausgangslage war ein Prototyp mi
 - [x] AI-Analyse des Chatverlaufs für Stimmung/Ort/Outfit, Jahreszeit via Datum – 2026-03-09
 - [x] API-URL-Erkennung port-basiert (Backend, Live Server, file://) – 2026-03-09
 - [x] GitHub-Repository erstellt (remo01de/cecilis) – 2026-03-09
+- [x] Echtes Multi-Size-favicon.ico + SVG/PNG-Icons, im Dockerfile mitkopiert – 2026-09-27
+- [x] Bild-Klick oeffnet Lightbox-Popup statt Download/neuem Tab – 2026-09-27
 
 ## Docker
 

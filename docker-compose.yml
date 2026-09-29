@@ -2,7 +2,9 @@ services:
   cecilia:
     build: .
     ports:
-      - "30000:30000"
+      # Nur localhost – Plesk-nginx proxied cecilia.rsservice.app auf diesen Port
+      # und läuft auf demselben Host. Zugriff ausschliesslich über die Domain.
+      - "127.0.0.1:30000:30000"
     env_file:
       - cecilia-chat/.env
     environment:

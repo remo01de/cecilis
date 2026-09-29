@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = process.env.PUBLIC_DIR || path.join(__dirname, "..", "..");
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 

@@ -24,3 +24,24 @@ dist/
 build/
 
 cecilia-projekt.zip
+
+# --- Server-Artefakte, gehoeren nicht ins Repo -------------------------
+# Plesk NodeJS-Toolkit erzeugt diese beim Deploy selbst
+.bootstrap.cjs
+.node-version
+
+# Altes, nirgends referenziertes Stylesheet (ersetzt durch styles.css + Inline-CSS)
+css/
+
+# Plesk-Default-Icons im img/-Ordner, in keiner HTML/JS-Datei referenziert
+img/blog.png
+img/facebook.png
+img/fastcgi.png
+img/forum.png
+img/globe.png
+img/knowledge-base.png
+img/linkedin.png
+img/logo.png
+img/php.png
+img/ssi.png
+img/twitter.png
