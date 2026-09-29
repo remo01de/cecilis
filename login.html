@@ -91,6 +91,19 @@
       color: var(--text-3); font-family: inherit; font-weight: 600; font-size: 13px; line-height: 1; cursor: pointer;
     }
     .show-pw:hover { color: var(--text-1); }
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      padding: 5px; border-radius: 999px;
+      background: var(--field); border: 1px solid var(--stroke);
+      margin-bottom: 6px;
+    }
+    .tabs button {
+      min-height: 42px; border: none; border-radius: 999px;
+      background: transparent; color: var(--text-3);
+      font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+    .tabs button[aria-selected="true"] { background: var(--grad-magic); color: #2A0526; }
+    form[hidden] { display: none; }
     .error {
       margin-top: 16px; padding: 10px 14px;
       border-radius: 14px; background: var(--error-bg); color: var(--error);
@@ -118,21 +131,33 @@
     <h1>Hallo!</h1>
     <p class="intro">Melde dich an, um mit Cecilia zu plaudern.</p>
 
-    <form id="loginForm" novalidate>
-      <label for="user">E-Mail</label>
+    <div class="tabs" role="tablist" aria-label="Wie meldest du dich an?">
+      <button type="button" role="tab" id="tabFamily" aria-selected="true" aria-controls="familyForm">Familie</button>
+      <button type="button" role="tab" id="tabChild" aria-selected="false" aria-controls="childForm" tabindex="-1">Mein Kind-Login</button>
+    </div>
+
+    <form id="familyForm" role="tabpanel" aria-labelledby="tabFamily" novalidate>
+      <label for="email">E-Mail</label>
+      <div class="field"><input id="email" type="email" autocomplete="username" inputmode="email" required></div>
+      <label for="password">Passwort</label>
       <div class="field">
-        <input id="user" name="user" type="email" autocomplete="username" inputmode="email" required>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button type="button" class="show-pw" data-toggle="password" aria-controls="password" aria-pressed="false">zeigen</button>
       </div>
+      <p class="error" data-error role="alert" hidden></p>
+      <button type="submit">Anmelden ✨</button>
+    </form>
 
-      <label for="passwort">Passwort</label>
+    <form id="childForm" role="tabpanel" aria-labelledby="tabChild" novalidate hidden>
+      <label for="username">Benutzername</label>
+      <div class="field"><input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+      <label for="childPassword">Passwort</label>
       <div class="field">
-        <input id="passwort" name="passwort" type="password" autocomplete="current-password" required>
-        <button type="button" class="show-pw" id="showPw" aria-controls="passwort" aria-pressed="false">zeigen</button>
+        <input id="childPassword" type="password" autocomplete="current-password" required>
+        <button type="button" class="show-pw" data-toggle="childPassword" aria-controls="childPassword" aria-pressed="false">zeigen</button>
       </div>
-
-      <p class="error" id="error" role="alert" hidden></p>
-
-      <button type="submit" id="submit">Anmelden ✨</button>
+      <p class="error" data-error role="alert" hidden></p>
+      <button type="submit">Los geht's ✨</button>
     </form>
 
     <p class="hint">Deinen Zugang bekommst du von deinen Eltern.</p>
@@ -140,58 +165,86 @@
   </main>
 
   <script>
-    const form   = document.getElementById('loginForm');
-    const errEl  = document.getElementById('error');
-    const submit = document.getElementById('submit');
-    const pwEl   = document.getElementById('passwort');
-    const showPw = document.getElementById('showPw');
-
-    // Nur Pfade dieser Seite als Ziel zulassen (kein Weiterleiten auf fremde Seiten)
     function nextTarget() {
       const next = new URLSearchParams(location.search).get('next') || '/';
       return /^\/(?!\/)/.test(next) && !next.startsWith('/login.html') ? next : '/';
     }
 
-    // Schon angemeldet? Direkt weiter.
-    fetch('/api/session').then(r => r.json()).then(d => { if (d.loggedIn) location.replace(nextTarget()); }).catch(() => {});
+    // Schon angemeldet? Mit Profil weiter, ohne Profil zur Profilwahl.
+    fetch('/api/auth/session').then(r => r.json()).then(s => {
+      if (s.loggedIn) location.replace(s.profile ? nextTarget() : '/profile.html?next=' + encodeURIComponent(nextTarget()));
+    }).catch(() => {});
 
-    showPw.addEventListener('click', () => {
-      const show = pwEl.type === 'password';
-      pwEl.type = show ? 'text' : 'password';
-      showPw.textContent = show ? 'verbergen' : 'zeigen';
-      showPw.setAttribute('aria-pressed', String(show));
+    // Reiter (Pfeiltasten wie bei WAI-ARIA Tabs)
+    const tabs = [document.getElementById('tabFamily'), document.getElementById('tabChild')];
+    function selectTab(tab) {
+      tabs.forEach(t => {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+      tab.focus();
+    }
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => selectTab(t));
+      t.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') selectTab(tabs[(i + 1) % 2]);
+      });
     });
 
-    function showError(text) {
-      errEl.textContent = text;
-      errEl.hidden = false;
+    document.querySelectorAll('[data-toggle]').forEach(btn => {
+      const input = document.getElementById(btn.dataset.toggle);
+      btn.addEventListener('click', () => {
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.textContent = show ? 'verbergen' : 'zeigen';
+        btn.setAttribute('aria-pressed', String(show));
+      });
+    });
+
+    const MESSAGES = {
+      401: 'Das hat leider nicht geklappt. Prüf bitte deine Angaben.',
+      403: 'Dieser Zugang ist gerade gesperrt. Frag bitte deine Eltern.',
+      429: 'Zu viele Versuche. Warte bitte 15 Minuten und probier es dann nochmal.'
+    };
+
+    async function submit(form, url, payload, onOk) {
+      const err = form.querySelector('[data-error]');
+      const btn = form.querySelector('button[type="submit"]');
+      const label = btn.textContent;
+      err.hidden = true;
+      if (Object.values(payload).some(v => !v)) {
+        err.textContent = 'Bitte füll beide Felder aus.';
+        err.hidden = false;
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Einen Moment …';
+      try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (res.ok) return onOk(await res.json());
+        err.textContent = MESSAGES[res.status] || 'Cecilia ist gerade nicht erreichbar. Probier es bitte später nochmal.';
+      } catch (e) {
+        err.textContent = 'Keine Verbindung. Bist du mit dem Internet verbunden?';
+      }
+      err.hidden = false;
+      btn.disabled = false;
+      btn.textContent = label;
     }
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('familyForm').addEventListener('submit', e => {
       e.preventDefault();
-      errEl.hidden = true;
-      const user = document.getElementById('user').value.trim();
-      const passwort = pwEl.value;
-      if (!user || !passwort) { showError('Bitte gib deine E-Mail und dein Passwort ein.'); return; }
+      submit(e.target, '/api/auth/login',
+        { email: document.getElementById('email').value.trim(), password: document.getElementById('password').value },
+        data => location.replace(data.profileSelected ? nextTarget() : '/profile.html?next=' + encodeURIComponent(nextTarget())));
+    });
 
-      submit.disabled = true;
-      submit.textContent = 'Einen Moment …';
-      try {
-        const res = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user, passwort })
-        });
-        if (res.ok) { location.replace(nextTarget()); return; }
-        if (res.status === 401) showError('Das hat leider nicht geklappt. Prüf bitte E-Mail und Passwort.');
-        else if (res.status === 429) showError('Zu viele Versuche. Warte bitte 15 Minuten und probier es dann nochmal.');
-        else showError('Cecilia ist gerade nicht erreichbar. Probier es bitte später nochmal.');
-      } catch (err) {
-        showError('Keine Verbindung. Bist du mit dem Internet verbunden?');
-      }
-      submit.disabled = false;
-      submit.textContent = 'Anmelden ✨';
-      pwEl.select();
+    document.getElementById('childForm').addEventListener('submit', e => {
+      e.preventDefault();
+      submit(e.target, '/api/auth/child-login',
+        { username: document.getElementById('username').value.trim(), password: document.getElementById('childPassword').value },
+        () => location.replace(nextTarget()));
     });
   </script>
 </body>
