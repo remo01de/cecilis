@@ -4,7 +4,20 @@ import chatRoute from "./routes/chat.mjs";
 import imageRoute from "./routes/image.mjs";
 import searchRoute from "./routes/search.mjs";
 import { createAuthRouter } from "./routes/auth.mjs";
-import { loadSession, requireJsonBody, requireProfile, pageGate } from "./lib/auth.mjs";
+import { loadSession, requireJsonBody, requireProfile, pageGate, normalizePath } from "./lib/auth.mjs";
+
+// Nur diese Dateien aus dem Projektordner dürfen ausgeliefert werden (nicht data/, src/, Doku …)
+const STATIC_FILES = new Set([
+  "/", "/index.html", "/willkommen.html", "/login.html", "/profile.html", "/admin.html", "/poster.html",
+  "/cecilia-charakter.html", "/chat.css", "/styles.css", "/placeholder-images.js", "/favicon.ico",
+  "/favicon.svg", "/favicon-32.png", "/favicon-192.png", "/apple-touch-icon.png"
+]);
+function staticAllowlist(req, res, next) {
+  const p = normalizePath(req.path);
+  if (p === null) return res.status(400).end();
+  if (STATIC_FILES.has(p) || p.startsWith("/img/web/") || (p.startsWith("/js/") && p.endsWith(".js"))) return next();
+  res.status(404).type("text/plain").send("Not found");
+}
 
 export function createApp({ db, publicDir, now = () => Date.now(), loginLimit = 5 }) {
   const app = express();
@@ -35,6 +48,7 @@ export function createApp({ db, publicDir, now = () => Date.now(), loginLimit = 
   app.use("/api/search", requireProfile, searchRoute);
 
   app.use(pageGate);
+  app.use(staticAllowlist);
   app.use(express.static(publicDir));
   return app;
 }

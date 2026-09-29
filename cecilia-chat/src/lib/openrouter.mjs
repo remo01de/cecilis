@@ -3,8 +3,7 @@ import OpenAI from "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export const openrouter = new OpenAI({
-  // Platzhalter, damit der Import ohne Schlüssel (Tests) nicht abstürzt; die Routen melden einen fehlenden Schlüssel selbst
-  apiKey: process.env.OPENROUTER_API_KEY || "missing",
+  apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: OPENROUTER_BASE_URL,
   defaultHeaders: {
     "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "https://cecilia.rsservice.app",

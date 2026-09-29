@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { startTestApp, client, seedAccount } from "./helpers.mjs";
 import { setAccountStatus } from "../src/db/accounts.mjs";
+import { createSession } from "../src/db/sessions.mjs";
 
 test("Familien-Login richtig: Sitzung, bei genau einem Profil ohne PIN automatisch gewählt", async (t) => {
   const app = await startTestApp({ seed: (db) => seedAccount(db) });
@@ -134,4 +135,57 @@ test("Seitenschutz mit Familien-Sitzung ohne Profil", async (t) => {
   const api = await c.req("/api/chat", { method: "POST", json: { message: "hi" } });
   assert.equal(api.status, 409);
   assert.equal(api.data.error, "profile_required");
+});
+
+const LOGIN = { email: "eltern@example.com", password: "Eltern-Passwort-1" };
+
+test("Seitenschutz lässt sich nicht über Gross-/Kleinschreibung oder %2E umgehen", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db) });
+  t.after(app.close);
+  const c = client(app.base);
+  await c.req("/api/auth/login", { method: "POST", json: LOGIN });
+  assert.equal((await c.req("/admin.html")).location, "/");
+  assert.equal((await c.req("/admin%2Ehtml")).location, "/");
+  assert.equal((await c.req("/Admin.html")).location, "/");
+  assert.equal((await c.req("/%zz")).status, 400);
+});
+
+test("Kind-Sitzung kommt nicht auf /Profile.html", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db) });
+  t.after(app.close);
+  const { accountId, profileIds } = app.seeded;
+  const token = createSession(app.db, { accountId, profileId: profileIds[0], kind: "child", ttlMs: 1e9, now: app.clock.t });
+  const c = client(app.base);
+  const h = { cookie: `cecilia_session=${token}` };
+  assert.equal((await c.req("/Profile.html", { headers: h })).location, "/");
+  assert.equal((await c.req("/profile%2Ehtml", { headers: h })).location, "/");
+});
+
+test("Nur freigegebene Dateien werden ausgeliefert", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db) });
+  t.after(app.close);
+  const c = client(app.base);
+  await c.req("/api/auth/login", { method: "POST", json: LOGIN });
+  for (const p of ["/data/cecilia.db", "/data/secret.db", "/cecilia-chat/package.json", "/docs/x.md", "/DATA/secret.db", "/data%2Fsecret.db"]) {
+    assert.equal((await c.req(p)).status, 404, p);
+  }
+  assert.equal((await c.req("/js/app.js")).status, 200);
+  assert.equal((await c.req("/index.html")).status, 200);
+});
+
+test("Kaputtes Cookie führt nicht zu einem 500er", async (t) => {
+  const app = await startTestApp();
+  t.after(app.close);
+  const r = await client(app.base).req("/api/auth/session", { headers: { cookie: "cecilia_session=%E0%A4%A" } });
+  assert.equal(r.status, 200);
+  assert.equal(r.data.loggedIn, false);
+});
+
+test("Profil eines fremden Kontos macht die Sitzung ungültig", async (t) => {
+  const app = await startTestApp({ seed: (db) => [seedAccount(db), seedAccount(db, { email: "b@example.com", profiles: [{ name: "Fremd" }] })] });
+  t.after(app.close);
+  const [a, b] = app.seeded;
+  const token = createSession(app.db, { accountId: a.accountId, profileId: b.profileIds[0], kind: "family", ttlMs: 1e9, now: app.clock.t });
+  const r = await client(app.base).req("/api/auth/session", { headers: { cookie: `cecilia_session=${token}` } });
+  assert.equal(r.data.loggedIn, false);
 });

@@ -11,7 +11,9 @@ const TOUCH_INTERVAL = 60 * 60 * 1000;
 function readCookie(req, name) {
   for (const part of (req.headers.cookie || "").split(";")) {
     const i = part.indexOf("=");
-    if (i > 0 && part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1).trim());
+    if (i > 0 && part.slice(0, i).trim() === name) {
+      try { return decodeURIComponent(part.slice(i + 1).trim()); } catch { return null; }
+    }
   }
   return null;
 }
@@ -49,6 +51,7 @@ export function loadSession(db, now) {
     const profile = s?.profile_id ? profiles.getProfile(db, s.profile_id) : null;
     const valid =
       s && s.expires_at > req.now && account && account.status === "active" &&
+      (!profile || profile.account_id === account.id) &&
       (s.kind === "family" || profile);
     if (!valid) {
       if (s) sessions.deleteSession(db, s.token_hash);
@@ -107,21 +110,29 @@ const PUBLIC_PATHS = new Set([
 ]);
 const PUBLIC_PREFIXES = ["/img/web/"];
 
-export function pageGate(req, res, next) {
-  if (req.path.startsWith("/api/")) return next();
-  if (PUBLIC_PATHS.has(req.path) || PUBLIC_PREFIXES.some((p) => req.path.startsWith(p))) return next();
+// Pfad wie ihn express.static sieht: dekodiert und klein geschrieben (sonst umgehen
+// /admin%2Ehtml oder /Admin.html die Prüfungen). null = kaputte Kodierung.
+export function normalizePath(p) {
+  try { return decodeURIComponent(p).toLowerCase(); } catch { return null; }
+}
 
-  const isStart = req.path === "/" || req.path === "/index.html";
-  const isPage = req.method === "GET" && (isStart || req.path.endsWith(".html"));
+export function pageGate(req, res, next) {
+  const path = normalizePath(req.path);
+  if (path === null) return res.status(400).end();
+  if (path.startsWith("/api/")) return next();
+  if (PUBLIC_PATHS.has(path) || PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return next();
+
+  const isStart = path === "/" || path === "/index.html";
+  const isPage = req.method === "GET" && (isStart || path.endsWith(".html"));
 
   if (!req.session) {
     if (req.method === "GET" && isStart) return res.redirect(302, "/willkommen.html");
     return res.redirect(302, `/login.html?next=${encodeURIComponent(isPage ? req.originalUrl : "/")}`);
   }
-  if (req.path === "/profile.html") {
+  if (path === "/profile.html") {
     return req.session.kind === "family" ? next() : res.redirect(302, "/");
   }
-  if (req.path === "/admin.html") {
+  if (path === "/admin.html") {
     return req.session.kind === "family" && req.account.role === "admin" ? next() : res.redirect(302, "/");
   }
   if (!req.profile) return res.redirect(302, "/profile.html");

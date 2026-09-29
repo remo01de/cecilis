@@ -1,3 +1,4 @@
+import "./setup-env.mjs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createApp } from "../src/app.mjs";
