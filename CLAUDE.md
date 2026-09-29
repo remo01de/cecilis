@@ -78,8 +78,8 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 | `/api/auth/select-profile` | POST | Profil wählen. Body: `{ profileId, pin? }`, setzt auch Cookie `cecilia_profile` |
 | `/api/auth/admin-unlock` | POST | Passwort erneut eingeben → Admin-Freigabe 15 min (IP-Limit, bei Kontosperre blockiert) |
 | `/api/admin/accounts` | GET/POST | Konten auflisten (`?q=`) / anlegen (`{ email }`, Passwort einmalig in der Antwort) |
-| `/api/admin/accounts/:id/reset-password` | POST | Neues Passwort (einmalig), löscht Sitzungen |
-| `/api/admin/accounts/:id/disable` · `enable` · `logout-all` | POST | Sperren / entsperren / alle Sitzungen löschen |
+| `/api/admin/accounts/:id/reset-password` | POST | Neues Passwort (einmalig), löscht Sitzungen (eigenes Konto: alle ausser der aktuellen) |
+| `/api/admin/accounts/:id/disable` · `enable` · `logout-all` | POST | Sperren (eigenes Konto → 400) / entsperren / alle Sitzungen löschen (eigenes Konto: alle ausser der aktuellen) |
 | `/api/admin/accounts/:id` | DELETE | Konto löschen, Body `{ confirmEmail }`; eigenes Konto → 400 |
 | `/api/admin/accounts/:id/profiles` | GET/POST | Profile eines Kontos / anlegen (`{ name, avatar, color }`) |
 | `/api/admin/profiles/:id` | PATCH/DELETE | Profil ändern / löschen |

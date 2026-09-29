@@ -46,6 +46,10 @@ export function createAdminRouter(db) {
     return p;
   }
   const isSelf = (req, a) => a.id === req.account.id;
+  // Beim eigenen Konto bleibt die aktuelle Sitzung bestehen, alle anderen enden
+  const endSessions = (req, a) => isSelf(req, a)
+    ? sessions.deleteAccountSessionsExcept(db, a.id, req.session.token_hash)
+    : sessions.deleteAccountSessions(db, a.id);
 
   router.get("/accounts", (req, res) => {
     const q = typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : "";
@@ -66,7 +70,7 @@ export function createAdminRouter(db) {
     if (!a) return;
     const password = generatePassword();
     accounts.setAccountPassword(db, a.id, hashSecret(password));
-    if (!isSelf(req, a)) sessions.deleteAccountSessions(db, a.id);
+    endSessions(req, a);
     res.json({ password });
   });
 
@@ -89,8 +93,7 @@ export function createAdminRouter(db) {
   router.post("/accounts/:id/logout-all", (req, res) => {
     const a = account(req, res);
     if (!a) return;
-    if (isSelf(req, a)) return res.status(400).json({ error: "cannot_modify_self" });
-    sessions.deleteAccountSessions(db, a.id);
+    endSessions(req, a);
     res.json({ ok: true });
   });
 

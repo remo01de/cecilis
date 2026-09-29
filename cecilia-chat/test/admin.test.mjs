@@ -197,3 +197,25 @@ test("Profil löschen beendet dessen Kind-Sitzung", async (t) => {
   await c.req(`/api/admin/profiles/${pid}`, { method: "DELETE", json: {} });
   assert.equal((await k.req("/api/auth/session")).data.loggedIn, false);
 });
+
+test("Eigenes Passwort zurücksetzen und „alle abmelden“ beenden nur die anderen Sitzungen", async (t) => {
+  const app = await startTestApp({ seed: (db) => ({ admin: seedAccount(db, ADMIN) }) });
+  t.after(app.close);
+  const self = app.seeded.admin.accountId;
+  const c = await adminClient(app);
+  const other = client(app.base);
+  await other.req("/api/auth/login", { method: "POST", json: { email: ADMIN.email, password: ADMIN.password } });
+  assert.equal((await other.req("/api/auth/session")).data.loggedIn, true);
+
+  const lo = await c.req(`/api/admin/accounts/${self}/logout-all`, { method: "POST", json: {} });
+  assert.equal(lo.status, 200);
+  assert.equal((await other.req("/api/auth/session")).data.loggedIn, false);
+  assert.equal((await c.req("/api/auth/session")).data.loggedIn, true);
+
+  await other.req("/api/auth/login", { method: "POST", json: { email: ADMIN.email, password: ADMIN.password } });
+  const reset = await c.req(`/api/admin/accounts/${self}/reset-password`, { method: "POST", json: {} });
+  assert.equal(reset.status, 200);
+  assert.equal((await other.req("/api/auth/session")).data.loggedIn, false);
+  assert.equal((await c.req("/api/auth/session")).data.loggedIn, true);
+  assert.equal((await c.req("/api/admin/accounts")).status, 200); // Freigabe bleibt
+});

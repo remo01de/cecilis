@@ -206,7 +206,7 @@ Konten, Profile und Sitzungen liegen in SQLite (lokal `data/cecilia.db`, im Dock
 
 **Admin**
 - Admin-Seite und `/api/admin/*` brauchen Rolle `admin` und eine Freigabe: Passwort erneut eingeben (`/api/auth/admin-unlock`), gültig 15 Minuten. Ohne Freigabe 403 `admin_reauth_required`. Kind-Sitzungen haben keinen Zugriff.
-- Eigenes Konto sperren oder löschen ist gesperrt.
+- Eigenes Konto sperren oder löschen ist gesperrt. Setzt der Admin sein eigenes Passwort zurück oder meldet sein Konto „überall“ ab, enden alle anderen Sitzungen des Kontos; nur die aktuelle bleibt.
 
 **Seitenschutz und Dateien**
 - `pageGate` (`lib/auth.mjs`) normalisiert den Pfad (dekodieren, klein schreiben, bei ungültiger Kodierung 400), bevor er verglichen wird. Sonst würde z.B. `/admin%2Ehtml` den Schutz umgehen.

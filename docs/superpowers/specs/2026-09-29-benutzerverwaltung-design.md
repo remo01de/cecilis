@@ -141,9 +141,9 @@ Alle ändernden Aufrufe sind `POST`/`PATCH`/`DELETE` mit `Content-Type: applicat
 |---|---|
 | `GET /api/admin/accounts?q=` | Liste mit Anzahl Profile, letzte Anmeldung |
 | `POST /api/admin/accounts` | `{ email }` → legt Konto an, Antwort enthält einmalig `password` |
-| `POST /api/admin/accounts/:id/reset-password` | neues Passwort (einmalig in der Antwort), Sitzungen löschen |
+| `POST /api/admin/accounts/:id/reset-password` | neues Passwort (einmalig in der Antwort), Sitzungen löschen (eigenes Konto: alle ausser der aktuellen) |
 | `POST /api/admin/accounts/:id/disable` / `enable` | sperren (Sitzungen löschen) / entsperren (setzt auch `failed_logins` und `locked_until` zurück) |
-| `POST /api/admin/accounts/:id/logout-all` | alle Sitzungen löschen |
+| `POST /api/admin/accounts/:id/logout-all` | alle Sitzungen löschen (eigenes Konto: alle ausser der aktuellen) |
 | `DELETE /api/admin/accounts/:id` | Body `{ confirmEmail }` muss passen; eigenes Konto → 400 |
 | `GET /api/admin/accounts/:id/profiles` | Profile eines Kontos |
 | `POST /api/admin/accounts/:id/profiles` | `{ name, avatar, color }` |

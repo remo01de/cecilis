@@ -27,6 +27,9 @@ export function setAdminUntil(db, tokenHash, until) {
 
 export const deleteSession = (db, tokenHash) => db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(tokenHash);
 export const deleteAccountSessions = (db, accountId) => db.prepare("DELETE FROM sessions WHERE account_id = ?").run(accountId);
+// Alle Sitzungen eines Kontos ausser der aktuellen (eigenes Passwort, „alle anderen abmelden“)
+export const deleteAccountSessionsExcept = (db, accountId, tokenHash) =>
+  db.prepare("DELETE FROM sessions WHERE account_id = ? AND token_hash <> ?").run(accountId, tokenHash);
 export const deleteChildSessions = (db, profileId) =>
   db.prepare("DELETE FROM sessions WHERE profile_id = ? AND kind = 'child'").run(profileId);
 export const deleteExpiredSessions = (db, now) => db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now).changes;
