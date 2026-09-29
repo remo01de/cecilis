@@ -47,6 +47,11 @@ export function recordLoginSuccess(db, id, now) {
   db.prepare("UPDATE accounts SET failed_logins = 0, locked_until = NULL, last_login_at = ? WHERE id = ?").run(now, id);
 }
 
+// Nach richtiger Passwort-Eingabe ohne neue Anmeldung (Admin-Freigabe)
+export function resetLoginFailures(db, id) {
+  db.prepare("UPDATE accounts SET failed_logins = 0, locked_until = NULL WHERE id = ?").run(id);
+}
+
 export function deleteAccount(db, id) {
   db.prepare("DELETE FROM accounts WHERE id = ?").run(id);
 }

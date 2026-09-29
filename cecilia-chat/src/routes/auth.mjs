@@ -109,10 +109,12 @@ export function createAuthRouter(db, { loginLimit = 5 } = {}) {
     if (req.account.role !== "admin") return res.status(403).json({ error: "forbidden" });
     if (req.account.locked_until > req.now) return res.status(429).json({ error: "too_many_attempts" });
     const { password } = req.body ?? {};
-    if (typeof password !== "string" || !verifySecret(password, req.account.password_hash)) {
+    if (typeof password !== "string" || password.length > 200) return res.status(400).json({ error: "invalid_input" });
+    if (!verifySecret(password, req.account.password_hash)) {
       accounts.recordLoginFailure(db, req.account.id, req.now);
       return res.status(401).json({ error: "wrong_credentials" });
     }
+    accounts.resetLoginFailures(db, req.account.id);
     const until = req.now + TTL.admin;
     sessions.setAdminUntil(db, req.session.token_hash, until);
     res.json({ ok: true, until });

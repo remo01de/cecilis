@@ -189,7 +189,7 @@ Konten, Profile und Sitzungen liegen in SQLite (lokal `data/cecilia.db`, im Dock
 - `app.set("trust proxy", 1)`: IP-Rate-Limit und `Secure`-Flag gehen von **genau einem** Reverse-Proxy (Plesk-nginx) vor dem Container aus. Mit mehr oder ohne Proxy stimmen die IP-Adressen nicht.
 
 **Rate-Limits und Sperren**
-- Familien- und Kind-Login: 5 Fehlversuche / 15 min / IP (erfolgreiche zählen nicht). `/api/auth/admin-unlock` hat dasselbe IP-Limit und ist bei gesperrtem Konto blockiert.
+- Familien- und Kind-Login: 5 Fehlversuche / 15 min / IP (erfolgreiche zählen nicht). `/api/auth/admin-unlock` hat dasselbe IP-Limit, ist bei gesperrtem Konto blockiert, lehnt Passwörter über 200 Zeichen ab (400) und setzt bei Erfolg den Fehlerzähler des Kontos zurück.
 - Pro Konto bzw. Kind-Login: nach 10 Fehlversuchen 15 min gesperrt. PIN: nach 5 Fehlversuchen 5 min gesperrt.
 
 | Fall beim Login | Antwort |

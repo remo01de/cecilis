@@ -219,3 +219,20 @@ test("Eigenes Passwort zurücksetzen und „alle abmelden“ beenden nur die and
   assert.equal((await c.req("/api/auth/session")).data.loggedIn, true);
   assert.equal((await c.req("/api/admin/accounts")).status, 200); // Freigabe bleibt
 });
+
+test("Admin-Freigabe: zu langes Passwort → 400, Erfolg setzt den Fehlerzähler zurück", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db, ADMIN) });
+  t.after(app.close);
+  const c = await adminClient(app, { unlock: false });
+  const long = await c.req("/api/auth/admin-unlock", { method: "POST", json: { password: "x".repeat(201) } });
+  assert.equal(long.status, 400);
+  assert.equal(long.data.error, "invalid_input");
+  for (let i = 0; i < 9; i++) {
+    assert.equal((await c.req("/api/auth/admin-unlock", { method: "POST", json: { password: "falsch" } })).status, 401);
+  }
+  assert.equal((await c.req("/api/auth/admin-unlock", { method: "POST", json: { password: ADMIN.password } })).status, 200);
+  // Ohne Zurücksetzen wäre das der 10. Fehlversuch und das Konto gesperrt
+  const other = client(app.base);
+  assert.equal((await other.req("/api/auth/login", { method: "POST", json: { email: ADMIN.email, password: "falsch" } })).status, 401);
+  assert.equal((await other.req("/api/auth/login", { method: "POST", json: { email: ADMIN.email, password: ADMIN.password } })).status, 200);
+});
