@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { openDb } from "./db/index.mjs";
 import { deleteExpiredSessions } from "./db/sessions.mjs";
+import { bootstrapAdmin } from "./lib/bootstrap.mjs";
 import { createApp } from "./app.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -13,6 +14,8 @@ const { db, created } = openDb(dbPath);
 if (created) {
   console.warn(`Neue Datenbank angelegt: ${dbPath} – falls das unerwartet ist: Volume in docker-compose.yml prüfen.`);
 }
+
+bootstrapAdmin(db, process.env);
 
 // Abgelaufene Sitzungen beim Start und danach stündlich aufräumen
 const cleanup = () => deleteExpiredSessions(db, Date.now());
