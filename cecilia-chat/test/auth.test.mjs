@@ -189,3 +189,97 @@ test("Profil eines fremden Kontos macht die Sitzung ungültig", async (t) => {
   const r = await client(app.base).req("/api/auth/session", { headers: { cookie: `cecilia_session=${token}` } });
   assert.equal(r.data.loggedIn, false);
 });
+
+import { setPin, setChildLogin } from "../src/db/profiles.mjs";
+import { hashSecret } from "../src/lib/passwords.mjs";
+
+async function familyLogin(app, profiles = [{ name: "A" }, { name: "B" }]) {
+  const c = client(app.base);
+  await c.req("/api/auth/login", { method: "POST", json: { email: "eltern@example.com", password: "Eltern-Passwort-1" } });
+  return c;
+}
+
+test("Profilliste und Profilwahl ohne PIN", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db, { profiles: [{ name: "A" }, { name: "B" }] }) });
+  t.after(app.close);
+  const c = await familyLogin(app);
+  const list = await c.req("/api/auth/profiles");
+  assert.deepEqual(list.data.profiles.map((p) => [p.name, p.hasPin]), [["A", false], ["B", false]]);
+  const [, b] = app.seeded.profileIds;
+  const r = await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: b } });
+  assert.equal(r.status, 200);
+  assert.equal(c.cookies().cecilia_profile, String(b));
+  assert.equal((await c.req("/api/auth/session")).data.profile.name, "B");
+});
+
+test("Profilwahl mit PIN: falsch, richtig, Sperre nach 5", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db, { profiles: [{ name: "A" }, { name: "B" }] }) });
+  t.after(app.close);
+  const [a] = app.seeded.profileIds;
+  setPin(app.db, a, hashSecret("1234"));
+  const c = await familyLogin(app);
+  assert.equal((await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: a } })).status, 401);
+  assert.equal((await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: a, pin: "1234" } })).status, 200);
+  for (let i = 0; i < 5; i++) await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: a, pin: "0000" } });
+  const locked = await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: a, pin: "1234" } });
+  assert.equal(locked.status, 429);
+  app.clock.t += 5 * 60 * 1000 + 1;
+  assert.equal((await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: a, pin: "1234" } })).status, 200);
+});
+
+test("Fremdes Profil wählen → 404", async (t) => {
+  const app = await startTestApp({
+    seed: (db) => {
+      const own = seedAccount(db, { profiles: [{ name: "A" }, { name: "B" }] });
+      const other = seedAccount(db, { email: "andere@example.com", profiles: [{ name: "X" }] });
+      return { ...own, otherProfile: other.profileIds[0] };
+    }
+  });
+  t.after(app.close);
+  const c = await familyLogin(app);
+  const r = await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: app.seeded.otherProfile } });
+  assert.equal(r.status, 404);
+});
+
+test("Kind-Login: fest auf Profil, keine Profilwahl, keine Profilliste", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db, { profiles: [{ name: "A" }, { name: "B" }] }) });
+  t.after(app.close);
+  const [a] = app.seeded.profileIds;
+  setChildLogin(app.db, a, "sternchen", hashSecret("Sternkatze-47"));
+  const c = client(app.base);
+  const r = await c.req("/api/auth/child-login", { method: "POST", json: { username: " Sternchen ", password: "Sternkatze-47" } });
+  assert.equal(r.status, 200);
+  assert.equal(c.cookies().cecilia_profile, String(a));
+  const s = await c.req("/api/auth/session");
+  assert.equal(s.data.kind, "child");
+  assert.equal(s.data.profile.name, "A");
+  assert.equal((await c.req("/api/auth/profiles")).status, 403);
+  assert.equal((await c.req("/api/auth/select-profile", { method: "POST", json: { profileId: app.seeded.profileIds[1] } })).status, 403);
+  assert.equal((await c.req("/profile.html")).location, "/");
+  assert.equal((await c.req("/index.html")).status, 200);
+});
+
+test("Kind-Login falsch/unbekannt gleich, Sperre nach 10", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db) });
+  t.after(app.close);
+  const [a] = app.seeded.profileIds;
+  setChildLogin(app.db, a, "sternchen", hashSecret("Sternkatze-47"));
+  const wrong = await client(app.base).req("/api/auth/child-login", { method: "POST", json: { username: "sternchen", password: "x" } });
+  const unknown = await client(app.base).req("/api/auth/child-login", { method: "POST", json: { username: "niemand", password: "x" } });
+  assert.equal(wrong.status, 401);
+  assert.deepEqual(wrong.data, unknown.data);
+  for (let i = 0; i < 9; i++) await client(app.base).req("/api/auth/child-login", { method: "POST", json: { username: "sternchen", password: "x" } });
+  const locked = await client(app.base).req("/api/auth/child-login", { method: "POST", json: { username: "sternchen", password: "Sternkatze-47" } });
+  assert.equal(locked.status, 429);
+});
+
+test("Kind-Sitzung endet, wenn das Profil gelöscht wird", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db) });
+  t.after(app.close);
+  const [a] = app.seeded.profileIds;
+  setChildLogin(app.db, a, "sternchen", hashSecret("Sternkatze-47"));
+  const c = client(app.base);
+  await c.req("/api/auth/child-login", { method: "POST", json: { username: "sternchen", password: "Sternkatze-47" } });
+  app.db.prepare("DELETE FROM profiles WHERE id = ?").run(a);
+  assert.equal((await c.req("/api/auth/session")).data.loggedIn, false);
+});
