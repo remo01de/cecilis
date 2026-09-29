@@ -32,7 +32,9 @@ router.post("/", imageLimiter, async (req, res) => {
   try {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "OPENROUTER_API_KEY not configured" });
+      // Details nur ins Server-Log, nicht an den Browser
+      console.error("OPENROUTER_API_KEY fehlt in der .env");
+      return res.status(503).json({ error: "service_unavailable" });
     }
 
     const { prompt, size = "1024x1024" } = req.body ?? {};
@@ -42,7 +44,7 @@ router.post("/", imageLimiter, async (req, res) => {
     }
 
     if (!ALLOWED_SIZES.has(size)) {
-      return res.status(400).json({ error: `Invalid size. Allowed: ${[...ALLOWED_SIZES].join(", ")}` });
+      return res.status(400).json({ error: "Invalid size" });
     }
 
     const response = await fetch(IMAGE_URL, {

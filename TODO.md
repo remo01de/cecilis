@@ -1,204 +1,62 @@
-# TODO - Verbesserungsvorschläge für das Cecilia-Projekt
+# TODO – Cecilia
 
-## Kritische Verbesserungen
+Stand: 2026-09-29 (nach Runde 9). Zielgruppe: Mädchen von 10–16 Jahren.
+Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 
-### Sicherheit
-- [x] **XSS-Schutz implementiert** ✅ (2025-11-30)
-  - Frontend: `innerHTML` ersetzt durch sichere DOM-Manipulation
-  - Backend: Input-Validierung und HTML-Sanitization
-  - Test-Suite erstellt (xss-test.html)
-  - Dokumentation in SECURITY.md
-- [ ] **API-Key-Sicherheit:** OpenRouter API-Key niemals im Frontend exponieren
-- [x] **Rate-Limiting verbessern:** ✅ (2026-01-27)
-  - `express-rate-limit` Package installiert und konfiguriert
-  - Pro IP-Adresse limitiert (max 20 Requests/Minute)
-  - Globale `lastHit` Variable entfernt
-- [ ] **CORS konfigurieren:** Aktuell erlaubt CORS alle Origins - in Produktion einschränken
-- [ ] **Fehlerbehandlung:** API-Errors sollten keine sensiblen Informationen leaken
+## Offen
 
-### Code-Qualität
-- [ ] **Duplikate entfernen:** `.stars` CSS-Regel ist doppelt definiert (styles.css:128-147)
-- [ ] **Konsistenz:** Chat-Funktionalität existiert zweimal (Frontend + Backend) - vereinheitlichen
-- [ ] **Fehlende Bilder:** Projekt referenziert viele Bilder, die möglicherweise nicht existieren
-  - Fallback-Bilder oder Platzhalter implementieren
-  - Fehlerbehandlung für fehlende Bilder hinzufügen
+### Jugendschutz & Recht (zuerst klären)
+- [ ] **Datenschutz für Minderjährige:** Nachrichten gehen über OpenRouter an KI-Anbieter. Datenschutzerklärung erstellen; je nach Einsatz Einwilligung der Eltern einholen (DSGVO: unter 16 Jahren, revDSG Schweiz). Keine technische Aufgabe – rechtlich prüfen lassen.
+- [ ] **Serverseitige Moderation:** Antworten der KI (und Nutzernachrichten) zusätzlich über ein Moderationsmodell prüfen. Heute schützen nur System-Prompt, Bild-Sicherheitszusatz, Such-Sperrliste und die Stichwortliste im Browser.
+- [ ] **Sorgen-Stichworte** (`WORRY_PATTERN` in `js/ui.js`) mit Fachleuten (z.B. Pro Juventute) abstimmen und erweitern.
 
-## Feature-Erweiterungen
+### Backend & Betrieb
+- [ ] **Logging:** Strukturiertes Logging (z.B. Pino), Request- und Fehler-Logs, Kosten-Tracking pro Endpoint
+- [ ] **Zentraler Error-Handler** in Express
+- [ ] **Startup-Check:** Beim Start prüfen, ob alle nötigen ENV-Variablen gesetzt sind
+- [ ] **Cost-Monitoring:** OpenRouter-Kosten überwachen, ggf. Tageslimit
+- [ ] **Uptime-Monitoring**
+- [ ] **Content Security Policy:** Vorher die Inline-`onclick`-Handler in `index.html` durch `addEventListener` ersetzen, sonst blockiert eine strikte CSP sie
 
-### Frontend
-- [ ] **Chat-Integration:** Frontend-Chat mit Backend-API verbinden
-  - AJAX/Fetch-Request zu `/api/chat` implementieren
-  - Loading-State während API-Anfrage anzeigen
-  - Fehlerbehandlung bei Netzwerkproblemen
-- [ ] **Responsive Design:** Mobile Optimierung testen und verbessern
-  - Gallery-Bilder auf kleinen Screens anpassen
-  - Chat-Box für Mobile optimieren
-- [ ] **Accessibility:**
-  - ARIA-Labels für interaktive Elemente
-  - Keyboard-Navigation für Chat
-  - Alt-Texte für alle Bilder vervollständigen
-- [ ] **Galerie-Steuerung:**
-  - Vor/Zurück-Buttons hinzufügen
-  - Pause-Button für Auto-Rotation
-  - Thumbnail-Navigation
-- [ ] **Dark Mode:** Optional einen Dark Mode für die Seite implementieren
-- [ ] **Animationen verbessern:**
-  - Prefers-reduced-motion Media Query respektieren
-  - Performance-Optimierung für Animationen (will-change, transform)
+### Testing & CI
+- [ ] **Backend-Tests** (Vitest): Routen, Validierung, Such-Filter, Rate-Limiter
+- [ ] **E2E-Tests** (Playwright): Chat, Verlauf, Dialoge, Galerie – mit gemockter API
+- [ ] **Barrierefreiheit automatisch prüfen** (axe-core im E2E-Test)
+- [ ] **CI/CD** mit GitHub Actions
+- [ ] `xss-test.html` an den aktuellen `parseMarkdown()` angleichen oder durch einen automatischen Test ersetzen
 
-### Backend
-- [x] **Conversation Memory:** ✅ (2026-03-03)
-  - Frontend: `conversationHistory`-Array pflegt User- und Assistant-Nachrichten
-  - Backend: Akzeptiert `history`- und `summary`-Felder, validiert, leitet an OpenRouter weiter
-  - Persistenz via `localStorage` – Chat überlebt Seitenneuladen und Sessions
-  - Auto-Zusammenfassung nach 30 History-Einträgen via `/api/chat/summarize`
-  - Zusammenfassung wird als Kontext an OpenRouter mitgegeben, History wird zurückgesetzt
-  - Chat-Nachrichten werden beim Seitenaufruf wiederhergestellt
-  - "Chat leeren"-Button setzt History, Summary und localStorage zurück
-- [ ] **Logging:** Strukturiertes Logging hinzufügen (z.B. Winston oder Pino)
-  - Request-Logging
-  - Error-Logging
-  - API-Usage-Tracking
-- [ ] **Error-Handling:** Zentralisierter Error-Handler in Express
-- [ ] **Environment-Validierung:** Startup-Check ob alle ENV-Variablen gesetzt sind
-- [ ] **Caching:** Response-Caching für häufige Anfragen implementieren
-- [ ] **WebSocket-Support:** Real-time Chat via Socket.io statt HTTP-Polling
+### Frontend & Design
+- [ ] **Poster und Charakterseite** ans neue Design angleichen (Schriften, Nacht/Tag, Hilfe-Knopf)
+- [ ] **Warteanimation beim Bildermalen** (dauert 10–30 s) kindgerechter gestalten
+- [ ] **Vorschlags-Chips** abwechseln statt immer derselben drei
+- [ ] **Spassfaktor:** Cecilias Stimmung im Header, Galeriebilder als Sticker sammeln, kleine Belohnungen
+- [ ] **Screenreader-Test** mit echten Geräten (VoiceOver iOS, TalkBack)
+- [ ] **Open-Graph-Tags** für geteilte Links
+- [ ] **Performance auf günstigen Android-Geräten** prüfen (viele `backdrop-filter`-Ebenen)
 
-### Datenbank
-- [ ] **Persistenz:** Datenbank hinzufügen für:
-  - Chat-Historie
-  - User-Sessions
-  - Analytics/Usage-Stats
-  - Cecilia's "Erinnerungen"
-- [ ] **Empfohlene DB:** PostgreSQL oder MongoDB
+### Ideen für später
+- [ ] Geschichten-Modus, Quiz oder Mini-Spiele mit Cecilia
+- [ ] Chat als Text exportieren
+- [ ] Mehrsprachigkeit (Französisch/Italienisch für die Schweiz)
 
-## Testing
+## Erledigt (Kurzfassung)
 
-### Unit Tests
-- [ ] Backend-Tests mit Jest/Vitest
-  - Chat-Route-Tests
-  - LLM-Client-Mock-Tests
-  - Rate-Limiter-Tests
-- [ ] Frontend-Tests
-  - Chat-Funktionalität
-  - Galerie-Rotation
-  - DOM-Manipulation
-
-### Integration Tests
-- [ ] E2E-Tests mit Playwright oder Cypress
-  - User-Flow: Galerie ansehen → Chat nutzen
-  - API-Integration testen
-
-### Performance Tests
-- [ ] Lighthouse-Score optimieren
-- [ ] Load-Testing für Backend-API
-- [ ] Bundle-Size-Optimierung
-
-## DevOps & Deployment
-
-### Build & Deployment
-- [ ] **Build-Pipeline:**
-  - CSS/JS Minification
-  - Image-Optimierung
-  - Cache-Busting für Assets
-- [x] **Docker:** ✅ (2026-03-03)
-  - Dockerfile (Node 22 Alpine, Production-Build)
-  - docker-compose.yml mit env_file und Healthcheck
-  - .dockerignore
-  - Express serviert Frontend statisch (Single-Container)
-  - Frontend API-URLs relativ statt hardcoded localhost
-- [ ] **CI/CD:** GitHub Actions oder ähnliches einrichten
-- [ ] **Hosting:**
-  - Frontend: Netlify, Vercel oder GitHub Pages
-  - Backend: Railway, Render oder Heroku
-- [ ] **CDN:** Statische Assets über CDN ausliefern
-
-### Monitoring
-- [ ] **Error-Tracking:** Sentry oder ähnliches integrieren
-- [ ] **Analytics:** Privacy-freundliches Analytics (z.B. Plausible)
-- [ ] **Uptime-Monitoring:** UptimeRobot oder Pingdom
-- [ ] **Cost-Monitoring:** OpenRouter-Kosten überwachen
-
-## Dokumentation
-
-- [ ] **API-Dokumentation:** OpenAPI/Swagger-Spec erstellen
-- [ ] **Code-Kommentare:** JSDoc für Backend-Code
-- [ ] **User-Guide:** Anleitung für End-User erstellen
-- [ ] **Development-Guide:** Setup-Anleitung für Entwickler erweitern
-- [ ] **Deployment-Guide:** Production-Deployment dokumentieren
-
-## Content & Design
-
-### Content
-- [x] **Bildgenerierung:** ✅ (2026-03-03)
-  - Cecilia kann Bilder erstellen via OpenRouter (Bildmodell per `.env`)
-  - Backend: `POST /api/image` Endpoint mit Prompt-Validierung und Rate-Limiting
-  - System-Prompt erweitert: Cecilia nutzt `[IMAGE: prompt]` Marker
-  - Frontend erkennt Marker, zeigt Loading-State, generiert Bild und zeigt es im Chat
-  - Bilder werden in localStorage persistiert und beim Seitenaufruf wiederhergestellt
-  - Klick auf Bild öffnet es in neuem Tab
-- [x] **Websuche:** ✅ (2026-03-03)
-  - Cecilia kann im Web recherchieren via OpenRouter Web-Suche
-  - Backend: `POST /api/search` Endpoint mit Query-Validierung und Rate-Limiting
-  - System-Prompt erweitert: Cecilia nutzt `[SEARCH: query]` Marker ("Kristallkugel")
-  - Two-Pass-Flow: Cecilia erkennt Suchbedarf → Frontend führt Suche durch → zweiter Chat-Call mit Ergebnissen → informierte Antwort
-  - Loading-States: "Recherchiert im Web..." → "Verarbeitet Ergebnisse..."
-  - Quellen werden als aufklappbares Element unter der Antwort angezeigt
-  - Quellen-Links werden in localStorage persistiert
-- [ ] **Mehr Outfit-Variationen:** Zusätzliche Outfit-Designs
-- [ ] **Story-Inhalte:** Kurze Geschichten über Cecilia erstellen
-- [ ] **Interaktive Elemente:** Mini-Spiele oder Quiz hinzufügen
-- [ ] **Musik:** Hintergrundmusik (optional, mit User-Kontrolle)
-
-### Design
-- [ ] **Loading-States:** Schöne Loader für asynchrone Operationen
-- [ ] **Transitions:** Seitenübergänge zwischen verschiedenen HTML-Seiten
-- [ ] **Favicon:** Custom Favicon hinzufügen
-- [ ] **Open Graph Tags:** Meta-Tags für Social Media Sharing
-- [ ] **Print-Stylesheet:** Optimierte Ansicht für Druck
-
-## Performance-Optimierungen
-
-- [ ] **Lazy Loading:** Bilder erst bei Bedarf laden
-- [ ] **Image-Formate:** WebP-Format für bessere Kompression
-- [ ] **CSS-Optimierung:** Ungenutztes CSS entfernen
-- [ ] **JavaScript-Optimierung:**
-  - Debouncing für Chat-Input
-  - Code-Splitting bei größeren Modulen
-- [ ] **Caching-Strategy:** Service Worker für Offline-Funktionalität
-
-## Barrierefreiheit (a11y)
-
-- [ ] **Kontrast-Ratio:** Alle Text-Hintergrund-Kombinationen prüfen (WCAG AA)
-- [ ] **Focus-Styles:** Sichtbare Focus-Indikatoren für Tastatur-Navigation
-- [ ] **Screen-Reader:** Testen mit NVDA/JAWS
-- [ ] **Semantisches HTML:** Header-Hierarchie prüfen und korrigieren
-- [ ] **Forms:** Labels für alle Input-Felder
-
-## Sonstiges
-
-- [ ] **i18n:** Mehrsprachigkeit (Englisch, Deutsch)
-- [ ] **Theme-Switcher:** Verschiedene Farbschemata auswählbar
-- [ ] **User-Preferences:** Einstellungen im LocalStorage speichern
-- [ ] **Share-Funktionalität:** Chat-Konversationen teilen können
-- [ ] **Export-Funktion:** Chat-Historie als PDF/Text exportieren
-
----
-
-## Prioritäten-Empfehlung
-
-**Hoch (sofort):**
-- Sicherheit: XSS-Schutz, API-Key-Handling, CORS
-- Frontend-Backend Chat-Integration
-- Rate-Limiting verbessern
-
-**Mittel (nächste Schritte):**
-- Conversation Memory
-- Testing-Setup
-- Error-Handling & Logging
-- Mobile-Optimierung
-
-**Niedrig (Nice-to-have):**
-- Zusätzliche Features (Spiele, Musik)
-- i18n
-- Advanced-Analytics
+- [x] XSS-Schutz Frontend + Backend (2025-11-30), Lücken in Suchquellen/`parseMarkdown` geschlossen (2026-09-29)
+- [x] API-Key nur im Backend, nie im Frontend
+- [x] Rate-Limiting pro IP (2026-01-27); 429 zeigt eine freundliche Pause-Meldung (2026-09-29)
+- [x] Chat-Integration, Conversation Memory, Auto-Zusammenfassung (2026-03-03)
+- [x] Bildgenerierung und Websuche via OpenRouter (2026-03-03 / 2026-09-29)
+- [x] Docker-Setup (2026-03-03), schlankes Image ohne Referenzbilder und ohne Testseite (2026-09-29)
+- [x] Automatische KI-Galerie (2026-03-09), kindgerechte Motive + Aussehen wie im System-Prompt (2026-09-29)
+- [x] Responsive Design / Mobile (2026-03-19), iOS-Zoom-Fix (2026-09-29)
+- [x] Nacht/Tag-Modus (2026-05-20)
+- [x] Favicon-Set, Lightbox (2026-09-27)
+- [x] **2026-09-29 (Runde 9):**
+  - Jugendschutz: Galerie-Motive, Bild-Sicherheitszusatz, System-Prompt für 10–16, Websuche mit Sperrliste/Positivliste
+  - Sicherheits-UI: Willkommens-Dialog, Hilfe-Knopf (147 / 116 111), Warnung vor persönlichen Daten, Hilfe-Karte bei Sorgen-Stichworten, Hinweis vor externen Links
+  - Bilder in IndexedDB statt localStorage (Speicher lief voll)
+  - Mehrere Gespräche im Verlauf, Löschen mit Rückgängig
+  - Barrierefreiheit: WCAG-AA-Kontraste, Tastatur, Screenreader, axe-core ohne Befund
+  - WebP-Bilder, ungenutzte Bilder gelöscht, `index.html` in `chat.css` + `js/` aufgeteilt
+  - Sternenhimmel bei Nacht, Schmetterlinge fliegen vorwärts, „Zauber-Effekte“ abschaltbar
+  - CORS eingeschränkt (`ALLOWED_ORIGINS`), Fehlermeldungen ohne Konfigurationsdetails

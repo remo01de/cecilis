@@ -12,7 +12,8 @@ COPY cecilia-chat/src ./cecilia-chat/src
 # Frontend-Dateien kopieren
 COPY index.html styles.css chat.css placeholder-images.js ./
 COPY js ./js
-COPY poster.html cecilia-charakter.html xss-test.html ./
+# xss-test.html ist eine Entwickler-Testseite und gehört nicht ins Produktions-Image
+COPY poster.html cecilia-charakter.html ./
 COPY favicon.ico favicon.svg favicon-32.png favicon-192.png apple-touch-icon.png ./
 COPY img/web ./img/web
 

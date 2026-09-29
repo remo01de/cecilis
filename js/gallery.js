@@ -127,7 +127,8 @@ function buildAutoGalleryPrompt(analysis, season) {
   };
 
   const parts = [
-    'A cheerful anime-style teenage fairy girl named Cecilia, 17 years old, with long flowing pastel-colored hair adorned with small flowers and magical sparkles, large expressive eyes, delicate translucent fairy wings'
+    // Aussehen wie im System-Prompt und auf dem Poster, damit alle Bilder dieselbe Figur zeigen
+    'A cheerful anime-style teenage fairy girl named Cecilia, 17 years old, with short wavy vibrant pink hair, sparkling blue eyes, soft peach skin, a small golden star hair clip, delicate translucent fairy wings'
   ];
   const mood     = moodDescriptions[analysis.mood]     || moodDescriptions.happy;
   const location = locationDescriptions[analysis.location] || locationDescriptions['fairy-forest'];

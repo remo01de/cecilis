@@ -30,7 +30,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── cecilia-chat/                  # Backend
 │   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2
 │   ├── .env                       # OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_*_TEMPERATURE, OPENROUTER_IMAGE_MODEL, PORT
-│   ├── .env.example               # Template für .env
+│   ├── .env.example               # Template für .env (inkl. ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS)
 │   └── src/
 │       ├── server.mjs             # Express-Server, statisches File-Serving, API-Routen
 │       ├── lib/openrouter.mjs     # OpenRouter Client + Temperatur-Helper
@@ -205,6 +205,9 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Sidebar-Schubfach: `aria-expanded`, Esc schliesst, Fokus-Rückgabe, geschlossen `inert`
   - Galerie-Vorschaubilder sind Buttons (`aria-current`); Auto-Rotation pausiert bei Hover/Fokus und entfällt bei `prefers-reduced-motion`
   - Lightbox hält den Fokus auf dem Schliessen-Knopf; globales `:focus-visible` in Pink
+- **Galerie-Prompt** beschreibt Cecilia jetzt wie System-Prompt und Poster (kurze pinke Haare, blaue Augen, goldene Stern-Haarspange) statt lange Pastellhaare.
+- **Backend-Härtung:** CORS nur noch für die eigene Adresse, `ALLOWED_ORIGINS` (kommagetrennt) und in development für localhost auf jedem Port. Fehlt der API-Key, bekommt der Browser nur `service_unavailable` (503), die Details stehen im Server-Log. `xss-test.html` ist nicht mehr im Docker-Image.
+- **`AGENTS.md` ist ein Symlink auf `CLAUDE.md`**, damit beide nicht mehr auseinanderlaufen. `TODO.md` neu geschrieben (Offen / Erledigt).
 - **Hintergrund-Effekte:** Nachts Sternenhimmel (70–180 per JS erzeugte `.star`, Anzahl nach Bildschirmfläche) mit gelegentlicher Sternschnuppe, keine Schmetterlinge; tagsüber Schmetterlinge. Schmetterlinge fliegen jetzt mit dem Kopf voraus (SVG von oben, per CSS um 90° gedreht, Neigung folgt der Flugbahn). Schalter „Zauber-Effekte“ in der Sidebar setzt `data-effects="on|off"` auf `<html>` (localStorage `cecilia_effects`, Standard aus bei `prefers-reduced-motion`); aus = keine Glühwürmchen, Schmetterlinge, Sternschnuppen, kein Funkeln, Sterne bleiben ruhig stehen.
 - `ImageStore` bricht `indexedDB.open()` nach 4 s ab (z.B. blockiert durch anderen Tab), damit die App nicht hängen bleibt
 
@@ -254,15 +257,12 @@ docker compose down
 
 ## Was als nächstes ansteht (Priorität)
 
-Siehe `TODO.md` für die vollständige Liste. Highlights:
-- [ ] CORS in Produktion einschränken
-- [ ] Fehlerbehandlung verbessern (keine sensiblen Infos leaken)
-- [x] Responsive Design / Mobile-Optimierung – 2026-03-19
-- [ ] Accessibility (ARIA, Keyboard-Nav, Kontraste)
-- [ ] Strukturiertes Logging (Winston/Pino)
-- [ ] Testing (Unit + E2E)
-- [ ] CI/CD Pipeline
-- [x] Galerie: Ablaufen von Z.AI CDN Links durch `onerror`-Feedback abgefangen – lokales Caching noch optional
+Siehe `TODO.md` für die vollständige, aktuelle Liste. Highlights:
+- [ ] Datenschutz für Minderjährige rechtlich klären (Datenschutzerklärung, ggf. Einwilligung der Eltern)
+- [ ] Serverseitige Moderation der KI-Antworten
+- [ ] Strukturiertes Logging, zentraler Error-Handler, Startup-Check der ENV-Variablen
+- [ ] Testing (Vitest + Playwright mit gemockter API) und CI/CD
+- [ ] Poster und Charakterseite ans neue Design angleichen
 
 ## Hinweise
 

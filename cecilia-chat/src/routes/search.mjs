@@ -57,7 +57,9 @@ function isBlockedUrl(url) {
 router.post("/", searchLimiter, async (req, res) => {
   try {
     if (!process.env.OPENROUTER_API_KEY) {
-      return res.status(500).json({ error: "OPENROUTER_API_KEY not configured" });
+      // Details nur ins Server-Log, nicht an den Browser
+      console.error("OPENROUTER_API_KEY fehlt in der .env");
+      return res.status(503).json({ error: "service_unavailable" });
     }
 
     const { query, count = 10 } = req.body ?? {};

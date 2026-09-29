@@ -157,24 +157,19 @@ app.use('/api/chat', limiter);
 
 ### Input-Längen-Begrenzung
 
-- **Frontend:** Keine Begrenzung (sollte hinzugefügt werden)
+- **Frontend:** `maxlength="1000"` am Eingabefeld + Zeichenzähler ab 800 Zeichen
 - **Backend:** Max 1000 Zeichen
 - **Express:** 1MB JSON-Limit
 
 ### CORS (Cross-Origin Resource Sharing)
 
-**Aktuell:**
-```javascript
-app.use(cors()); // Erlaubt ALLE Origins
-```
+**Umgesetzt (2026-09-29, `cecilia-chat/src/server.mjs`):**
+- Frontend und API kommen vom selben Server, dafür braucht es kein CORS.
+- Fremde Origins bekommen nur CORS-Header, wenn sie in `ALLOWED_ORIGINS` (kommagetrennt, `.env`) stehen.
+- Mit `NODE_ENV` ungleich `production` ist zusätzlich `localhost`/`127.0.0.1` auf jedem Port erlaubt (z.B. VS Code Live Server).
 
-**Empfohlen für Produktion:**
-```javascript
-app.use(cors({
-  origin: 'https://cecilia.example.com', // Nur deine Domain
-  credentials: true,
-  methods: ['GET', 'POST']
-}));
+```
+ALLOWED_ORIGINS=https://cecilia.example.ch
 ```
 
 ## Noch zu implementieren
