@@ -28,7 +28,7 @@ Selbst-Registrierung, E-Mail-Versand, „Passwort vergessen“ per E-Mail, Elter
 
 ```sql
 accounts (
-  id               INTEGER PRIMARY KEY,
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
   email            TEXT NOT NULL UNIQUE,          -- immer klein geschrieben, getrimmt
   password_hash    TEXT NOT NULL,
   role             TEXT NOT NULL CHECK (role IN ('admin','parent')),
@@ -40,7 +40,7 @@ accounts (
 )
 
 profiles (
-  id                   INTEGER PRIMARY KEY,
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,  -- IDs nie wiederverwenden (Browser-Speicher hängt daran)
   account_id           INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   name                 TEXT NOT NULL,             -- Spitzname, 1–20 Zeichen
   avatar               TEXT NOT NULL,             -- Emoji aus fester Liste

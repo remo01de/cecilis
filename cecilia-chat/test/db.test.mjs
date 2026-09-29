@@ -8,7 +8,7 @@ import * as sessions from "../src/db/sessions.mjs";
 test("Migrationen legen alle Tabellen an und setzen user_version", () => {
   const { db, created } = openDb(":memory:");
   assert.equal(created, false); // :memory: gilt nicht als neue Datei
-  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all().map((r) => r.name);
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name);
   assert.deepEqual(tables, ["accounts", "profiles", "sessions"]);
   assert.equal(db.pragma("user_version", { simple: true }), 1);
   assert.equal(db.pragma("foreign_keys", { simple: true }), 1);
@@ -94,4 +94,19 @@ test("Kind-Login-Benutzername ist eindeutig", () => {
   assert.equal(profiles.findProfileByChildUsername(db, "sternchen").id, p1);
   profiles.clearChildLogin(db, p1);
   assert.equal(profiles.findProfileByChildUsername(db, "sternchen"), undefined);
+});
+
+test("Gelöschte Profil- und Konto-IDs werden nie wiederverwendet", () => {
+  const { db } = openDb(":memory:");
+  const now = Date.now();
+  const acc = accounts.createAccount(db, { email: "a@example.com", passwordHash: "x", role: "parent", now });
+  const mk = (name) => profiles.createProfile(db, acc, { name, avatar: "🦄", color: "pink", now });
+  mk("A");
+  const last = mk("B");
+  profiles.deleteProfile(db, last);
+  assert.ok(mk("C") > last);
+
+  const acc2 = accounts.createAccount(db, { email: "b@example.com", passwordHash: "x", role: "parent", now });
+  accounts.deleteAccount(db, acc2);
+  assert.ok(accounts.createAccount(db, { email: "c@example.com", passwordHash: "x", role: "parent", now }) > acc2);
 });

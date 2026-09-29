@@ -4,8 +4,10 @@ export const migrations = [
   {
     version: 1,
     sql: `
+      -- AUTOINCREMENT: gelöschte IDs werden nie neu vergeben. Chats und Bilder im
+      -- Browser hängen an der Profil-ID; ein neues Profil darf nie die eines alten erben.
       CREATE TABLE accounts (
-        id             INTEGER PRIMARY KEY,
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
         email          TEXT NOT NULL UNIQUE,
         password_hash  TEXT NOT NULL,
         role           TEXT NOT NULL CHECK (role IN ('admin','parent')),
@@ -17,7 +19,7 @@ export const migrations = [
       );
 
       CREATE TABLE profiles (
-        id                   INTEGER PRIMARY KEY,
+        id                   INTEGER PRIMARY KEY AUTOINCREMENT,
         account_id           INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
         name                 TEXT NOT NULL,
         avatar               TEXT NOT NULL,
