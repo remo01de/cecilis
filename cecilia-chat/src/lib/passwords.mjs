@@ -14,12 +14,40 @@ export function verifySecret(secret, stored) {
   if (typeof stored !== "string") return false;
   const parts = stored.split("$");
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
-  const [, n, r, p, saltB64, hashB64] = parts;
-  const expected = Buffer.from(hashB64, "base64url");
-  const actual = crypto.scryptSync(String(secret), Buffer.from(saltB64, "base64url"), expected.length, {
-    N: Number(n), r: Number(r), p: Number(p)
-  });
-  return crypto.timingSafeEqual(actual, expected);
+  const [, nStr, rStr, pStr, saltB64, hashB64] = parts;
+
+  try {
+    // Decode hash and salt
+    const expected = Buffer.from(hashB64, "base64url");
+    const salt = Buffer.from(saltB64, "base64url");
+
+    // Reject empty hashes or salts
+    if (expected.length === 0 || salt.length === 0) return false;
+
+    // Parse and validate N, r, p parameters
+    const n = Number(nStr);
+    const r = Number(rStr);
+    const p = Number(pStr);
+
+    // Validate parameters are positive integers
+    if (!Number.isInteger(n) || n <= 0 || !Number.isInteger(r) || r <= 0 || !Number.isInteger(p) || p <= 0) {
+      return false;
+    }
+
+    // Validate N is a power of two and N ≤ 2^20
+    if ((n & (n - 1)) !== 0 || n > 1048576) return false;
+
+    // Validate r and p are ≤ 16
+    if (r > 16 || p > 16) return false;
+
+    const actual = crypto.scryptSync(String(secret), salt, expected.length, {
+      N: n, r: r, p: p
+    });
+    return crypto.timingSafeEqual(actual, expected);
+  } catch (err) {
+    // Return false on any crypto errors (invalid parameters, etc.)
+    return false;
+  }
 }
 
 // Wird bei unbekannter E-Mail geprüft, damit die Antwortzeit nichts verrät.

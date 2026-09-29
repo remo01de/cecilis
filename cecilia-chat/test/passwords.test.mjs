@@ -19,6 +19,12 @@ test("verifySecret ist robust bei kaputten Werten", () => {
   assert.equal(verifySecret("x", null), false);
   assert.equal(verifySecret("x", "kaputt"), false);
   assert.equal(verifySecret("x", DUMMY_HASH), false);
+  // Leerer Hash-Teil erlaubt keine Authentifizierung (0-byte Vergleich)
+  assert.equal(verifySecret("x", "scrypt$16384$8$1$abc$"), false);
+  // Ungültige Parameter werfen keinen Fehler, sondern geben false zurück
+  assert.equal(verifySecret("x", "scrypt$a$b$c$d$e"), false);
+  // N außerhalb des gültigen Bereichs (2^20)
+  assert.equal(verifySecret("x", "scrypt$99999999999$8$1$YWJj$YWJj"), false);
 });
 
 test("Generierte Passwörter erfüllen die Regeln", () => {
