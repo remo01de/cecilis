@@ -70,7 +70,7 @@ Alle Endpoints haben Rate-Limiting und Input-Validierung.
 - `conversationHistory[]` speichert User/Assistant-Nachrichten für den API-Kontext
 - `conversationSummary` akkumuliert Zusammenfassungen vergangener Gespräche
 - `displayMessages[]` speichert alle sichtbaren Nachrichten (inkl. imageUrl, searchSources)
-- Alles in `localStorage` unter Key `cecilia_chat_state` persistiert
+- Alles in `localStorage` unter Key `cecilia_chats` persistiert (mehrere Gespräche, siehe Runde 9; Bilder in IndexedDB)
 - **Auto-Summarize** nach 30 History-Einträgen: Backend fasst via OpenRouter zusammen, History wird zurückgesetzt
 - Seite neuladen → Chat wird vollständig wiederhergestellt (Text, Bilder, Quellen)
 
@@ -190,7 +190,7 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Externe Links im Chat (Antworten + Quellen) → Dialog „Du verlässt Cecilias Welt“ mit Hostname
   - Composer-Hinweis „Cecilia ist eine KI …“; Nachrichten-Chip durch Delfin-Chip ersetzt
 - **Bedienung für Kinder:**
-  - Papierkorb neben dem Senden-Knopf entfernt; Löschen nur noch über „Neuer Zauber“, mit Toast + „Rückgängig“ (8 s, `pendingClear`). Bilder werden erst nach Ablauf aus IndexedDB gelöscht; wer in der Frist schreibt, bestätigt das Löschen.
+  - Papierkorb neben dem Senden-Knopf entfernt; Löschen per ✕ im Verlauf mit Toast + „Rückgängig“ (8 s, `pendingDelete`). Bilder werden erst nach Ablauf aus IndexedDB gelöscht.
   - Begrüssung von Cecilia (`renderGreeting()`) steht immer als erste Blase, wird nicht gespeichert und nicht an die API geschickt
   - Offline/Serverfehler: keine erfundene Zufallsantwort mehr, sondern ehrliche Meldung; Text bleibt im Eingabefeld (wie bei 429). `getFallbackResponse()` nur noch bei leerer API-Antwort.
   - `maxlength="1000"` + Zeichenzähler ab 800 Zeichen statt `alert()`
