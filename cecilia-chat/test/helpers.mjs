@@ -1,4 +1,5 @@
 import "./setup-env.mjs";
+import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createApp } from "../src/app.mjs";
@@ -61,4 +62,19 @@ export function seedAccount(db, {
     createProfile(db, accountId, { name: p.name, avatar: p.avatar ?? "🦄", color: p.color ?? "pink", now: Date.now() })
   );
   return { accountId, profileIds, email, password };
+}
+
+// Rohe Anfrage mit node:http – fetch würde "..", "%2e" usw. vorher auflösen
+export function rawGet(base, rawPath, headers = {}) {
+  const { hostname, port } = new URL(base);
+  return new Promise((resolve, reject) => {
+    const r = http.request({ host: hostname, port, path: rawPath, method: "GET", headers }, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (d) => (body += d));
+      res.on("end", () => resolve({ status: res.statusCode, body }));
+    });
+    r.on("error", reject);
+    r.end();
+  });
 }

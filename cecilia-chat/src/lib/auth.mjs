@@ -1,3 +1,4 @@
+import { posix } from "path";
 import * as accounts from "../db/accounts.mjs";
 import * as profiles from "../db/profiles.mjs";
 import * as sessions from "../db/sessions.mjs";
@@ -111,9 +112,15 @@ const PUBLIC_PATHS = new Set([
 const PUBLIC_PREFIXES = ["/img/web/"];
 
 // Pfad wie ihn express.static sieht: dekodiert und klein geschrieben (sonst umgehen
-// /admin%2Ehtml oder /Admin.html die Prüfungen). null = kaputte Kodierung.
+// /admin%2Ehtml oder /Admin.html die Prüfungen). null = kaputte Kodierung oder
+// verdächtiger Pfad: "..", "//", "/./", Backslash oder NUL. Sonst käme man mit
+// /img/web/../../data/cecilia.db (auch %2e%2e, ..%2f) an der Freigabeliste vorbei.
 export function normalizePath(p) {
-  try { return decodeURIComponent(p).toLowerCase(); } catch { return null; }
+  let decoded;
+  try { decoded = decodeURIComponent(p); } catch { return null; }
+  if (/\/\.\.(\/|$)/.test(decoded) || /[\\\0]/.test(decoded)) return null;
+  if (posix.normalize(decoded) !== decoded) return null;
+  return decoded.toLowerCase();
 }
 
 export function pageGate(req, res, next) {

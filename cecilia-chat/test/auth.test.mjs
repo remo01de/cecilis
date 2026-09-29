@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { startTestApp, client, seedAccount } from "./helpers.mjs";
+import { startTestApp, client, seedAccount, rawGet } from "./helpers.mjs";
 import { setAccountStatus } from "../src/db/accounts.mjs";
 import { createSession } from "../src/db/sessions.mjs";
 
@@ -282,4 +282,38 @@ test("Kind-Sitzung endet, wenn das Profil gelöscht wird", async (t) => {
   await c.req("/api/auth/child-login", { method: "POST", json: { username: "sternchen", password: "Sternkatze-47" } });
   app.db.prepare("DELETE FROM profiles WHERE id = ?").run(a);
   assert.equal((await c.req("/api/auth/session")).data.loggedIn, false);
+});
+
+// Wie ein Angreifer mit curl --path-as-is: rohe Pfade, nicht von fetch aufgelöst
+const TRAVERSALS = [
+  "/img/web/../../data/secret.db",
+  "/img/web/%2e%2e/%2e%2e/data/secret.db",
+  "/img/web/..%2f..%2fdata%2fsecret.db",
+  "/img/web/%2E%2E/%2E%2E/data/secret.db",
+  "/js/../data/secret.db",
+  "/js/%2e%2e/data/secret.db",
+  "/img/web/..\\..\\data\\secret.db",
+  "/img/web/./../../data/secret.db",
+  "/img//web/x.webp",
+  "/img/web/%00x.webp"
+];
+
+test("Pfad-Traversal liefert die Datenbank nicht aus – ohne und mit Sitzung", async (t) => {
+  const app = await startTestApp({ seed: (db) => seedAccount(db) });
+  t.after(app.close);
+  const c = client(app.base);
+  await c.req("/api/auth/login", { method: "POST", json: LOGIN });
+  const cookie = Object.entries(c.cookies()).map(([k, v]) => `${k}=${v}`).join("; ");
+  for (const headers of [{}, { cookie }]) {
+    for (const p of TRAVERSALS) {
+      const r = await rawGet(app.base, p, headers);
+      assert.notEqual(r.status, 200, `${p} ${headers.cookie ? "mit" : "ohne"} Sitzung`);
+      assert.ok(!r.body.includes("secret"), `${p} liefert Inhalt`);
+    }
+  }
+  // Legitime Pfade verhalten sich wie vorher
+  assert.equal((await rawGet(app.base, "/js/app.js", { cookie })).status, 200);
+  assert.equal((await rawGet(app.base, "/js/app.js")).status, 302);
+  assert.equal((await rawGet(app.base, "/img/web/x.webp")).status, 404);
+  assert.equal((await rawGet(app.base, "/img/web/x.webp", { cookie })).status, 404);
 });

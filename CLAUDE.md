@@ -144,7 +144,7 @@ OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
 PORT=30000
 user=…                                # erstes Admin-Konto (nur beim allerersten Start mit leerer DB)
 passwort=…                            # dessen Passwort
-# optional: DB_PATH (Standard data/cecilia.db), ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS
+# optional: DB_PATH (Standard data/cecilia.db, im Docker-Image /data/cecilia.db), ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS
 NODE_ENV=development
 ```
 
@@ -251,18 +251,18 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
 
 ### Runde 10 (2026-09-29) – Benutzerverwaltung Stufe 1
 Ersetzt den Einzel-Login aus der `.env` (Cookies `cecilia_session` alt/HMAC, `/api/login|session`, `SESSION_SECRET` gibt es nicht mehr). Spec und Plan: `docs/superpowers/specs|plans/2026-09-29-benutzerverwaltung*.md`.
-- **SQLite in `data/cecilia.db`** (better-sqlite3, WAL): Konten, Profile, Sitzungen. Chats und Bilder bleiben im Browser. Alles SQL steht in `src/db/`.
+- **SQLite in `data/cecilia.db`** (lokal; im Container `/data/cecilia.db`, ausserhalb des Web-Ordners) (better-sqlite3, WAL): Konten, Profile, Sitzungen. Chats und Bilder bleiben im Browser. Alles SQL steht in `src/db/`.
 - **Familien-Login + Profilwahl:** E-Mail + Passwort → `profile.html` (Avatar, optional 4-stellige PIN). **Kind-Login:** Benutzername + Passwort, fest an ein Profil gebunden, ohne Zugriff auf Profilwahl und Admin.
 - **Admin-Seite `admin.html`:** Konten anlegen/sperren/löschen/Passwort zurücksetzen/alle abmelden, Profile, PINs, Kind-Logins. Zugriff nur mit Rolle `admin` **und** Passwort-Freigabe (`/api/auth/admin-unlock`, 15 min). Neue Passwörter erscheinen nur einmal.
 - **Sitzungen serverseitig:** 32 Zufallsbytes im HttpOnly-Cookie `cecilia_session`, in der DB nur der SHA-256-Hash (Familie 30 Tage, Kind 14 Tage). Sperren/Reset/Löschen beendet Sitzungen sofort; abgelaufene werden stündlich gelöscht.
 - **Speicher pro Profil:** Das lesbare Cookie `cecilia_profile` liefert die Profil-ID. Alle Browser-Schlüssel laufen über `profileKey()` (Suffix `:p_<id>`), IndexedDB heisst `cecilia_images:p_<id>`. Alte Geräte-Daten (`cecilia_chats` u. a., `cecilia_images`) übernimmt einmalig das erste Profil, das auf dem Gerät gewählt wird; Bilder mit Wiederholungs-Marker `cecilia_legacy_images_pending:p_<id>`.
 - **Bootstrap aus `.env`:** `user=`/`passwort=` legen nur bei leerer Datenbank das erste Admin-Konto an.
 - **Tests:** `cd cecilia-chat && npm test` (node:test, Dummy-`OPENROUTER_API_KEY` aus `test/setup-env.mjs`, Produktionscode unverändert).
-- **Volume-Pflicht:** `./data:/app/data` in `docker-compose.yml`, sonst sind bei jedem Neubau alle Konten weg. **Backup:** `npm run backup` (siehe Docker-Abschnitt); die DB enthält E-Mails und Hashes.
+- **Volume-Pflicht:** `./data:/data` in `docker-compose.yml`, sonst sind bei jedem Neubau alle Konten weg. **Backup:** `npm run backup` (siehe Docker-Abschnitt); die DB enthält E-Mails und Hashes.
 - **Sicherheitsentscheidungen (Details in `SECURITY.md`):**
   - `verifySecret` lehnt leere Hashes und ungültige/riesige scrypt-Parameter ab (N ≤ 2^20, r und p ≤ 16).
   - `pageGate` normalisiert den Pfad (dekodieren + klein, 400 bei ungültiger Kodierung) vor jedem Vergleich – verhindert `/admin%2Ehtml`-Umgehung.
-  - Statische Dateien nur aus der Allowlist `staticAllowlist` in `app.mjs` (HTML-Seiten, `chat.css`, `styles.css`, `placeholder-images.js`, Favicons, `/js/*.js`, `/img/web/*`), alles andere 404 – `data/cecilia.db`, `cecilia-chat/` und Doku werden nie ausgeliefert. **Neue Frontend-Dateien** müssen in diese Allowlist, bei öffentlichen Seiten zusätzlich in `PUBLIC_PATHS` (`lib/auth.mjs`) und in die `COPY`-Zeile des Dockerfiles.
+  - Statische Dateien nur aus der Allowlist `staticAllowlist` in `app.mjs` (HTML-Seiten, `chat.css`, `styles.css`, `placeholder-images.js`, Favicons, `/js/*.js`, `/img/web/*`), alles andere 404 – `data/cecilia.db`, `cecilia-chat/` und Doku werden nie ausgeliefert. `normalizePath` lehnt `..`, `//`, `/./`, Backslash und NUL nach dem Dekodieren mit 400 ab (Schutz gegen `/img/web/../../data/cecilia.db`); Tests dafür mit rohen `node:http`-Anfragen (`rawGet` in `test/helpers.mjs`), weil fetch `..` selbst auflöst. **Neue Frontend-Dateien** müssen in diese Allowlist, bei öffentlichen Seiten zusätzlich in `PUBLIC_PATHS` (`lib/auth.mjs`) und in die `COPY`-Zeile des Dockerfiles.
   - `/api/auth/admin-unlock` hat das IP-Limit und ist bei gesperrtem Konto blockiert.
   - `next`-Ziele in `login.html`/`profile.html` werden mit `new URL(…, location.origin)` aufgelöst, nur gleiche Origin erlaubt (kein Open Redirect).
   - `app.set("trust proxy", 1)`: IP-Rate-Limit und `Secure`-Cookie gehen von **genau einem** Reverse-Proxy (Plesk-nginx) davor aus.
@@ -304,7 +304,7 @@ docker compose logs -f
 # Stoppen
 docker compose down
 
-# Datenbank sichern (schreibt data/backup-<Datum>.db)
+# Datenbank sichern (schreibt /data/backup-<Datum>.db, auf dem Host ./data/)
 docker compose exec cecilia npm --prefix cecilia-chat run backup
 ```
 
@@ -313,7 +313,7 @@ docker compose exec cecilia npm --prefix cecilia-chat run backup
 - **Healthcheck:** `GET /health` alle 30s
 - **Port:** 30000 (konfigurierbar via `.env`)
 - **Env:** Liest `cecilia-chat/.env` via `env_file`
-- **Volume (PFLICHT):** `./data:/app/data` enthält `cecilia.db` (Konten). Ohne Volume gehen bei jedem Neubau alle Konten verloren. Backups enthalten E-Mails und Hashes – schützen.
+- **Volume (PFLICHT):** `./data:/data` enthält `cecilia.db` (Konten). Ohne Volume gehen bei jedem Neubau alle Konten verloren. Backups enthalten E-Mails und Hashes – schützen.
 
 ## Was als nächstes ansteht (Priorität)
 

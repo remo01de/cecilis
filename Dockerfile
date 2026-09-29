@@ -21,9 +21,10 @@ COPY img/web ./img/web
 ENV NODE_ENV=production
 ENV PUBLIC_DIR=/app
 ENV PORT=30000
-# Konten-Datenbank: /app/data muss per Volume eingebunden sein (siehe docker-compose.yml)
-ENV DB_PATH=/app/data/cecilia.db
-RUN mkdir -p /app/data
+# Konten-Datenbank: /data muss per Volume eingebunden sein (siehe docker-compose.yml).
+# Bewusst ausserhalb von PUBLIC_DIR (/app), damit sie nie als Datei ausgeliefert werden kann.
+ENV DB_PATH=/data/cecilia.db
+RUN mkdir -p /data
 
 EXPOSE 30000
 

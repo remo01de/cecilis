@@ -14,4 +14,4 @@ services:
     restart: unless-stopped
     volumes:
       # PFLICHT: Ohne diese Zeile sind bei jedem Neubau alle Konten weg.
-      - ./data:/app/data
+      - ./data:/data

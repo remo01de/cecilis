@@ -51,6 +51,6 @@ export function createApp({ db, publicDir, now = () => Date.now(), loginLimit = 
 
   app.use(pageGate);
   app.use(staticAllowlist);
-  app.use(express.static(publicDir));
+  app.use(express.static(publicDir, { dotfiles: "deny" }));
   return app;
 }

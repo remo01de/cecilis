@@ -174,7 +174,7 @@ ALLOWED_ORIGINS=https://cecilia.example.ch
 
 ## Konten und Anmeldung
 
-Konten, Profile und Sitzungen liegen in SQLite (`data/cecilia.db`, Zugriff nur über `cecilia-chat/src/db/`). Spezifikation: `docs/superpowers/specs/2026-09-29-benutzerverwaltung-design.md`.
+Konten, Profile und Sitzungen liegen in SQLite (lokal `data/cecilia.db`, im Docker-Container `/data/cecilia.db`; Zugriff nur über `cecilia-chat/src/db/`). Spezifikation: `docs/superpowers/specs/2026-09-29-benutzerverwaltung-design.md`.
 
 **Passwörter und PINs**
 - Konto-Passwörter, PINs und Kind-Passwörter werden als scrypt-Hashes mit Salt gespeichert, nie im Klartext.
@@ -210,12 +210,13 @@ Konten, Profile und Sitzungen liegen in SQLite (`data/cecilia.db`, Zugriff nur �
 
 **Seitenschutz und Dateien**
 - `pageGate` (`lib/auth.mjs`) normalisiert den Pfad (dekodieren, klein schreiben, bei ungültiger Kodierung 400), bevor er verglichen wird. Sonst würde z.B. `/admin%2Ehtml` den Schutz umgehen.
+- **Pfad-Traversal:** `normalizePath` lehnt nach dem Dekodieren jeden Pfad mit `..`-Segment, Backslash, NUL-Byte, `//` oder `/./` ab (400, auch in `staticAllowlist`). Sonst käme `/img/web/../../data/cecilia.db` (oder `%2e%2e`, `..%2f`) als „öffentliches Bild“ an der Prüfung vorbei und `express.static` würde die DB ausliefern. `express.static` läuft zusätzlich mit `dotfiles: "deny"`. Tests schicken die Pfade roh über `node:http` (fetch löst `..` selbst auf und würde den Fehler verdecken). Prüfen von aussen: `curl --path-as-is https://…/img/web/../../data/cecilia.db` muss 400 liefern.
 - Statische Dateien kommen nur aus einer Allowlist (`staticAllowlist` in `app.mjs`): die HTML-Seiten, `chat.css`, `styles.css`, `placeholder-images.js`, Favicons, `/js/*.js`, `/img/web/*`. Alles andere ist 404, damit `data/cecilia.db`, `cecilia-chat/` und Doku nie ausgeliefert werden. Neue Frontend-Dateien gehören in die Allowlist, öffentliche zusätzlich in `PUBLIC_PATHS` (`lib/auth.mjs`) und in die `COPY`-Zeile des `Dockerfile`.
 - Öffentlich sind nur `willkommen.html`, `login.html`, Favicons, `/img/web/*`, `/health` und die Anmelde-Endpoints unter `/api/auth/`.
 
 **Datenbank und Backups**
-- Die DB enthält E-Mail-Adressen und Passwort-Hashes. Sie liegt im Docker-Volume `./data` und ist nicht im Git (`.gitignore`).
-- Backup im laufenden Betrieb: `docker compose exec cecilia npm --prefix cecilia-chat run backup` (schreibt `data/backup-<Datum>.db`). **Backups enthalten dieselben Daten und müssen genauso geschützt werden** (Zugriffsrechte, verschlüsselter Ablageort).
+- Die DB enthält E-Mail-Adressen und Passwort-Hashes. Im Container liegt sie unter `/data` (Volume `./data:/data`), also ausserhalb des Web-Ordners `/app` – zweite Schutzschicht neben der Traversal-Prüfung. Sie ist nicht im Git (`.gitignore`).
+- Backup im laufenden Betrieb: `docker compose exec cecilia npm --prefix cecilia-chat run backup` (schreibt `/data/backup-<Datum>.db`, auf dem Host `./data/backup-<Datum>.db`). **Backups enthalten dieselben Daten und müssen genauso geschützt werden** (Zugriffsrechte, verschlüsselter Ablageort).
 
 **Grenzen (Stufe 1):** Keine Selbst-Registrierung, kein „Passwort vergessen“, kein E-Mail-Versand; Konten legt nur der Admin an. Der Bootstrap-Zugang (`user=`/`passwort=` in der `.env`) wird nur beim allerersten Start mit leerer DB gelesen; danach empfiehlt es sich, `user=` und `passwort=` aus der `.env` zu entfernen. Achtung: Geht die Datenbank bzw. das Volume je verloren, braucht ein neuer Erststart beide Werte wieder – sonst kann sich niemand anmelden.
 
