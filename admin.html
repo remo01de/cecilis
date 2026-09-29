@@ -68,6 +68,7 @@
   <section class="card unlock" id="unlock" hidden>
     <h2>Bitte bestätige dein Passwort</h2>
     <p class="meta">Die Verwaltung ist 15 Minuten lang freigeschaltet.</p>
+    <div class="notice warn" id="unlockExpired" hidden>Die Freigabe ist abgelaufen. Bitte bestätige dein Passwort und wiederhole die letzte Aktion.</div>
     <form id="unlockForm">
       <label for="unlockPassword">Passwort</label>
       <input id="unlockPassword" type="password" autocomplete="current-password" required>
@@ -75,6 +76,8 @@
       <p style="margin-top:14px"><button class="primary" type="submit">Freischalten</button></p>
     </form>
   </section>
+
+  <div class="notice error" id="globalError" role="alert" hidden style="width:min(1100px, 100% - 32px); margin:16px auto 0"></div>
 
   <main id="app" hidden>
     <div>
@@ -131,6 +134,7 @@
     };
 
     let selectedId = null;
+    let adminEmail = null;
 
     // Kleiner Helfer: Element mit Attributen und Kindern (Text wird nie als HTML eingesetzt)
     function h(tag, attrs = {}, ...children) {
@@ -147,11 +151,26 @@
     async function api(path, { method = 'GET', body } = {}) {
       const opts = { method, headers: {} };
       if (method !== 'GET') { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
-      const res = await fetch(path, opts);
+      let res;
+      try { res = await fetch(path, opts); } catch (e) { throw new Error('network'); }
       const data = await res.json().catch(() => ({}));
       if (res.status === 401) { location.href = '/login.html?next=%2Fadmin.html'; throw new Error('login'); }
-      if (data.error === 'admin_reauth_required') { showUnlock(); throw new Error('reauth'); }
-      return { ok: res.ok, status: res.status, data };
+      if (data.error === 'admin_reauth_required') { showUnlock(true); throw new Error('reauth'); }
+      return { ok: res.ok, status: res.status, data: (data && typeof data === 'object') ? data : {} };
+    }
+
+    // Zentrale Fehlerbehandlung für Klicks und Formulare
+    function showGeneralError(text) {
+      const box = document.getElementById('globalError');
+      box.textContent = text;
+      box.hidden = false;
+    }
+    async function run(fn) {
+      try { await fn(); }
+      catch (e) {
+        if (e && (e.message === 'reauth' || e.message === 'login')) return;
+        showGeneralError(e && e.message === 'network' ? 'Keine Verbindung zum Server. Bitte gleich nochmal versuchen.' : 'Das hat nicht geklappt.');
+      }
     }
 
     const fmtDate = (ms) => ms ? new Date(ms).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' }) : 'noch nie';
@@ -162,15 +181,29 @@
       document.getElementById('secretValue').textContent = value;
       document.getElementById('secretDialog').showModal();
     }
+    document.getElementById('secretDialog').addEventListener('close', () => {
+      document.getElementById('secretValue').textContent = '';
+    });
     document.getElementById('copySecret').addEventListener('click', async (e) => {
-      await navigator.clipboard.writeText(document.getElementById('secretValue').textContent).catch(() => {});
-      e.target.textContent = 'Kopiert ✓';
-      setTimeout(() => { e.target.textContent = 'Kopieren'; }, 1500);
+      const btn = e.target;
+      let ok = true;
+      try {
+        if (!navigator.clipboard) throw new Error('no clipboard');
+        await navigator.clipboard.writeText(document.getElementById('secretValue').textContent);
+      } catch (err) { ok = false; }
+      btn.textContent = ok ? 'Kopiert ✓' : 'Kopieren nicht möglich – bitte markieren';
+      setTimeout(() => { btn.textContent = 'Kopieren'; }, 2500);
     });
     document.getElementById('closeSecret').addEventListener('click', () => document.getElementById('secretDialog').close());
 
     // ---------- Freischalten ----------
-    function showUnlock() {
+    function showUnlock(expired = false) {
+      for (const id of ['confirmDialog', 'secretDialog']) {
+        const dlg = document.getElementById(id);
+        if (dlg.open) dlg.close();
+      }
+      document.getElementById('unlockExpired').hidden = !expired;
+      document.getElementById('globalError').hidden = true;
       document.getElementById('app').hidden = true;
       document.getElementById('unlock').hidden = false;
       document.getElementById('unlockPassword').focus();
@@ -178,25 +211,42 @@
     document.getElementById('unlockForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const err = document.getElementById('unlockError');
-      const res = await fetch('/api/auth/admin-unlock', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: document.getElementById('unlockPassword').value })
-      });
-      if (!res.ok) { err.textContent = res.status === 429 ? 'Zu viele Versuche. Bitte später nochmal.' : 'Das Passwort stimmt nicht.'; err.hidden = false; return; }
+      const showErr = (t) => { err.textContent = t; err.hidden = false; };
+      let res;
+      try {
+        res = await fetch('/api/auth/admin-unlock', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: document.getElementById('unlockPassword').value })
+        });
+      } catch (ex) { showErr('Keine Verbindung zum Server. Bitte gleich nochmal versuchen.'); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        if (res.status === 401 && d.error === 'login_required') { location.href = '/login.html?next=%2Fadmin.html'; return; }
+        showErr(res.status === 429 ? 'Zu viele Versuche. Bitte später nochmal.'
+          : res.status === 401 ? 'Das Passwort stimmt nicht.'
+          : res.status === 403 ? 'Dafür hast du keine Berechtigung.' : 'Das hat nicht geklappt.');
+        return;
+      }
       err.hidden = true;
       document.getElementById('unlockPassword').value = '';
+      document.getElementById('unlockExpired').hidden = true;
       document.getElementById('unlock').hidden = true;
       document.getElementById('app').hidden = false;
-      loadAccounts();
+      run(async () => { await loadAccounts(); if (selectedId) await selectAccount(selectedId); });
     });
 
     // ---------- Kontenliste ----------
     async function loadAccounts() {
       const q = document.getElementById('search').value.trim();
-      const { data } = await api('/api/admin/accounts?q=' + encodeURIComponent(q));
+      const r = await api('/api/admin/accounts?q=' + encodeURIComponent(q));
       const list = document.getElementById('accountList');
+      if (!r.ok || !Array.isArray(r.data.accounts)) {
+        list.replaceChildren(h('li', { class: 'meta' }, 'Die Konten konnten nicht geladen werden.'));
+        return [];
+      }
+      const data = r.data;
       list.replaceChildren(...data.accounts.map(a => h('li', {},
-        h('button', { type: 'button', 'aria-current': String(a.id === selectedId), onclick: () => selectAccount(a.id) },
+        h('button', { type: 'button', 'aria-current': String(a.id === selectedId), onclick: () => run(() => selectAccount(a.id)) },
           h('span', {}, a.email, ' ', a.role === 'admin' ? h('span', { class: 'badge admin' }, 'Admin') : null,
             a.status === 'disabled' ? h('span', { class: 'badge disabled' }, 'gesperrt') : null),
           h('small', {}, `${a.profileCount} Profil${a.profileCount === 1 ? '' : 'e'} · letzte Anmeldung ${fmtDate(a.lastLoginAt)}`)
@@ -206,10 +256,11 @@
       return data.accounts;
     }
     let searchTimer;
-    document.getElementById('search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadAccounts, 250); });
+    document.getElementById('search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => run(loadAccounts), 250); });
 
-    document.getElementById('createForm').addEventListener('submit', async (e) => {
+    document.getElementById('createForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      run(async () => {
       const err = document.getElementById('createError');
       const email = document.getElementById('newEmail').value.trim();
       const r = await api('/api/admin/accounts', { method: 'POST', body: { email } });
@@ -219,6 +270,7 @@
       await loadAccounts();
       await selectAccount(r.data.account.id);
       showSecret('Konto angelegt', `Startpasswort für ${r.data.account.email}:`, r.data.password);
+      });
     });
 
     // ---------- Konto-Detail ----------
@@ -228,10 +280,12 @@
       const a = accountsNow.find(x => x.id === id);
       const detail = document.getElementById('detail');
       if (!a) { detail.replaceChildren(h('p', { class: 'meta' }, 'Wähle links ein Konto aus.')); return; }
-      const { data } = await api(`/api/admin/accounts/${id}/profiles`);
+      const pr = await api(`/api/admin/accounts/${id}/profiles`);
+      if (!pr.ok || !Array.isArray(pr.data.profiles)) { detail.replaceChildren(h('div', { class: 'notice error', role: 'alert' }, 'Die Profile konnten nicht geladen werden.')); return; }
+      const data = pr.data;
       const message = h('div', { class: 'notice error', role: 'alert', hidden: true });
       const fail = (r) => { message.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; message.hidden = false; };
-      const action = (label, fn, cls = '') => h('button', { type: 'button', class: cls, onclick: fn }, label);
+      const action = (label, fn, cls = '') => h('button', { type: 'button', class: cls, onclick: () => run(fn) }, label);
 
       detail.replaceChildren(
         h('h2', {}, a.email),
@@ -240,11 +294,11 @@
           action('Passwort zurücksetzen', async () => {
             const r = await api(`/api/admin/accounts/${id}/reset-password`, { method: 'POST' });
             if (!r.ok) return fail(r);
-            showSecret('Neues Passwort', `Für ${a.email}. Alle Geräte dieses Kontos wurden abgemeldet.`, r.data.password);
+            showSecret('Neues Passwort', a.email === adminEmail ? 'Dein Passwort wurde geändert.' : `Für ${a.email}. Alle Geräte dieses Kontos wurden abgemeldet.`, r.data.password);
           }),
           a.status === 'active'
-            ? action('Sperren', async () => { const r = await api(`/api/admin/accounts/${id}/disable`, { method: 'POST' }); r.ok ? selectAccount(id) : fail(r); }, 'danger')
-            : action('Entsperren', async () => { const r = await api(`/api/admin/accounts/${id}/enable`, { method: 'POST' }); r.ok ? selectAccount(id) : fail(r); }),
+            ? action('Sperren', async () => { const r = await api(`/api/admin/accounts/${id}/disable`, { method: 'POST' }); if (r.ok) await selectAccount(id); else fail(r); }, 'danger')
+            : action('Entsperren', async () => { const r = await api(`/api/admin/accounts/${id}/enable`, { method: 'POST' }); if (r.ok) await selectAccount(id); else fail(r); }),
           action('Alle Geräte abmelden', async () => { const r = await api(`/api/admin/accounts/${id}/logout-all`, { method: 'POST' }); if (!r.ok) fail(r); }),
           action('Konto löschen', () => confirmDelete(a), 'danger')
         ),
@@ -263,13 +317,19 @@
       input.value = '';
       dlg.showModal();
       document.getElementById('confirmCancel').onclick = () => dlg.close();
-      document.getElementById('confirmOk').onclick = async () => {
-        const r = await api(`/api/admin/accounts/${a.id}`, { method: 'DELETE', body: { confirmEmail: input.value } });
-        if (!r.ok) { alert(ERRORS[r.data.error] || 'Das hat nicht geklappt.'); return; }
-        dlg.close();
-        selectedId = null;
-        await loadAccounts();
-        document.getElementById('detail').replaceChildren(h('p', { class: 'meta' }, 'Konto gelöscht.'));
+      const ok = document.getElementById('confirmOk');
+      ok.disabled = false;
+      ok.onclick = async () => {
+        ok.disabled = true;
+        await run(async () => {
+          const r = await api(`/api/admin/accounts/${a.id}`, { method: 'DELETE', body: { confirmEmail: input.value } });
+          if (!r.ok) { alert(ERRORS[r.data.error] || 'Das hat nicht geklappt.'); ok.disabled = false; return; }
+          dlg.close();
+          selectedId = null;
+          await loadAccounts();
+          document.getElementById('detail').replaceChildren(h('p', { class: 'meta' }, 'Konto gelöscht.'));
+        });
+        ok.disabled = false;
       };
     }
 
@@ -284,8 +344,8 @@
       return wrap;
     }
 
-    function colorSelect(current) {
-      return h('select', {}, Object.keys(COLORS).map(c => h('option', { value: c, selected: c === current }, COLOR_NAMES[c])));
+    function colorSelect(current, label = 'Farbe') {
+      return h('select', { 'aria-label': label }, Object.keys(COLORS).map(c => h('option', { value: c, selected: c === current }, COLOR_NAMES[c])));
     }
 
     function looksLikeRealName(u) {
@@ -315,39 +375,39 @@
         h('label', {}, 'Avatar'), avatarPicker(p.avatar, v => { avatar = v; }),
         h('label', {}, 'Farbe'), color,
         h('div', { class: 'actions', style: 'margin-top:10px' },
-          h('button', { type: 'button', class: 'primary', onclick: async () => {
+          h('button', { type: 'button', class: 'primary', onclick: () => run(async () => {
             const r = await api(`/api/admin/profiles/${p.id}`, { method: 'PATCH', body: { name: nameInput.value, avatar, color: color.value } });
-            r.ok ? refresh() : fail(r);
-          } }, 'Speichern'),
-          h('button', { type: 'button', class: 'danger', onclick: async () => {
+            if (r.ok) await refresh(); else fail(r);
+          }) }, 'Speichern'),
+          h('button', { type: 'button', class: 'danger', onclick: () => run(async () => {
             if (!confirm(`Profil „${p.name}“ löschen?`)) return;
             const r = await api(`/api/admin/profiles/${p.id}`, { method: 'DELETE' });
-            r.ok ? refresh() : fail(r);
-          } }, 'Profil löschen')
+            if (r.ok) await refresh(); else fail(r);
+          }) }, 'Profil löschen')
         ),
         h('label', {}, 'PIN'),
         h('div', { class: 'row' }, pinInput,
-          h('button', { type: 'button', onclick: async () => {
+          h('button', { type: 'button', onclick: () => run(async () => {
             const r = await api(`/api/admin/profiles/${p.id}/pin`, { method: 'POST', body: { pin: pinInput.value } });
-            r.ok ? refresh() : fail(r);
-          } }, p.hasPin ? 'PIN ändern' : 'PIN setzen'),
-          p.hasPin ? h('button', { type: 'button', onclick: async () => {
+            if (r.ok) await refresh(); else fail(r);
+          }) }, p.hasPin ? 'PIN ändern' : 'PIN setzen'),
+          p.hasPin ? h('button', { type: 'button', onclick: () => run(async () => {
             const r = await api(`/api/admin/profiles/${p.id}/pin`, { method: 'DELETE' });
-            r.ok ? refresh() : fail(r);
-          } }, 'PIN entfernen') : null
+            if (r.ok) await refresh(); else fail(r);
+          }) }, 'PIN entfernen') : null
         ),
         h('label', {}, 'Kind-Login (für andere Geräte)'),
         h('div', { class: 'row' }, userInput,
-          h('button', { type: 'button', onclick: async () => {
+          h('button', { type: 'button', onclick: () => run(async () => {
             const r = await api(`/api/admin/profiles/${p.id}/child-login`, { method: 'POST', body: { username: userInput.value } });
             if (!r.ok) return fail(r);
             showSecret('Kind-Login', `Benutzername: ${r.data.username}. Ältere Anmeldungen mit diesem Kind-Login wurden beendet.`, r.data.password);
-            refresh();
-          } }, p.childUsername ? 'Passwort neu' : 'Einrichten'),
-          p.childUsername ? h('button', { type: 'button', onclick: async () => {
+            await refresh();
+          }) }, p.childUsername ? 'Passwort neu' : 'Einrichten'),
+          p.childUsername ? h('button', { type: 'button', onclick: () => run(async () => {
             const r = await api(`/api/admin/profiles/${p.id}/child-login`, { method: 'DELETE' });
-            r.ok ? refresh() : fail(r);
-          } }, 'Abschalten') : null
+            if (r.ok) await refresh(); else fail(r);
+          }) }, 'Abschalten') : null
         ),
         warn,
         msg
@@ -357,18 +417,18 @@
     function newProfileForm(accountId) {
       let avatar = AVATARS[0];
       const name = h('input', { maxlength: '20', placeholder: 'Spitzname, kein echter Name', 'aria-label': 'Name des neuen Profils' });
-      const color = colorSelect('pink');
+      const color = colorSelect('pink', 'Farbe des neuen Profils');
       const msg = h('div', { class: 'notice error', role: 'alert', hidden: true });
       return h('div', { class: 'profile', style: 'margin-top:12px' },
         h('strong', {}, 'Neues Profil'),
         h('label', {}, 'Name'), name,
         h('label', {}, 'Avatar'), avatarPicker(avatar, v => { avatar = v; }),
         h('label', {}, 'Farbe'), color,
-        h('p', { style: 'margin-top:10px' }, h('button', { type: 'button', class: 'primary', onclick: async () => {
+        h('p', { style: 'margin-top:10px' }, h('button', { type: 'button', class: 'primary', onclick: () => run(async () => {
           const r = await api(`/api/admin/accounts/${accountId}/profiles`, { method: 'POST', body: { name: name.value, avatar, color: color.value } });
           if (!r.ok) { msg.textContent = ERRORS[r.data.error] || 'Das hat nicht geklappt.'; msg.hidden = false; return; }
-          selectAccount(accountId);
-        } }, 'Profil anlegen')),
+          await selectAccount(accountId);
+        }) }, 'Profil anlegen')),
         msg
       );
     }
@@ -377,11 +437,17 @@
     (async () => {
       const s = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({}));
       if (!s.loggedIn) return location.replace('/login.html?next=%2Fadmin.html');
-      if (s.kind !== 'family' || s.account.role !== 'admin') return location.replace('/');
+      if (s.kind !== 'family' || !s.account || s.account.role !== 'admin') return location.replace('/');
+      adminEmail = s.account.email;
       try {
         await loadAccounts();
         document.getElementById('app').hidden = false;
-      } catch (e) { /* showUnlock() wurde bereits aufgerufen */ }
+      } catch (e) {
+        if (e && e.message === 'reauth') return; // Freischalt-Formular ist bereits sichtbar
+        if (e && e.message === 'login') return;
+        document.getElementById('app').hidden = false;
+        document.getElementById('detail').replaceChildren(h('div', { class: 'notice error', role: 'alert' }, 'Keine Verbindung zum Server. Lade die Seite gleich nochmal.'));
+      }
     })();
   </script>
 </body>
