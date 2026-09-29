@@ -45,3 +45,6 @@ img/logo.png
 img/php.png
 img/ssi.png
 img/twitter.png
+
+# SQLite-Datenbank (Konten) – nie committen
+data/
