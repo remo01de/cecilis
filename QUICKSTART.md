@@ -109,6 +109,21 @@ PORT=30000                     # Server-Port
 NODE_ENV=development          # development oder production
 ```
 
+## 🌍 Live-Betrieb mit Docker
+
+### Erster Live-Gang
+
+1. **Volume prüfen:** In `docker-compose.yml` steht unter `volumes:` die Zeile `- ./data:/data`. Ohne sie sind bei jedem Neubau alle Konten weg.
+2. **Admin anlegen:** In `cecilia-chat/.env` `user=<admin-e-mail>` und `passwort=<starkes Passwort>` setzen, dann `docker compose up -d --build`. Im Log (`docker compose logs cecilia`) muss „Admin-Konto … aus .env angelegt“ stehen. Fehlt die Zeile, war die Datenbank nicht leer.
+3. **Familie einrichten, bevor ein Familiengerät sich anmeldet:** Auf `/admin.html` (Passwort erneut bestätigen) die Familienkonten und für jedes Kind ein Profil anlegen. Neue Passwörter werden nur einmal angezeigt – sofort notieren.
+4. **Bestehende Geräte umstellen:** Auf jedem Gerät, das Cecilia schon benutzt hat, mit dem passenden Konto anmelden und beim ersten Mal das Profil des Kindes wählen, das dieses Gerät nutzt. **Das erste Profil, das auf einem Gerät gewählt wird, übernimmt die alten Chats und Bilder dieses Geräts.** Darum auf einem Kindergerät nicht zuerst mit dem Admin-Konto („Mein Profil“) anmelden. Hat ein Konto genau ein Profil ohne PIN, wird es beim Login automatisch gewählt.
+5. **Aufräumen:** `user=` und `passwort=` aus der `.env` entfernen (werden nur bei leerer DB gebraucht) und den Container neu starten.
+6. **Hinter Plesk prüfen:**
+   - Nach dem Login im Browser (Entwicklertools → Netzwerk → Antwort von `/api/auth/login` → `Set-Cookie`, oder Speicher → Cookies): `cecilia_session` hat `Secure` und `HttpOnly`. Fehlt `Secure`, schickt nginx kein `X-Forwarded-Proto` (in Plesk unter „Zusätzliche nginx-Anweisungen“ `proxy_set_header X-Forwarded-Proto $scheme;` ergänzen).
+   - `curl -s -o /dev/null -w '%{http_code}\n' --path-as-is https://cecilia.rsservice.app/img/web/../../data/cecilia.db` → muss `400` liefern.
+
+Backup und Wiederherstellung: siehe `SECURITY.md`.
+
 ## 🐛 Problemlösung
 
 ### "Backend-Server nicht erreichbar"

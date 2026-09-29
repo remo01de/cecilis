@@ -186,6 +186,7 @@ Konten, Profile und Sitzungen liegen in SQLite (lokal `data/cecilia.db`, im Dock
 - Sitzung serverseitig: 32 Zufallsbytes im Cookie `cecilia_session`, in der DB nur der SHA-256-Hash. Jede Anfrage prüft die Sitzung in der DB, darum wirken Sperren, Passwort-Reset und Löschen sofort (alle Sitzungen des Kontos werden gelöscht). Familie 30 Tage, Kind 14 Tage; abgelaufene Sitzungen werden stündlich gelöscht.
 - `cecilia_session`: `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` bei HTTPS.
 - `cecilia_profile` ist absichtlich lesbar (für die Speicherschlüssel im Browser) und enthält nur die Profil-Nummer, keine Berechtigung.
+- **Eine PIN ist kein Datenschutz auf dem Gerät.** Sie verhindert nur, dass jemand in der Oberfläche ein fremdes Profil wählt. Chats und Bilder liegen unverschlüsselt im Browser (localStorage/IndexedDB, pro Profil getrennte Schlüssel); wer das Gerät benutzt, kann sie über die Entwicklertools des Browsers lesen – auch die anderer Profile. Getrennte Privatsphäre gibt es nur mit getrennten Geräten bzw. Browser-Benutzern.
 - `app.set("trust proxy", 1)`: IP-Rate-Limit und `Secure`-Flag gehen von **genau einem** Reverse-Proxy (Plesk-nginx) vor dem Container aus. Mit mehr oder ohne Proxy stimmen die IP-Adressen nicht.
 
 **Rate-Limits und Sperren**
@@ -216,7 +217,13 @@ Konten, Profile und Sitzungen liegen in SQLite (lokal `data/cecilia.db`, im Dock
 
 **Datenbank und Backups**
 - Die DB enthält E-Mail-Adressen und Passwort-Hashes. Im Container liegt sie unter `/data` (Volume `./data:/data`), also ausserhalb des Web-Ordners `/app` – zweite Schutzschicht neben der Traversal-Prüfung. Sie ist nicht im Git (`.gitignore`).
-- Backup im laufenden Betrieb: `docker compose exec cecilia npm --prefix cecilia-chat run backup` (schreibt `/data/backup-<Datum>.db`, auf dem Host `./data/backup-<Datum>.db`). **Backups enthalten dieselben Daten und müssen genauso geschützt werden** (Zugriffsrechte, verschlüsselter Ablageort).
+- Backup im laufenden Betrieb: `docker compose exec cecilia npm --prefix cecilia-chat run backup` (schreibt `/data/backup-<Datum>.db`, auf dem Host `./data/backup-<Datum>.db`). **Backups enthalten dieselben Daten und müssen genauso geschützt werden** (Zugriffsrechte, verschlüsselter Ablageort). Backups regelmässig vom Server wegkopieren (z.B. `scp` auf einen anderen Rechner); liegen sie nur neben der DB, gehen sie mit dem Server verloren.
+- **Wiederherstellen:**
+  1. `docker compose stop`
+  2. `cp data/backup-<Datum>.db data/cecilia.db`
+  3. `rm -f data/cecilia.db-wal data/cecilia.db-shm` (sonst spielt SQLite alte Änderungen über das Backup)
+  4. `docker compose start` und im Log prüfen, dass **keine** „Neue Datenbank angelegt“-Meldung erscheint.
+  Sitzungen, die nach dem Backup entstanden sind, gelten danach nicht mehr; die Familie meldet sich neu an.
 
 **Grenzen (Stufe 1):** Keine Selbst-Registrierung, kein „Passwort vergessen“, kein E-Mail-Versand; Konten legt nur der Admin an. Der Bootstrap-Zugang (`user=`/`passwort=` in der `.env`) wird nur beim allerersten Start mit leerer DB gelesen; danach empfiehlt es sich, `user=` und `passwort=` aus der `.env` zu entfernen. Achtung: Geht die Datenbank bzw. das Volume je verloren, braucht ein neuer Erststart beide Werte wieder – sonst kann sich niemand anmelden.
 
@@ -269,6 +276,10 @@ input.maxLength = 1000;
 ## Sicherheits-Checkliste für Deployment
 
 - [ ] `.env` Datei ist in `.gitignore`
+- [ ] Volume `./data:/data` eingebunden, `user=`/`passwort=` nach dem ersten Start aus der `.env` entfernt
+- [ ] `curl --path-as-is https://…/img/web/../../data/cecilia.db` liefert 400
+- [ ] `cecilia_session` hat hinter dem Proxy `Secure; HttpOnly`
+- [ ] Backups werden vom Server wegkopiert
 - [ ] API-Keys sind nicht im Frontend-Code
 - [ ] CORS ist auf spezifische Origins beschränkt
 - [ ] HTTPS ist aktiviert
