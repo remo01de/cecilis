@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="night">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Wer bist du? · Cecilia</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --night: #1D0B3A; --text-1: #FFFFFF; --text-2: #E8DCFF; --text-3: #C9B8E8;
+      --pink: #FF6FCB; --field: rgba(255,255,255,0.09); --stroke: rgba(255,255,255,0.16);
+      --grad-magic: linear-gradient(135deg,#FF6FCB 0%,#C9B4FF 50%,#7EE8FA 100%);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    body {
+      min-height: 100dvh; display: grid; place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(ellipse at 18% 20%, rgba(255,111,203,0.25), transparent 50%),
+        radial-gradient(ellipse at 85% 15%, rgba(126,232,250,0.18), transparent 55%),
+        linear-gradient(180deg, #12052A 0%, var(--night) 55%, #3A1466 100%) fixed;
+      color: var(--text-2); font: 400 17px/1.5 'DM Sans', system-ui, sans-serif;
+    }
+    :focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
+    main { width: min(720px, 100%); text-align: center; }
+    h1 { font: 700 clamp(48px, 9vw, 72px)/1 'Caveat', cursive; color: #fff; text-shadow: 0 0 26px rgba(255,111,203,0.5); }
+    .sub { margin: 8px 0 34px; color: var(--text-3); }
+    .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 26px 22px; list-style: none; }
+    .tile {
+      display: grid; justify-items: center; gap: 10px;
+      background: none; border: none; color: var(--text-1); cursor: pointer;
+      font-family: inherit; font-weight: 700; font-size: 18px; line-height: 1.2;
+    }
+    .tile .face {
+      width: 116px; height: 116px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 56px;
+      border: 4px solid rgba(255,255,255,0.85);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      transition: transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms;
+    }
+    .tile:hover .face, .tile:focus-visible .face { transform: translateY(-4px) scale(1.05); box-shadow: 0 0 30px rgba(255,111,203,0.6); }
+    .tile:focus-visible { outline: none; }
+    .lock { font-size: 13px; color: var(--text-3); font-weight: 400; }
+    .empty { max-width: 42ch; margin: 0 auto; }
+    .empty a, .links a, .links button { color: var(--text-1); font-weight: 700; }
+    .links { margin-top: 40px; display: flex; justify-content: center; gap: 24px; font-size: 15px; }
+    .links button { background: none; border: none; font: inherit; cursor: pointer; text-decoration: underline; }
+
+    /* PIN-Block */
+    .pin-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(12,4,28,0.75); backdrop-filter: blur(8px); padding: 16px; }
+    .pin-card { width: min(340px, 100%); padding: 28px 22px; border-radius: 30px; background: #26104A; border: 1px solid rgba(255,111,203,0.45); text-align: center; }
+    .pin-card h2 { font: 700 34px/1 'Caveat', cursive; color: #fff; }
+    .dots { display: flex; justify-content: center; gap: 14px; margin: 20px 0 8px; }
+    .dots span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-3); }
+    .dots span.on { background: var(--pink); border-color: var(--pink); }
+    .pin-error { min-height: 24px; color: #FFB3D1; font-size: 14px; }
+    .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+    .pad button {
+      min-height: 62px; border-radius: 20px; border: 1px solid var(--stroke);
+      background: var(--field); color: #fff; font-family: inherit; font-weight: 700; font-size: 24px; line-height: 1; cursor: pointer;
+    }
+    .pad button:active { transform: scale(0.96); }
+    .pad .small { font-size: 15px; }
+    .shake { animation: shake 360ms; }
+    @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Wer bist du?</h1>
+    <p class="sub">Tipp auf dein Bild.</p>
+    <ul class="grid" id="grid" aria-label="Profile"></ul>
+    <div class="empty" id="empty" hidden>
+      <p>Hier gibt es noch kein Profil. Ein Erwachsener muss zuerst eines anlegen.</p>
+      <p id="adminLink" hidden><a href="/admin.html">Zur Verwaltung</a></p>
+    </div>
+    <div class="links">
+      <a id="adminLinkBottom" href="/admin.html" hidden>Verwaltung</a>
+      <button type="button" id="logoutBtn">Abmelden</button>
+    </div>
+  </main>
+
+  <div class="pin-overlay" id="pinOverlay" role="dialog" aria-modal="true" aria-labelledby="pinTitle" hidden>
+    <div class="pin-card" id="pinCard">
+      <h2 id="pinTitle">Deine PIN</h2>
+      <div class="dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <p class="pin-error" id="pinError" role="alert"></p>
+      <div class="pad" id="pad">
+        <button type="button">1</button><button type="button">2</button><button type="button">3</button>
+        <button type="button">4</button><button type="button">5</button><button type="button">6</button>
+        <button type="button">7</button><button type="button">8</button><button type="button">9</button>
+        <button type="button" class="small" data-cancel>Zurück</button><button type="button">0</button><button type="button" class="small" data-del aria-label="Letzte Ziffer löschen">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = { pink: '#FF6FCB', lilac: '#C9B4FF', cyan: '#7EE8FA', mint: '#B4F0D6', gold: '#FFD86B', peach: '#FFB89A' };
+    const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+
+    function nextTarget() {
+      const raw = new URLSearchParams(location.search).get('next') || '/';
+      try {
+        const u = new URL(raw, location.origin);
+        if (u.origin !== location.origin || /^\/(login|profile)\.html/.test(u.pathname)) return '/';
+        return u.pathname + u.search + u.hash;
+      } catch (e) {
+        return '/';
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await post('/api/auth/logout').catch(() => {});
+      location.href = '/login.html';
+    });
+
+    // ---------- PIN ----------
+    const overlay = document.getElementById('pinOverlay');
+    const dots = [...document.querySelectorAll('.dots span')];
+    const pinError = document.getElementById('pinError');
+    let pin = '', current = null, lastFocus = null;
+
+    function openPin(profile, tile) {
+      current = profile; pin = ''; lastFocus = tile;
+      pinError.textContent = '';
+      document.getElementById('pinTitle').textContent = `Hallo ${profile.name}! Deine PIN`;
+      updateDots();
+      overlay.hidden = false;
+      document.querySelector('#pad button').focus();
+    }
+    function closePin() { overlay.hidden = true; current = null; lastFocus?.focus(); }
+    function updateDots() { dots.forEach((d, i) => d.classList.toggle('on', i < pin.length)); }
+
+    async function addDigit(d) {
+      if (pin.length >= 4) return;
+      pin += d; updateDots();
+      if (pin.length === 4) await choose(current, pin);
+    }
+
+    document.getElementById('pad').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.hasAttribute('data-cancel')) return closePin();
+      if (b.hasAttribute('data-del')) { pin = pin.slice(0, -1); return updateDots(); }
+      addDigit(b.textContent);
+    });
+    document.addEventListener('keydown', e => {
+      if (overlay.hidden) return;
+      if (/^\d$/.test(e.key)) addDigit(e.key);
+      else if (e.key === 'Backspace') { pin = pin.slice(0, -1); updateDots(); }
+      else if (e.key === 'Escape') closePin();
+    });
+
+    // ---------- Profil wählen ----------
+    async function choose(profile, pinValue) {
+      const res = await post('/api/auth/select-profile', pinValue ? { profileId: profile.id, pin: pinValue } : { profileId: profile.id }).catch(() => null);
+      if (res && res.ok) return location.replace(nextTarget());
+      if (!res) { pinError.textContent = 'Keine Verbindung. Probier es gleich nochmal.'; }
+      else if (res.status === 401) { pinError.textContent = 'Die PIN stimmt nicht. Probier es nochmal.'; }
+      else if (res.status === 429) { pinError.textContent = 'Zu viele Versuche. Warte kurz und probier es dann nochmal.'; }
+      else if (res.status === 403) { location.href = '/login.html'; return; }
+      else { pinError.textContent = 'Das hat nicht geklappt.'; }
+      pin = ''; updateDots();
+      const card = document.getElementById('pinCard');
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    }
+
+    async function init() {
+      const session = await fetch('/api/auth/session').then(r => r.json()).catch(() => ({ loggedIn: false }));
+      if (!session.loggedIn) return location.replace('/login.html');
+      if (session.kind !== 'family') return location.replace('/');
+      const res = await fetch('/api/auth/profiles');
+      if (!res.ok) return location.replace('/login.html');
+      const { profiles, role } = await res.json();
+      const isAdmin = role === 'admin';
+      document.getElementById('adminLinkBottom').hidden = !isAdmin;
+
+      if (profiles.length === 0) {
+        document.getElementById('empty').hidden = false;
+        document.getElementById('adminLink').hidden = !isAdmin;
+        document.querySelector('.sub').hidden = true;
+        return;
+      }
+      const grid = document.getElementById('grid');
+      for (const p of profiles) {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tile';
+        const face = document.createElement('span');
+        face.className = 'face';
+        face.style.background = COLORS[p.color] || COLORS.pink;
+        face.textContent = p.avatar;
+        face.setAttribute('aria-hidden', 'true');
+        const name = document.createElement('span');
+        name.textContent = p.name;
+        btn.append(face, name);
+        if (p.hasPin) {
+          const lock = document.createElement('span');
+          lock.className = 'lock';
+          lock.textContent = '🔒 mit PIN';
+          btn.append(lock);
+        }
+        btn.addEventListener('click', () => p.hasPin ? openPin(p, btn) : choose(p));
+        li.append(btn);
+        grid.append(li);
+      }
+    }
+    init();
+  </script>
+</body>
+</html>
