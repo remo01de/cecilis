@@ -165,9 +165,16 @@
   </main>
 
   <script>
+    // Nur Ziele auf dieser Seite zulassen (kein Weiterleiten auf fremde Seiten)
     function nextTarget() {
-      const next = new URLSearchParams(location.search).get('next') || '/';
-      return /^\/(?!\/)/.test(next) && !next.startsWith('/login.html') ? next : '/';
+      const raw = new URLSearchParams(location.search).get('next') || '/';
+      try {
+        const u = new URL(raw, location.origin);
+        if (u.origin !== location.origin || u.pathname.startsWith('/login.html')) return '/';
+        return u.pathname + u.search + u.hash;
+      } catch (e) {
+        return '/';
+      }
     }
 
     // Schon angemeldet? Mit Profil weiter, ohne Profil zur Profilwahl.
