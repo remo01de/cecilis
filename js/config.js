@@ -17,3 +17,19 @@ const CONFIG = {
   MAX_DISPLAY_MESSAGES: 100,
   STORAGE_KEY: 'cecilia_chat_state'
 };
+
+// Alle API-Aufrufe laufen hierüber: schickt das Login-Cookie mit (auch beim
+// Entwickeln mit Live Server auf einem anderen Port) und führt bei abgelaufener
+// Sitzung zurück zur Anmeldung.
+async function apiFetch(url, options = {}) {
+  const response = await fetch(url, { credentials: 'include', ...options });
+  if (response.status === 401) {
+    location.href = `${API_BASE}/login.html?next=${encodeURIComponent('/')}`;
+  }
+  return response;
+}
+
+async function logout() {
+  try { await apiFetch(API_BASE + '/api/logout', { method: 'POST' }); } catch (e) {}
+  location.href = `${API_BASE}/login.html`;
+}

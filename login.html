@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="night">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Anmelden · Cecilia</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <script>
+    // Farbmodus wie in der App, bevor die Seite gezeichnet wird
+    try { if (localStorage.getItem('cecilia_theme') === 'day') document.documentElement.dataset.theme = 'day'; } catch (e) {}
+  </script>
+  <!-- Bewusst alles inline: diese Seite ist ohne Login erreichbar, chat.css und js/ nicht. -->
+  <style>
+    :root {
+      --bg: #0F0420; --card: rgba(255,255,255,0.07); --stroke: rgba(255,255,255,0.14);
+      --stroke-hot: rgba(255,111,203,0.5); --text-1: #FFFFFF; --text-2: #E8DCFF; --text-3: #B0A0CE;
+      --pink: #FF6FCB; --field: rgba(255,255,255,0.08); --error-bg: rgba(255,111,160,0.14); --error: #FFB3D1;
+      --grad-magic: linear-gradient(135deg,#FF6FCB 0%,#C9B4FF 50%,#7EE8FA 100%);
+      --aurora: radial-gradient(ellipse at 15% 20%,rgba(255,111,203,0.25),transparent 50%),
+                radial-gradient(ellipse at 85% 10%,rgba(126,232,250,0.18),transparent 55%),
+                radial-gradient(ellipse at 50% 95%,rgba(201,180,255,0.2),transparent 55%),
+                linear-gradient(180deg,#1D0B3A 0%,#2A0F4D 45%,#3D1466 100%);
+    }
+    [data-theme="day"] {
+      --bg: #FFD3E7; --card: rgba(255,255,255,0.75); --stroke: rgba(42,15,51,0.12);
+      --stroke-hot: rgba(243,83,181,0.45); --text-1: #2A0F33; --text-2: #5A2F66; --text-3: #784686;
+      --pink: #D63A99; --field: #FFFFFF; --error-bg: rgba(214,58,153,0.1); --error: #A3206F;
+      --aurora: radial-gradient(ellipse at 15% 20%,rgba(243,83,181,0.25),transparent 55%),
+                radial-gradient(ellipse at 85% 10%,rgba(78,203,227,0.2),transparent 55%),
+                linear-gradient(180deg,#FFEEF6 0%,#FFE0EE 55%,#FFD3E7 100%);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      min-height: 100dvh;
+      display: grid; place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+      background: var(--aurora), var(--bg);
+      background-attachment: fixed;
+      color: var(--text-2);
+      font: 400 16px/1.55 'DM Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    :focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+    main {
+      width: min(400px, 100%);
+      padding: 32px 26px 26px;
+      border-radius: 32px;
+      background: var(--card);
+      border: 1px solid var(--stroke-hot);
+      box-shadow: 0 24px 60px rgba(8,2,22,0.45);
+      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+    }
+    .avatar {
+      width: 84px; height: 84px; margin: 0 auto 14px;
+      border-radius: 26px; overflow: hidden;
+      background: var(--grad-magic);
+      box-shadow: 0 0 28px rgba(255,111,203,0.5);
+      display: grid; place-items: center; font-size: 38px;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    h1 {
+      font: 400 36px/1.1 'Instrument Serif', Georgia, serif;
+      color: var(--text-1); text-align: center;
+    }
+    .intro { text-align: center; margin: 6px 0 22px; color: var(--text-3); font-size: 15px; }
+    label { display: block; font-weight: 600; color: var(--text-1); font-size: 14px; margin: 14px 0 6px; }
+    .field {
+      display: flex; align-items: center;
+      border-radius: 16px; background: var(--field);
+      border: 1px solid var(--stroke);
+      transition: border-color 160ms, box-shadow 160ms;
+    }
+    .field:focus-within { border-color: var(--stroke-hot); box-shadow: 0 0 0 3px rgba(255,111,203,0.2); }
+    /* Das runde Feld leuchtet schon; kein zusätzlicher eckiger Rahmen um das Eingabefeld */
+    .field input:focus-visible { outline: none; }
+    input {
+      flex: 1; min-width: 0;
+      padding: 13px 16px;
+      background: transparent; border: none; outline: none;
+      color: var(--text-1); font-family: inherit; font-size: 16px; line-height: 1.3; /* 16px: kein iOS-Zoom */
+    }
+    .show-pw {
+      flex: none; margin-right: 6px;
+      padding: 8px 10px; border-radius: 12px;
+      background: transparent; border: none;
+      color: var(--text-3); font-family: inherit; font-weight: 600; font-size: 13px; line-height: 1; cursor: pointer;
+    }
+    .show-pw:hover { color: var(--text-1); }
+    .error {
+      margin-top: 16px; padding: 10px 14px;
+      border-radius: 14px; background: var(--error-bg); color: var(--error);
+      font-size: 14px;
+    }
+    .error[hidden] { display: none; }
+    button[type="submit"] {
+      width: 100%; min-height: 50px; margin-top: 22px;
+      border: none; border-radius: 999px;
+      background: var(--grad-magic); color: #2A0526;
+      font-family: inherit; font-weight: 700; font-size: 16px; line-height: 1; cursor: pointer;
+      box-shadow: 0 0 24px rgba(255,111,203,0.45);
+      transition: transform 160ms, opacity 160ms;
+    }
+    button[type="submit"]:hover { transform: translateY(-1px); }
+    button[type="submit"]:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .hint { margin-top: 18px; text-align: center; font-size: 13px; color: var(--text-3); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="avatar" aria-hidden="true">✨</div>
+    <h1>Hallo!</h1>
+    <p class="intro">Melde dich an, um mit Cecilia zu plaudern.</p>
+
+    <form id="loginForm" novalidate>
+      <label for="user">E-Mail</label>
+      <div class="field">
+        <input id="user" name="user" type="email" autocomplete="username" inputmode="email" required>
+      </div>
+
+      <label for="passwort">Passwort</label>
+      <div class="field">
+        <input id="passwort" name="passwort" type="password" autocomplete="current-password" required>
+        <button type="button" class="show-pw" id="showPw" aria-controls="passwort" aria-pressed="false">zeigen</button>
+      </div>
+
+      <p class="error" id="error" role="alert" hidden></p>
+
+      <button type="submit" id="submit">Anmelden ✨</button>
+    </form>
+
+    <p class="hint">Deinen Zugang bekommst du von deinen Eltern.</p>
+  </main>
+
+  <script>
+    const form   = document.getElementById('loginForm');
+    const errEl  = document.getElementById('error');
+    const submit = document.getElementById('submit');
+    const pwEl   = document.getElementById('passwort');
+    const showPw = document.getElementById('showPw');
+
+    // Nur Pfade dieser Seite als Ziel zulassen (kein Weiterleiten auf fremde Seiten)
+    function nextTarget() {
+      const next = new URLSearchParams(location.search).get('next') || '/';
+      return /^\/(?!\/)/.test(next) && !next.startsWith('/login.html') ? next : '/';
+    }
+
+    // Schon angemeldet? Direkt weiter.
+    fetch('/api/session').then(r => r.json()).then(d => { if (d.loggedIn) location.replace(nextTarget()); }).catch(() => {});
+
+    showPw.addEventListener('click', () => {
+      const show = pwEl.type === 'password';
+      pwEl.type = show ? 'text' : 'password';
+      showPw.textContent = show ? 'verbergen' : 'zeigen';
+      showPw.setAttribute('aria-pressed', String(show));
+    });
+
+    function showError(text) {
+      errEl.textContent = text;
+      errEl.hidden = false;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.hidden = true;
+      const user = document.getElementById('user').value.trim();
+      const passwort = pwEl.value;
+      if (!user || !passwort) { showError('Bitte gib deine E-Mail und dein Passwort ein.'); return; }
+
+      submit.disabled = true;
+      submit.textContent = 'Einen Moment …';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user, passwort })
+        });
+        if (res.ok) { location.replace(nextTarget()); return; }
+        if (res.status === 401) showError('Das hat leider nicht geklappt. Prüf bitte E-Mail und Passwort.');
+        else if (res.status === 429) showError('Zu viele Versuche. Warte bitte 15 Minuten und probier es dann nochmal.');
+        else showError('Cecilia ist gerade nicht erreichbar. Probier es bitte später nochmal.');
+      } catch (err) {
+        showError('Keine Verbindung. Bist du mit dem Internet verbunden?');
+      }
+      submit.disabled = false;
+      submit.textContent = 'Anmelden ✨';
+      pwEl.select();
+    });
+  </script>
+</body>
+</html>

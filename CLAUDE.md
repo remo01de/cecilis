@@ -19,6 +19,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── docker-compose.yml             # Docker Compose Konfiguration
 ├── .dockerignore
 ├── index.html                     # Hauptseite: nur Markup (Chat, Galerie, Dialoge)
+├── login.html                     # Login-Seite (ohne Login erreichbar, daher alles inline)
 ├── chat.css                       # Styles der Hauptseite (Design-Tokens, Nacht/Tag)
 ├── js/                            # Scripts der Hauptseite, Reihenfolge siehe unten
 ├── poster.html                    # Character-Poster
@@ -34,6 +35,7 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 │   └── src/
 │       ├── server.mjs             # Express-Server, statisches File-Serving, API-Routen
 │       ├── lib/openrouter.mjs     # OpenRouter Client + Temperatur-Helper
+│       ├── lib/auth.mjs           # Login: Sitzungs-Cookie, Login-Wächter, /api/login|logout|session
 │       ├── routes/
 │       │   ├── chat.mjs           # POST /api/chat + POST /api/chat/summarize
 │       │   ├── image.mjs          # POST /api/image (OpenRouter Images API)
@@ -51,7 +53,10 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 
 | Endpoint | Methode | Beschreibung |
 |---|---|---|
-| `/health` | GET | Health-Check |
+| `/health` | GET | Health-Check (ohne Login) |
+| `/api/login` | POST | Anmelden. Body: `{ user, passwort }` → setzt Cookie `cecilia_session` (ohne Login) |
+| `/api/logout` | POST | Abmelden, löscht das Cookie |
+| `/api/session` | GET | `{ loggedIn }` (ohne Login) |
 | `/api/chat` | POST | Chat mit Cecilia. Body: `{ message, history?, summary? }` |
 | `/api/chat/summarize` | POST | History zusammenfassen. Body: `{ history, summary? }` |
 | `/api/image` | POST | Bild generieren via OpenRouter. Body: `{ prompt }` |
@@ -109,6 +114,9 @@ OPENROUTER_SUMMARY_TEMPERATURE=0.3
 OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
 # optional: OPENROUTER_SEARCH_MODEL, OPENROUTER_SEARCH_ENGINE (exa)
 PORT=30000
+user=…                                # Login-E-Mail (ein Zugang)
+passwort=…                            # Login-Passwort
+# optional: SESSION_SECRET, ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS
 NODE_ENV=development
 ```
 
@@ -207,6 +215,7 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Lightbox hält den Fokus auf dem Schliessen-Knopf; globales `:focus-visible` in Pink
 - **Galerie-Prompt** beschreibt Cecilia jetzt wie System-Prompt und Poster (kurze pinke Haare, blaue Augen, goldene Stern-Haarspange) statt lange Pastellhaare.
 - **Backend-Härtung:** CORS nur noch für die eigene Adresse, `ALLOWED_ORIGINS` (kommagetrennt) und in development für localhost auf jedem Port. Fehlt der API-Key, bekommt der Browser nur `service_unavailable` (503), die Details stehen im Server-Log. `xss-test.html` ist nicht mehr im Docker-Image.
+- **Login (erste Stufe, Datenschutz):** Ein einziger Zugang aus der `.env` (`user=`, `passwort=`). `lib/auth.mjs` schützt **alles** ausser `login.html`, Favicons, `/health` und `/api/login|logout|session`: Seiten leiten auf `/login.html?next=…` um, die API antwortet 401. Sitzung = HMAC-signiertes, HttpOnly-Cookie (14 Tage, `SameSite=Lax`, `Secure` bei HTTPS über den Proxy). Schlüssel aus user+passwort abgeleitet (oder `SESSION_SECRET`) – Passwort ändern meldet alle ab. Login-Rate-Limit: 5 Fehlversuche / 15 min / IP. Frontend: alle API-Aufrufe über `apiFetch()` (`js/config.js`), bei 401 zurück zum Login; „Abmelden“ in der Sidebar. Benutzerverwaltung und Paywall folgen später.
 - **`AGENTS.md` ist ein Symlink auf `CLAUDE.md`**, damit beide nicht mehr auseinanderlaufen. `TODO.md` neu geschrieben (Offen / Erledigt).
 - **Hintergrund-Effekte:** Nachts Sternenhimmel (70–180 per JS erzeugte `.star`, Anzahl nach Bildschirmfläche) mit gelegentlicher Sternschnuppe, keine Schmetterlinge; tagsüber Schmetterlinge. Schmetterlinge fliegen jetzt mit dem Kopf voraus (SVG von oben, per CSS um 90° gedreht, Neigung folgt der Flugbahn). Schalter „Zauber-Effekte“ in der Sidebar setzt `data-effects="on|off"` auf `<html>` (localStorage `cecilia_effects`, Standard aus bei `prefers-reduced-motion`); aus = keine Glühwürmchen, Schmetterlinge, Sternschnuppen, kein Funkeln, Sterne bleiben ruhig stehen.
 - `ImageStore` bricht `indexedDB.open()` nach 4 s ab (z.B. blockiert durch anderen Tab), damit die App nicht hängen bleibt

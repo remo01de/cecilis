@@ -262,7 +262,7 @@ function addSearchSourcesToMessage(messageDiv, results) {
 // IMAGE GENERATION
 // ==========================================
 async function generateImage(prompt) {
-  const response = await fetch(CONFIG.IMAGE_URL, {
+  const response = await apiFetch(CONFIG.IMAGE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt, size: '1024x1024' })
@@ -276,7 +276,7 @@ async function generateImage(prompt) {
 // SEARCH
 // ==========================================
 async function performWebSearch(query) {
-  const response = await fetch(CONFIG.SEARCH_URL, {
+  const response = await apiFetch(CONFIG.SEARCH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, count: 8 })
@@ -429,7 +429,7 @@ function getFallbackResponse() {
 async function getCeciliaResponseFromAPI(message) {
   const payload = { message, history: conversationHistory };
   if (conversationSummary) payload.summary = conversationSummary;
-  const response = await fetch(CONFIG.API_URL, {
+  const response = await apiFetch(CONFIG.API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -518,7 +518,7 @@ async function sendMessage() {
           isSearchFollowUp: true
         };
         if (conversationSummary) followUpPayload.summary = conversationSummary;
-        const followUpRes = await fetch(CONFIG.API_URL, {
+        const followUpRes = await apiFetch(CONFIG.API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(followUpPayload)
@@ -594,7 +594,7 @@ async function summarizeConversation() {
     console.log(`Zusammenfassung wird erstellt (${conversationHistory.length} Einträge)...`);
     const payload = { history: conversationHistory };
     if (conversationSummary) payload.summary = conversationSummary;
-    const response = await fetch(CONFIG.SUMMARIZE_URL, {
+    const response = await apiFetch(CONFIG.SUMMARIZE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

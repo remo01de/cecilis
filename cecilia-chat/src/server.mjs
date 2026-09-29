@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import chatRoute from "./routes/chat.mjs";
 import imageRoute from "./routes/image.mjs";
 import searchRoute from "./routes/search.mjs";
+import { authRouter, requireLogin } from "./lib/auth.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = process.env.PUBLIC_DIR || path.join(__dirname, "..", "..");
@@ -29,12 +30,17 @@ app.use(
         !origin || allowedOrigins.includes(origin) || (isDev && LOCALHOST_ORIGIN.test(origin));
       // Nicht erlaubte Origins bekommen einfach keine CORS-Header; der Browser blockt dann.
       callback(null, allowed);
-    }
+    },
+    credentials: true // Login-Cookie auch bei erlaubten fremden Origins mitschicken
   })
 );
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// Login: alles ausser Login-Seite, Icons und /health braucht eine gültige Sitzung
+app.use("/api", authRouter);
+app.use(requireLogin);
 
 app.use("/api/chat", chatRoute);
 app.use("/api/image", imageRoute);

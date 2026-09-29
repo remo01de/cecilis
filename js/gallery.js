@@ -71,7 +71,7 @@ Chat: ${context}
 Nur JSON: {"mood":"...","location":"...","outfit":"..."}`;
 
   try {
-    const response = await fetch(CONFIG.API_URL, {
+    const response = await apiFetch(CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: analysisPrompt, history: [] })
@@ -172,7 +172,7 @@ async function autoGenerateGalleryImage() {
     const prompt        = buildAutoGalleryPrompt(finalAnalysis, season);
     console.log('🎨 Galerie-Prompt:', finalAnalysis);
 
-    const response = await fetch(CONFIG.IMAGE_URL, {
+    const response = await apiFetch(CONFIG.IMAGE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, size: '1024x1024' })
@@ -409,7 +409,7 @@ async function generateWelcomeImage() {
   mainEl.appendChild(overlay);
 
   try {
-    const r = await fetch(CONFIG.IMAGE_URL, {
+    const r = await apiFetch(CONFIG.IMAGE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, size: '1024x1024' })

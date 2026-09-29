@@ -172,6 +172,18 @@ app.use('/api/chat', limiter);
 ALLOWED_ORIGINS=https://cecilia.example.ch
 ```
 
+## Login (seit 2026-09-29)
+
+- Ein Zugang aus `cecilia-chat/.env` (`user=`, `passwort=`); ohne diese Werte ist kein Login möglich (Server antwortet 503).
+- `cecilia-chat/src/lib/auth.mjs` schützt alle Seiten, Dateien und API-Routen. Öffentlich sind nur `login.html`, Favicons, `/health` und `/api/login|logout|session`.
+- Sitzung: HMAC-SHA256-signiertes Cookie `cecilia_session` mit Ablaufdatum (14 Tage), `HttpOnly`, `SameSite=Lax`, `Secure` bei HTTPS. Kein Server-Speicher nötig.
+- Schlüssel: `SESSION_SECRET` oder abgeleitet aus user+passwort – eine Passwortänderung macht alle bestehenden Sitzungen ungültig.
+- Zugangsdaten werden über SHA-256-Hashes mit `crypto.timingSafeEqual` verglichen (keine Laufzeit-Unterschiede); E-Mail ohne Gross-/Kleinschreibung.
+- Rate-Limit: 5 Fehlversuche pro 15 Minuten und IP (erfolgreiche Logins zählen nicht).
+- Die Login-Seite leitet nach der Anmeldung nur auf Pfade der eigenen Seite weiter (kein Open Redirect über `?next=`).
+
+**Grenzen:** Ein gemeinsamer Zugang, Passwort im Klartext in der `.env`, kein serverseitiges Abmelden einzelner Geräte. Das ersetzt die geplante Benutzerverwaltung.
+
 ## Noch zu implementieren
 
 ### Hoch-Priorität

@@ -5,6 +5,11 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 
 ## Offen
 
+### Zugang & Bezahlung
+- [ ] **Benutzerverwaltung:** mehrere Konten (z.B. Eltern-Konto mit Kind-Profilen), Passwörter gehasht (argon2/bcrypt), Passwort vergessen. Heute gibt es genau einen Zugang aus der `.env`.
+- [ ] **Paywall** (z.B. Stripe-Abo) vor dem Chat
+- [ ] Chat-Verlauf pro Konto trennen (heute liegt er im Browser des Geräts)
+
 ### Jugendschutz & Recht (zuerst klären)
 - [ ] **Datenschutz für Minderjährige:** Nachrichten gehen über OpenRouter an KI-Anbieter. Datenschutzerklärung erstellen; je nach Einsatz Einwilligung der Eltern einholen (DSGVO: unter 16 Jahren, revDSG Schweiz). Keine technische Aufgabe – rechtlich prüfen lassen.
 - [ ] **Serverseitige Moderation:** Antworten der KI (und Nutzernachrichten) zusätzlich über ein Moderationsmodell prüfen. Heute schützen nur System-Prompt, Bild-Sicherheitszusatz, Such-Sperrliste und die Stichwortliste im Browser.
@@ -43,6 +48,7 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 
 - [x] XSS-Schutz Frontend + Backend (2025-11-30), Lücken in Suchquellen/`parseMarkdown` geschlossen (2026-09-29)
 - [x] API-Key nur im Backend, nie im Frontend
+- [x] Login mit einem Zugang aus der `.env`, schützt alle Seiten und die API (2026-09-29)
 - [x] Rate-Limiting pro IP (2026-01-27); 429 zeigt eine freundliche Pause-Meldung (2026-09-29)
 - [x] Chat-Integration, Conversation Memory, Auto-Zusammenfassung (2026-03-03)
 - [x] Bildgenerierung und Websuche via OpenRouter (2026-03-03 / 2026-09-29)

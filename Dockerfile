@@ -10,7 +10,7 @@ RUN cd cecilia-chat && npm ci --omit=dev
 COPY cecilia-chat/src ./cecilia-chat/src
 
 # Frontend-Dateien kopieren
-COPY index.html styles.css chat.css placeholder-images.js ./
+COPY index.html login.html styles.css chat.css placeholder-images.js ./
 COPY js ./js
 # xss-test.html ist eine Entwickler-Testseite und gehört nicht ins Produktions-Image
 COPY poster.html cecilia-charakter.html ./
