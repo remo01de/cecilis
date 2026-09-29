@@ -163,7 +163,7 @@ app.use('/api/chat', limiter);
 
 ### CORS (Cross-Origin Resource Sharing)
 
-**Umgesetzt (2026-09-29, `cecilia-chat/src/server.mjs`):**
+**Umgesetzt (2026-09-29, `cecilia-chat/src/app.mjs`):**
 - Frontend und API kommen vom selben Server, dafür braucht es kein CORS.
 - Fremde Origins bekommen nur CORS-Header, wenn sie in `ALLOWED_ORIGINS` (kommagetrennt, `.env`) stehen.
 - Mit `NODE_ENV` ungleich `production` ist zusätzlich `localhost`/`127.0.0.1` auf jedem Port erlaubt (z.B. VS Code Live Server).
@@ -217,7 +217,7 @@ Konten, Profile und Sitzungen liegen in SQLite (`data/cecilia.db`, Zugriff nur �
 - Die DB enthält E-Mail-Adressen und Passwort-Hashes. Sie liegt im Docker-Volume `./data` und ist nicht im Git (`.gitignore`).
 - Backup im laufenden Betrieb: `docker compose exec cecilia npm --prefix cecilia-chat run backup` (schreibt `data/backup-<Datum>.db`). **Backups enthalten dieselben Daten und müssen genauso geschützt werden** (Zugriffsrechte, verschlüsselter Ablageort).
 
-**Grenzen (Stufe 1):** Keine Selbst-Registrierung, kein „Passwort vergessen“, kein E-Mail-Versand; Konten legt nur der Admin an. Der Bootstrap-Zugang (`user=`/`passwort=` in der `.env`) wird nur beim allerersten Start mit leerer DB gelesen; danach sollte das Passwort aus der `.env` entfernt werden.
+**Grenzen (Stufe 1):** Keine Selbst-Registrierung, kein „Passwort vergessen“, kein E-Mail-Versand; Konten legt nur der Admin an. Der Bootstrap-Zugang (`user=`/`passwort=` in der `.env`) wird nur beim allerersten Start mit leerer DB gelesen; danach empfiehlt es sich, `user=` und `passwort=` aus der `.env` zu entfernen. Achtung: Geht die Datenbank bzw. das Volume je verloren, braucht ein neuer Erststart beide Werte wieder – sonst kann sich niemand anmelden.
 
 ## Noch zu implementieren
 

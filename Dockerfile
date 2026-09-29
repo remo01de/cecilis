@@ -8,6 +8,7 @@ RUN cd cecilia-chat && npm ci --omit=dev
 
 # Backend-Code kopieren
 COPY cecilia-chat/src ./cecilia-chat/src
+COPY cecilia-chat/scripts ./cecilia-chat/scripts
 
 # Frontend-Dateien kopieren
 COPY index.html login.html willkommen.html profile.html admin.html styles.css chat.css placeholder-images.js ./

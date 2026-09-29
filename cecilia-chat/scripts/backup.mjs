@@ -1,5 +1,6 @@
 // Online-Backup der Datenbank (sicher im laufenden Betrieb).
 // Aufruf: npm run backup [-- ziel.db]
+import "dotenv/config";
 import path from "path";
 import { fileURLToPath } from "url";
 import Database from "better-sqlite3";

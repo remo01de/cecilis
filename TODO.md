@@ -1,6 +1,6 @@
 # TODO – Cecilia
 
-Stand: 2026-09-29 (nach Runde 9). Zielgruppe: Mädchen von 10–16 Jahren.
+Stand: 2026-09-29 (nach Runde 10). Zielgruppe: Mädchen von 10–16 Jahren.
 Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 
 ## Offen
