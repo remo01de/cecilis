@@ -1,141 +1,129 @@
-import crypto from "crypto";
-import { Router } from "express";
-import rateLimit from "express-rate-limit";
+import * as accounts from "../db/accounts.mjs";
+import * as profiles from "../db/profiles.mjs";
+import * as sessions from "../db/sessions.mjs";
 
-// Einfacher Login mit EINEM Zugang aus der .env (user= / passwort=).
-// Eine richtige Benutzerverwaltung kommt später.
-//
-// Sitzung = signiertes Cookie "<user>|<ablauf>|<hmac>", kein Server-Speicher.
-// Der Schlüssel wird aus Benutzer + Passwort abgeleitet (oder SESSION_SECRET):
-// Ändert sich das Passwort, sind alle alten Sitzungen automatisch ungültig.
-
-const COOKIE_NAME = "cecilia_session";
-const SESSION_DAYS = 14;
-
-function credentials() {
-  const user = (process.env.user || "").trim();
-  const pass = process.env.passwort || "";
-  return user && pass ? { user, pass } : null;
-}
-
-function secret() {
-  const creds = credentials();
-  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
-  return crypto.createHash("sha256").update(`cecilia-session|${creds?.user}|${creds?.pass}`).digest();
-}
-
-function sign(payload) {
-  return crypto.createHmac("sha256", secret()).update(payload).digest("base64url");
-}
-
-// Vergleich ohne Laufzeit-Unterschiede (verrät nicht, wie viele Zeichen stimmen)
-function safeEqual(a, b) {
-  const ha = crypto.createHash("sha256").update(String(a)).digest();
-  const hb = crypto.createHash("sha256").update(String(b)).digest();
-  return crypto.timingSafeEqual(ha, hb);
-}
-
-function createToken(user) {
-  const expires = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  const payload = `${Buffer.from(user).toString("base64url")}|${expires}`;
-  return `${payload}|${sign(payload)}`;
-}
-
-function verifyToken(token) {
-  if (!token || !credentials()) return false;
-  const parts = token.split("|");
-  if (parts.length !== 3) return false;
-  const [userB64, expires, signature] = parts;
-  if (!safeEqual(signature, sign(`${userB64}|${expires}`))) return false;
-  if (!(Number(expires) > Date.now())) return false;
-  return true;
-}
+export const SESSION_COOKIE = "cecilia_session";
+export const PROFILE_COOKIE = "cecilia_profile"; // lesbar für JS, nur die Profil-ID
+const DAY = 24 * 60 * 60 * 1000;
+export const TTL = { family: 30 * DAY, child: 14 * DAY, admin: 15 * 60 * 1000 };
+const TOUCH_INTERVAL = 60 * 60 * 1000;
 
 function readCookie(req, name) {
-  const header = req.headers.cookie || "";
-  for (const part of header.split(";")) {
+  for (const part of (req.headers.cookie || "").split(";")) {
     const i = part.indexOf("=");
     if (i > 0 && part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1).trim());
   }
   return null;
 }
 
-function cookieOptions(req) {
-  return {
-    httpOnly: true,       // für JavaScript unsichtbar
-    sameSite: "lax",
-    secure: req.secure,   // hinter dem Plesk-nginx über X-Forwarded-Proto (trust proxy)
-    path: "/"
+const baseCookie = (req) => ({ sameSite: "lax", secure: req.secure, path: "/" });
+
+export function setProfileCookie(req, res, profileId, ttlMs) {
+  res.cookie(PROFILE_COOKIE, String(profileId), { ...baseCookie(req), httpOnly: false, maxAge: ttlMs });
+}
+
+export function clearAuthCookies(req, res) {
+  res.clearCookie(SESSION_COOKIE, { ...baseCookie(req), httpOnly: true });
+  res.clearCookie(PROFILE_COOKIE, { ...baseCookie(req), httpOnly: false });
+}
+
+// Neue Sitzung anlegen und Cookies setzen
+export function startSession(req, res, db, { account, profileId = null, kind }) {
+  const ttl = TTL[kind];
+  const token = sessions.createSession(db, { accountId: account.id, profileId, kind, ttlMs: ttl, now: req.now });
+  res.cookie(SESSION_COOKIE, token, { ...baseCookie(req), httpOnly: true, maxAge: ttl });
+  if (profileId) setProfileCookie(req, res, profileId, ttl);
+  else res.clearCookie(PROFILE_COOKIE, { ...baseCookie(req), httpOnly: false });
+}
+
+// Liest die Sitzung bei jeder Anfrage aus der DB. Ungültig → Cookies weg.
+export function loadSession(db, now) {
+  return (req, res, next) => {
+    req.now = now();
+    req.session = req.account = req.profile = null;
+    const token = readCookie(req, SESSION_COOKIE);
+    if (!token) return next();
+
+    const s = sessions.getSessionByToken(db, token);
+    const account = s && accounts.getAccount(db, s.account_id);
+    const profile = s?.profile_id ? profiles.getProfile(db, s.profile_id) : null;
+    const valid =
+      s && s.expires_at > req.now && account && account.status === "active" &&
+      (s.kind === "family" || profile);
+    if (!valid) {
+      if (s) sessions.deleteSession(db, s.token_hash);
+      clearAuthCookies(req, res);
+      return next();
+    }
+
+    if (req.now - s.last_seen_at >= TOUCH_INTERVAL) {
+      const ttl = TTL[s.kind];
+      sessions.touchSession(db, s.token_hash, { now: req.now, ttlMs: ttl });
+      res.cookie(SESSION_COOKIE, token, { ...baseCookie(req), httpOnly: true, maxAge: ttl });
+      if (profile) setProfileCookie(req, res, profile.id, ttl);
+    }
+    req.session = s;
+    req.account = account;
+    req.profile = profile;
+    next();
   };
 }
 
-export function isLoggedIn(req) {
-  return verifyToken(readCookie(req, COOKIE_NAME));
+// CSRF-Schutz zusammen mit SameSite=Lax: ändernde Aufrufe nur als JSON
+export function requireJsonBody(req, res, next) {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+  if (!req.is("application/json")) return res.status(415).json({ error: "json_required" });
+  next();
 }
 
-// Öffentlich ohne Login: Vorstellungsseite, Login-Seite, Icons, Health-Check, Login-API
-// und die Figurenbilder in img/web/ (zeigt die Vorstellungsseite).
-const PUBLIC_PATHS = new Set([
-  "/willkommen.html", "/login.html", "/favicon.ico", "/favicon.svg", "/favicon-32.png", "/favicon-192.png",
-  "/apple-touch-icon.png", "/health", "/api/login", "/api/logout", "/api/session"
-]);
+export function requireSession(req, res, next) {
+  if (!req.session) return res.status(401).json({ error: "login_required" });
+  next();
+}
 
+export function requireFamily(req, res, next) {
+  if (!req.session) return res.status(401).json({ error: "login_required" });
+  if (req.session.kind !== "family") return res.status(403).json({ error: "forbidden" });
+  next();
+}
+
+export function requireProfile(req, res, next) {
+  if (!req.session) return res.status(401).json({ error: "login_required" });
+  if (!req.profile) return res.status(409).json({ error: "profile_required" });
+  next();
+}
+
+export function requireAdmin(req, res, next) {
+  if (!req.session) return res.status(401).json({ error: "login_required" });
+  if (req.session.kind !== "family" || req.account.role !== "admin") return res.status(403).json({ error: "forbidden" });
+  if (!(req.session.admin_until > req.now)) return res.status(403).json({ error: "admin_reauth_required" });
+  next();
+}
+
+// Schutz für Seiten und Dateien (nicht für /api – das regeln die Wächter oben)
+const PUBLIC_PATHS = new Set([
+  "/willkommen.html", "/login.html", "/favicon.ico", "/favicon.svg", "/favicon-32.png",
+  "/favicon-192.png", "/apple-touch-icon.png", "/health"
+]);
 const PUBLIC_PREFIXES = ["/img/web/"];
 
-export function requireLogin(req, res, next) {
-  if (PUBLIC_PATHS.has(req.path) || PUBLIC_PREFIXES.some((p) => req.path.startsWith(p)) || isLoggedIn(req)) {
-    return next();
+export function pageGate(req, res, next) {
+  if (req.path.startsWith("/api/")) return next();
+  if (PUBLIC_PATHS.has(req.path) || PUBLIC_PREFIXES.some((p) => req.path.startsWith(p))) return next();
+
+  const isStart = req.path === "/" || req.path === "/index.html";
+  const isPage = req.method === "GET" && (isStart || req.path.endsWith(".html"));
+
+  if (!req.session) {
+    if (req.method === "GET" && isStart) return res.redirect(302, "/willkommen.html");
+    return res.redirect(302, `/login.html?next=${encodeURIComponent(isPage ? req.originalUrl : "/")}`);
   }
-  if (req.path.startsWith("/api/")) return res.status(401).json({ error: "login_required" });
-  // Wer nicht angemeldet ist und die Startseite aufruft, lernt zuerst Cecilia kennen
-  if (req.method === "GET" && (req.path === "/" || req.path === "/index.html")) {
-    return res.redirect(302, "/willkommen.html");
+  if (req.path === "/profile.html") {
+    return req.session.kind === "family" ? next() : res.redirect(302, "/");
   }
-  // Seiten und Dateien: zur Login-Seite, danach zurück an die ursprüngliche Adresse
-  const isPage = req.method === "GET" && (req.path === "/" || req.path.endsWith(".html"));
-  const target = isPage ? req.originalUrl : "/";
-  return res.redirect(302, `/login.html?next=${encodeURIComponent(target)}`);
+  if (req.path === "/admin.html") {
+    return req.session.kind === "family" && req.account.role === "admin" ? next() : res.redirect(302, "/");
+  }
+  if (!req.profile) return res.redirect(302, "/profile.html");
+  next();
 }
-
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  skipSuccessfulRequests: true, // nur Fehlversuche zählen
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "too_many_attempts" }
-});
-
-export const authRouter = Router();
-
-authRouter.post("/login", loginLimiter, (req, res) => {
-  const creds = credentials();
-  if (!creds) {
-    console.error("Login nicht möglich: user= und passwort= fehlen in der .env");
-    return res.status(503).json({ error: "service_unavailable" });
-  }
-  const { user, passwort } = req.body ?? {};
-  if (typeof user !== "string" || typeof passwort !== "string" || user.length > 200 || passwort.length > 200) {
-    return res.status(400).json({ error: "invalid_input" });
-  }
-  // Beide Vergleiche immer ausführen, damit die Laufzeit nichts verrät
-  const userOk = safeEqual(user.trim().toLowerCase(), creds.user.toLowerCase());
-  const passOk = safeEqual(passwort, creds.pass);
-  if (!(userOk && passOk)) {
-    return res.status(401).json({ error: "wrong_credentials" });
-  }
-  res.cookie(COOKIE_NAME, createToken(creds.user), {
-    ...cookieOptions(req),
-    maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
-  });
-  res.json({ ok: true });
-});
-
-authRouter.post("/logout", (req, res) => {
-  res.clearCookie(COOKIE_NAME, cookieOptions(req));
-  res.json({ ok: true });
-});
-
-authRouter.get("/session", (req, res) => {
-  res.json({ loggedIn: isLoggedIn(req) });
-});
