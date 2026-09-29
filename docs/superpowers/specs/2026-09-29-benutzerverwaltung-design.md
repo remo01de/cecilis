@@ -205,9 +205,9 @@ Nachthimmel-Stil wie `login.html`, alles inline. Grosse runde Avatar-Kacheln mit
 Erwachsenes, schlichtes Layout mit den Cecilia-Farben, responsiv. Beim Öffnen ohne Freigabe: Passwort-Abfrage (`/api/auth/admin-unlock`). Kontenliste mit Suche, Konto-Detail mit Aktionen und Profilen wie im API-Teil. Einmalig angezeigte Passwörter mit Kopieren-Knopf und Hinweis „Wird nur jetzt angezeigt“. Löschen verlangt Eintippen der E-Mail.
 
 ### Chat (`index.html`, `js/`)
-- `js/config.js`: `loadSession()` holt `/api/auth/session` vor dem Start; `apiFetch` behandelt 401 (→ Login) und 409 `profile_required` (→ Profilwahl).
+- **Profil-ID für die Speicherschlüssel:** Die Scripts lesen ihre Schlüssel synchron beim Laden. Deshalb setzt der Server bei jeder Profilwahl und beim Kind-Login zusätzlich das **lesbare** Cookie `cecilia_profile=<id>` (nicht HttpOnly, gleiche Laufzeit wie die Sitzung, wird beim Abmelden gelöscht). Es enthält nur die Nummer, keine Berechtigung – die prüft allein das HttpOnly-Sitzungscookie. `js/config.js` liest es synchron.
+- `js/config.js`: `apiFetch` schickt bei ändernden Aufrufen immer `Content-Type: application/json` (leerer Body `{}`), behandelt 401 (→ Login) und 409 `profile_required` (→ Profilwahl). Name, Avatar und Farbe für die Sidebar kommen asynchron aus `/api/auth/session`.
 - `profileKey(name)` liefert `name:p_<id>`. Pro Profil: `cecilia_chats`, `cecilia_gallery`, `cecilia_welcome_seen`, `cecilia_theme`, `cecilia_effects`. IndexedDB: eigene Datenbank `cecilia_images:p_<id>`.
-- Da Theme und Effekte pro Profil gespeichert werden, wird die Session vor `applyTheme`/`applyEffects` geladen; bis dahin gelten die Standardwerte.
 - Sidebar: oben Avatar + Profilname; „Profil wechseln“ (nur Familien-Sitzung, → `/profile.html`) und „Abmelden“.
 - **Übernahme vorhandener Gerätedaten:** Gibt es beim Start Schlüssel ohne Profil-Suffix (`cecilia_chats`, `cecilia_gallery`, …) oder die IndexedDB `cecilia_images`, und hat das aktuelle Profil noch keine eigenen Daten, werden sie einmalig diesem Profil zugeordnet (Schlüssel umbenennen, Bilder in die Profil-Datenbank kopieren, alte Datenbank löschen). Danach ist das Gerät getrennt.
 
