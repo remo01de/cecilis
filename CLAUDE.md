@@ -81,7 +81,7 @@ Markup in `index.html`, Styles in `chat.css`, Logik in `js/` als klassische Scri
 | Datei | Inhalt |
 |---|---|
 | `config.js` | `CONFIG` (API-URLs, Limits) |
-| `ambient.js` | Feenstaub, Schmetterlinge, Nacht/Tag-Umschalter |
+| `ambient.js` | Sternenhimmel + Sternschnuppen, Glühwürmchen/Feenstaub, Schmetterlinge, Schalter Zauber-Effekte, Nacht/Tag-Umschalter |
 | `ui.js` | Sidebar, Sicherheits-Dialoge (Hilfe, Datenschutz, externe Links), Vorschlags-Chips, Toast, Begrüssung, Zeichenzähler |
 | `image-store.js` | `ImageStore` (IndexedDB), `persistImage()` |
 | `gallery.js` | Automatische Galerie inkl. Willkommensbild |
@@ -205,6 +205,7 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Sidebar-Schubfach: `aria-expanded`, Esc schliesst, Fokus-Rückgabe, geschlossen `inert`
   - Galerie-Vorschaubilder sind Buttons (`aria-current`); Auto-Rotation pausiert bei Hover/Fokus und entfällt bei `prefers-reduced-motion`
   - Lightbox hält den Fokus auf dem Schliessen-Knopf; globales `:focus-visible` in Pink
+- **Hintergrund-Effekte:** Nachts Sternenhimmel (70–180 per JS erzeugte `.star`, Anzahl nach Bildschirmfläche) mit gelegentlicher Sternschnuppe, keine Schmetterlinge; tagsüber Schmetterlinge. Schmetterlinge fliegen jetzt mit dem Kopf voraus (SVG von oben, per CSS um 90° gedreht, Neigung folgt der Flugbahn). Schalter „Zauber-Effekte“ in der Sidebar setzt `data-effects="on|off"` auf `<html>` (localStorage `cecilia_effects`, Standard aus bei `prefers-reduced-motion`); aus = keine Glühwürmchen, Schmetterlinge, Sternschnuppen, kein Funkeln, Sterne bleiben ruhig stehen.
 - `ImageStore` bricht `indexedDB.open()` nach 4 s ab (z.B. blockiert durch anderen Tab), damit die App nicht hängen bleibt
 
 ## Was bereits erledigt ist
