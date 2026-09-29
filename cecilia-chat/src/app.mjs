@@ -4,6 +4,7 @@ import chatRoute from "./routes/chat.mjs";
 import imageRoute from "./routes/image.mjs";
 import searchRoute from "./routes/search.mjs";
 import { createAuthRouter } from "./routes/auth.mjs";
+import { createAdminRouter } from "./routes/admin.mjs";
 import { loadSession, requireJsonBody, requireProfile, pageGate, normalizePath } from "./lib/auth.mjs";
 
 // Nur diese Dateien aus dem Projektordner dürfen ausgeliefert werden (nicht data/, src/, Doku …)
@@ -42,6 +43,7 @@ export function createApp({ db, publicDir, now = () => Date.now(), loginLimit = 
   app.use(loadSession(db, now));
   app.use("/api", requireJsonBody);
   app.use("/api/auth", createAuthRouter(db, { loginLimit }));
+  app.use("/api/admin", createAdminRouter(db));
 
   app.use("/api/chat", requireProfile, chatRoute);
   app.use("/api/image", requireProfile, imageRoute);

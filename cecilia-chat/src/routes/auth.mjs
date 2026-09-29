@@ -105,5 +105,17 @@ export function createAuthRouter(db, { loginLimit = 5 } = {}) {
     res.json({ ok: true, profile: publicProfile(profile) });
   });
 
+  router.post("/admin-unlock", requireFamily, (req, res) => {
+    if (req.account.role !== "admin") return res.status(403).json({ error: "forbidden" });
+    const { password } = req.body ?? {};
+    if (typeof password !== "string" || !verifySecret(password, req.account.password_hash)) {
+      accounts.recordLoginFailure(db, req.account.id, req.now);
+      return res.status(401).json({ error: "wrong_credentials" });
+    }
+    const until = req.now + TTL.admin;
+    sessions.setAdminUntil(db, req.session.token_hash, until);
+    res.json({ ok: true, until });
+  });
+
   return router;
 }
