@@ -10,7 +10,7 @@ RUN cd cecilia-chat && npm ci --omit=dev
 COPY cecilia-chat/src ./cecilia-chat/src
 
 # Frontend-Dateien kopieren
-COPY index.html login.html willkommen.html styles.css chat.css placeholder-images.js ./
+COPY index.html login.html willkommen.html profile.html admin.html styles.css chat.css placeholder-images.js ./
 COPY js ./js
 # xss-test.html ist eine Entwickler-Testseite und gehört nicht ins Produktions-Image
 COPY poster.html cecilia-charakter.html ./
@@ -20,6 +20,9 @@ COPY img/web ./img/web
 ENV NODE_ENV=production
 ENV PUBLIC_DIR=/app
 ENV PORT=30000
+# Konten-Datenbank: /app/data muss per Volume eingebunden sein (siehe docker-compose.yml)
+ENV DB_PATH=/app/data/cecilia.db
+RUN mkdir -p /app/data
 
 EXPOSE 30000
 

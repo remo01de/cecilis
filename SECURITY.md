@@ -172,17 +172,52 @@ app.use('/api/chat', limiter);
 ALLOWED_ORIGINS=https://cecilia.example.ch
 ```
 
-## Login (seit 2026-09-29)
+## Konten und Anmeldung
 
-- Ein Zugang aus `cecilia-chat/.env` (`user=`, `passwort=`); ohne diese Werte ist kein Login möglich (Server antwortet 503).
-- `cecilia-chat/src/lib/auth.mjs` schützt alle Seiten, Dateien und API-Routen. Öffentlich sind nur `willkommen.html`, `login.html`, Favicons, die Figurenbilder unter `/img/web/`, `/health` und `/api/login|logout|session`.
-- Sitzung: HMAC-SHA256-signiertes Cookie `cecilia_session` mit Ablaufdatum (14 Tage), `HttpOnly`, `SameSite=Lax`, `Secure` bei HTTPS. Kein Server-Speicher nötig.
-- Schlüssel: `SESSION_SECRET` oder abgeleitet aus user+passwort – eine Passwortänderung macht alle bestehenden Sitzungen ungültig.
-- Zugangsdaten werden über SHA-256-Hashes mit `crypto.timingSafeEqual` verglichen (keine Laufzeit-Unterschiede); E-Mail ohne Gross-/Kleinschreibung.
-- Rate-Limit: 5 Fehlversuche pro 15 Minuten und IP (erfolgreiche Logins zählen nicht).
-- Die Login-Seite leitet nach der Anmeldung nur auf Pfade der eigenen Seite weiter (kein Open Redirect über `?next=`).
+Konten, Profile und Sitzungen liegen in SQLite (`data/cecilia.db`, Zugriff nur über `cecilia-chat/src/db/`). Spezifikation: `docs/superpowers/specs/2026-09-29-benutzerverwaltung-design.md`.
 
-**Grenzen:** Ein gemeinsamer Zugang, Passwort im Klartext in der `.env`, kein serverseitiges Abmelden einzelner Geräte. Das ersetzt die geplante Benutzerverwaltung.
+**Passwörter und PINs**
+- Konto-Passwörter, PINs und Kind-Passwörter werden als scrypt-Hashes mit Salt gespeichert, nie im Klartext.
+- `verifySecret` lehnt leere Hashes sowie ungültige oder riesige scrypt-Parameter ab (N ≤ 2^20, r und p ≤ 16), damit eine manipulierte DB keinen Speicher-Angriff auslösen kann.
+- Die Passwortprüfung läuft auch bei unbekannter E-Mail (gegen einen festen Dummy-Hash), damit die Antwortzeit nichts verrät.
+- Vom Admin vergebene Passwörter erscheinen nur einmal in der Antwort.
+
+**Sitzungen und Cookies**
+- Sitzung serverseitig: 32 Zufallsbytes im Cookie `cecilia_session`, in der DB nur der SHA-256-Hash. Jede Anfrage prüft die Sitzung in der DB, darum wirken Sperren, Passwort-Reset und Löschen sofort (alle Sitzungen des Kontos werden gelöscht). Familie 30 Tage, Kind 14 Tage; abgelaufene Sitzungen werden stündlich gelöscht.
+- `cecilia_session`: `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` bei HTTPS.
+- `cecilia_profile` ist absichtlich lesbar (für die Speicherschlüssel im Browser) und enthält nur die Profil-Nummer, keine Berechtigung.
+- `app.set("trust proxy", 1)`: IP-Rate-Limit und `Secure`-Flag gehen von **genau einem** Reverse-Proxy (Plesk-nginx) vor dem Container aus. Mit mehr oder ohne Proxy stimmen die IP-Adressen nicht.
+
+**Rate-Limits und Sperren**
+- Familien- und Kind-Login: 5 Fehlversuche / 15 min / IP (erfolgreiche zählen nicht). `/api/auth/admin-unlock` hat dasselbe IP-Limit und ist bei gesperrtem Konto blockiert.
+- Pro Konto bzw. Kind-Login: nach 10 Fehlversuchen 15 min gesperrt. PIN: nach 5 Fehlversuchen 5 min gesperrt.
+
+| Fall beim Login | Antwort |
+|---|---|
+| E-Mail/Benutzername unbekannt oder Passwort falsch | 401 `wrong_credentials` (identisch) |
+| IP-Limit erreicht oder Konto/Kind-Login gesperrt | 429 `too_many_attempts`, unabhängig vom Passwort |
+| Passwort richtig, Konto vom Admin gesperrt | 403 `account_disabled` |
+
+- Bewusst in Kauf genommen: Nach 10 Fehlversuchen auf ein bestehendes Konto antwortet es mit 429, eine unbekannte E-Mail nie. Wer gezielt rät, erfährt so, dass das Konto existiert. Das IP-Limit macht diesen Weg sehr langsam.
+
+**CSRF und Weiterleitungen**
+- Alle ändernden `/api`-Aufrufe verlangen `Content-Type: application/json`, sonst 415. Zusammen mit `SameSite=Lax` schützt das vor CSRF.
+- `next`-Ziele in `login.html` und `profile.html` werden mit `new URL(…, location.origin)` aufgelöst; nur Pfade der eigenen Origin sind erlaubt (kein Open Redirect).
+
+**Admin**
+- Admin-Seite und `/api/admin/*` brauchen Rolle `admin` und eine Freigabe: Passwort erneut eingeben (`/api/auth/admin-unlock`), gültig 15 Minuten. Ohne Freigabe 403 `admin_reauth_required`. Kind-Sitzungen haben keinen Zugriff.
+- Eigenes Konto sperren oder löschen ist gesperrt.
+
+**Seitenschutz und Dateien**
+- `pageGate` (`lib/auth.mjs`) normalisiert den Pfad (dekodieren, klein schreiben, bei ungültiger Kodierung 400), bevor er verglichen wird. Sonst würde z.B. `/admin%2Ehtml` den Schutz umgehen.
+- Statische Dateien kommen nur aus einer Allowlist (`staticAllowlist` in `app.mjs`): die HTML-Seiten, `chat.css`, `styles.css`, `placeholder-images.js`, Favicons, `/js/*.js`, `/img/web/*`. Alles andere ist 404, damit `data/cecilia.db`, `cecilia-chat/` und Doku nie ausgeliefert werden. Neue Frontend-Dateien gehören in die Allowlist, öffentliche zusätzlich in `PUBLIC_PATHS` (`lib/auth.mjs`) und in die `COPY`-Zeile des `Dockerfile`.
+- Öffentlich sind nur `willkommen.html`, `login.html`, Favicons, `/img/web/*`, `/health` und die Anmelde-Endpoints unter `/api/auth/`.
+
+**Datenbank und Backups**
+- Die DB enthält E-Mail-Adressen und Passwort-Hashes. Sie liegt im Docker-Volume `./data` und ist nicht im Git (`.gitignore`).
+- Backup im laufenden Betrieb: `docker compose exec cecilia npm --prefix cecilia-chat run backup` (schreibt `data/backup-<Datum>.db`). **Backups enthalten dieselben Daten und müssen genauso geschützt werden** (Zugriffsrechte, verschlüsselter Ablageort).
+
+**Grenzen (Stufe 1):** Keine Selbst-Registrierung, kein „Passwort vergessen“, kein E-Mail-Versand; Konten legt nur der Admin an. Der Bootstrap-Zugang (`user=`/`passwort=` in der `.env`) wird nur beim allerersten Start mit leerer DB gelesen; danach sollte das Passwort aus der `.env` entfernt werden.
 
 ## Noch zu implementieren
 

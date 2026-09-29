@@ -6,9 +6,8 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 ## Offen
 
 ### Zugang & Bezahlung
-- [ ] **Benutzerverwaltung:** mehrere Konten (z.B. Eltern-Konto mit Kind-Profilen), Passwörter gehasht (argon2/bcrypt), Passwort vergessen. Heute gibt es genau einen Zugang aus der `.env`.
+- [ ] **Benutzerverwaltung Stufe 2:** Selbst-Registrierung mit E-Mail-Bestätigung, Passwort vergessen, Eltern-Bereich
 - [ ] **Paywall** (z.B. Stripe-Abo) vor dem Chat
-- [ ] Chat-Verlauf pro Konto trennen (heute liegt er im Browser des Geräts)
 
 ### Jugendschutz & Recht (zuerst klären)
 - [ ] **Datenschutz für Minderjährige:** Nachrichten gehen über OpenRouter an KI-Anbieter. Datenschutzerklärung erstellen; je nach Einsatz Einwilligung der Eltern einholen (DSGVO: unter 16 Jahren, revDSG Schweiz). Keine technische Aufgabe – rechtlich prüfen lassen.
@@ -24,7 +23,7 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 - [ ] **Content Security Policy:** Vorher die Inline-`onclick`-Handler in `index.html` durch `addEventListener` ersetzen, sonst blockiert eine strikte CSP sie
 
 ### Testing & CI
-- [ ] **Backend-Tests** (Vitest): Routen, Validierung, Such-Filter, Rate-Limiter
+- [ ] **Backend-Tests:** Backend-Tests für Konten vorhanden (`npm test`, node:test); noch offen: Chat-/Bild-/Such-Routen, Validierung, Such-Filter
 - [ ] **E2E-Tests** (Playwright): Chat, Verlauf, Dialoge, Galerie – mit gemockter API
 - [ ] **Barrierefreiheit automatisch prüfen** (axe-core im E2E-Test)
 - [ ] **CI/CD** mit GitHub Actions
@@ -47,7 +46,8 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 
 - [x] XSS-Schutz Frontend + Backend (2025-11-30), Lücken in Suchquellen/`parseMarkdown` geschlossen (2026-09-29)
 - [x] API-Key nur im Backend, nie im Frontend
-- [x] Login mit einem Zugang aus der `.env`, schützt alle Seiten und die API (2026-09-29)
+- [x] Benutzerverwaltung Stufe 1: Konten, Profile, Kind-Logins, Admin-Seite, Sitzungen in SQLite (2026-09-29, ersetzt den Einzel-Login aus der `.env`)
+- [x] Chat-Verlauf pro Konto trennen (pro Profil im Browser, 2026-09-29)
 - [x] Öffentliche Vorstellungsseite `willkommen.html` mit Open-Graph-Tags (2026-09-29)
 - [x] Rate-Limiting pro IP (2026-01-27); 429 zeigt eine freundliche Pause-Meldung (2026-09-29)
 - [x] Chat-Integration, Conversation Memory, Auto-Zusammenfassung (2026-03-03)

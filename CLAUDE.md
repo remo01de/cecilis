@@ -21,6 +21,9 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── index.html                     # Hauptseite: nur Markup (Chat, Galerie, Dialoge)
 ├── willkommen.html                # Vorstellungsseite für Besucher ohne Login (alles inline)
 ├── login.html                     # Login-Seite (ohne Login erreichbar, daher alles inline)
+├── profile.html                   # Profilwahl nach dem Familien-Login (Sitzung nötig, alles inline)
+├── admin.html                     # Admin-Seite: Konten und Profile verwalten (Admin + Freigabe)
+├── data/                          # SQLite-Datenbank cecilia.db (nicht im Git, im Docker per Volume)
 ├── chat.css                       # Styles der Hauptseite (Design-Tokens, Nacht/Tag)
 ├── js/                            # Scripts der Hauptseite, Reihenfolge siehe unten
 ├── poster.html                    # Character-Poster
@@ -30,14 +33,26 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 ├── img/
 │   └── web/                       # WebP-Bilder für Poster und Chat-Avatar (einzige Bilder im Projekt)
 ├── cecilia-chat/                  # Backend
-│   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2
+│   ├── package.json               # Express 5.1, OpenAI SDK 6.6 (gegen OpenRouter), express-rate-limit 8.2, better-sqlite3; Skripte: start, dev, test, backup
 │   ├── .env                       # OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_*_TEMPERATURE, OPENROUTER_IMAGE_MODEL, PORT
 │   ├── .env.example               # Template für .env (inkl. ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS)
+│   ├── scripts/backup.mjs         # Online-Backup der Datenbank (`npm run backup [-- ziel.db]`)
+│   ├── test/                      # node:test-Tests (helpers, setup-env, fixtures, *.test.mjs); `npm test`
 │   └── src/
-│       ├── server.mjs             # Express-Server, statisches File-Serving, API-Routen
-│       ├── lib/openrouter.mjs     # OpenRouter Client + Temperatur-Helper
-│       ├── lib/auth.mjs           # Login: Sitzungs-Cookie, Login-Wächter, /api/login|logout|session
+│       ├── app.mjs                # createApp(): Middleware, Routen, Seitenwächter, Allowlist für statische Dateien
+│       ├── server.mjs             # Start: DB öffnen, Bootstrap, stündliches Sitzungs-Aufräumen, listen
+│       ├── db/                    # SQLite (better-sqlite3); ALLES SQL liegt hier
+│       │   ├── index.mjs, migrations.mjs
+│       │   └── accounts.mjs, profiles.mjs, sessions.mjs
+│       ├── lib/
+│       │   ├── auth.mjs           # Sitzung laden, Cookies, Wächter (pageGate, requireProfile|Family|Admin), PUBLIC_PATHS
+│       │   ├── bootstrap.mjs      # erstes Admin-Konto aus .env (nur bei leerer DB)
+│       │   ├── passwords.mjs      # scrypt: hashSecret/verifySecret, Passwort-Generatoren
+│       │   ├── rules.mjs          # Eingaberegeln (E-Mail, PIN, Benutzername, Avatar …)
+│       │   └── openrouter.mjs     # OpenRouter Client + Temperatur-Helper
 │       ├── routes/
+│       │   ├── auth.mjs           # /api/auth/*
+│       │   ├── admin.mjs          # /api/admin/*
 │       │   ├── chat.mjs           # POST /api/chat + POST /api/chat/summarize
 │       │   ├── image.mjs          # POST /api/image (OpenRouter Images API)
 │       │   └── search.mjs         # POST /api/search (OpenRouter Web-Plugin)
@@ -55,15 +70,27 @@ Interaktives Web-Projekt rund um **Cecilia**, eine fiktive Fee (17, warmherzig, 
 | Endpoint | Methode | Beschreibung |
 |---|---|---|
 | `/health` | GET | Health-Check (ohne Login) |
-| `/api/login` | POST | Anmelden. Body: `{ user, passwort }` → setzt Cookie `cecilia_session` (ohne Login) |
-| `/api/logout` | POST | Abmelden, löscht das Cookie |
-| `/api/session` | GET | `{ loggedIn }` (ohne Login) |
+| `/api/auth/login` | POST | Familien-Login. Body: `{ email, password }` → Sitzung (Cookie `cecilia_session`), `{ ok, profiles, profileSelected }` (ohne Login) |
+| `/api/auth/child-login` | POST | Kind-Login. Body: `{ username, password }` → Sitzung mit festem Profil (ohne Login) |
+| `/api/auth/logout` | POST | Sitzung löschen, Cookies entfernen |
+| `/api/auth/session` | GET | `{ loggedIn, kind, account, profile }` (ohne Login erreichbar) |
+| `/api/auth/profiles` | GET | Profile des Kontos (nur Familien-Sitzung) |
+| `/api/auth/select-profile` | POST | Profil wählen. Body: `{ profileId, pin? }`, setzt auch Cookie `cecilia_profile` |
+| `/api/auth/admin-unlock` | POST | Passwort erneut eingeben → Admin-Freigabe 15 min (IP-Limit, bei Kontosperre blockiert) |
+| `/api/admin/accounts` | GET/POST | Konten auflisten (`?q=`) / anlegen (`{ email }`, Passwort einmalig in der Antwort) |
+| `/api/admin/accounts/:id/reset-password` | POST | Neues Passwort (einmalig), löscht Sitzungen |
+| `/api/admin/accounts/:id/disable` · `enable` · `logout-all` | POST | Sperren / entsperren / alle Sitzungen löschen |
+| `/api/admin/accounts/:id` | DELETE | Konto löschen, Body `{ confirmEmail }`; eigenes Konto → 400 |
+| `/api/admin/accounts/:id/profiles` | GET/POST | Profile eines Kontos / anlegen (`{ name, avatar, color }`) |
+| `/api/admin/profiles/:id` | PATCH/DELETE | Profil ändern / löschen |
+| `/api/admin/profiles/:id/pin` | POST/DELETE | PIN setzen (`{ pin }`) / entfernen |
+| `/api/admin/profiles/:id/child-login` | POST/DELETE | Kind-Login anlegen bzw. zurücksetzen (`{ username }`, Passwort einmalig) / abschalten |
 | `/api/chat` | POST | Chat mit Cecilia. Body: `{ message, history?, summary? }` |
 | `/api/chat/summarize` | POST | History zusammenfassen. Body: `{ history, summary? }` |
 | `/api/image` | POST | Bild generieren via OpenRouter. Body: `{ prompt }` |
 | `/api/search` | POST | Websuche via OpenRouter. Body: `{ query, count? }` |
 
-Alle Endpoints haben Rate-Limiting und Input-Validierung.
+Alle Endpoints haben Rate-Limiting und Input-Validierung. `/api/chat|image|search` brauchen Konto **und** gewähltes Profil (401 `login_required` / 409 `profile_required`). Ändernde `/api`-Aufrufe brauchen `Content-Type: application/json` (sonst 415).
 
 ## Cecilias Fähigkeiten (System-Prompt Marker)
 
@@ -115,9 +142,9 @@ OPENROUTER_SUMMARY_TEMPERATURE=0.3
 OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
 # optional: OPENROUTER_SEARCH_MODEL, OPENROUTER_SEARCH_ENGINE (exa)
 PORT=30000
-user=…                                # Login-E-Mail (ein Zugang)
-passwort=…                            # Login-Passwort
-# optional: SESSION_SECRET, ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS
+user=…                                # erstes Admin-Konto (nur beim allerersten Start mit leerer DB)
+passwort=…                            # dessen Passwort
+# optional: DB_PATH (Standard data/cecilia.db), ALLOWED_ORIGINS, SEARCH_INCLUDE_DOMAINS
 NODE_ENV=development
 ```
 
@@ -216,11 +243,29 @@ Erste grosse Überarbeitung durch Claude + Remo. Ausgangslage war ein Prototyp m
   - Lightbox hält den Fokus auf dem Schliessen-Knopf; globales `:focus-visible` in Pink
 - **Galerie-Prompt** beschreibt Cecilia jetzt wie System-Prompt und Poster (kurze pinke Haare, blaue Augen, goldene Stern-Haarspange) statt lange Pastellhaare.
 - **Backend-Härtung:** CORS nur noch für die eigene Adresse, `ALLOWED_ORIGINS` (kommagetrennt) und in development für localhost auf jedem Port. Fehlt der API-Key, bekommt der Browser nur `service_unavailable` (503), die Details stehen im Server-Log. `xss-test.html` ist nicht mehr im Docker-Image.
-- **Login (erste Stufe, Datenschutz):** Ein einziger Zugang aus der `.env` (`user=`, `passwort=`). `lib/auth.mjs` schützt **alles** ausser `login.html`, Favicons, `/health` und `/api/login|logout|session`: Seiten leiten auf `/login.html?next=…` um, die API antwortet 401. Sitzung = HMAC-signiertes, HttpOnly-Cookie (14 Tage, `SameSite=Lax`, `Secure` bei HTTPS über den Proxy). Schlüssel aus user+passwort abgeleitet (oder `SESSION_SECRET`) – Passwort ändern meldet alle ab. Login-Rate-Limit: 5 Fehlversuche / 15 min / IP. Frontend: alle API-Aufrufe über `apiFetch()` (`js/config.js`), bei 401 zurück zum Login; „Abmelden“ in der Sidebar. Benutzerverwaltung und Paywall folgen später.
+- **Login (erste Stufe, Datenschutz) – ersetzt durch Benutzerverwaltung (Runde 10):** Ein einziger Zugang aus der `.env` (`user=`, `passwort=`). `lib/auth.mjs` schützt **alles** ausser `login.html`, Favicons, `/health` und `/api/login|logout|session`: Seiten leiten auf `/login.html?next=…` um, die API antwortet 401. Sitzung = HMAC-signiertes, HttpOnly-Cookie (14 Tage, `SameSite=Lax`, `Secure` bei HTTPS über den Proxy). Schlüssel aus user+passwort abgeleitet (oder `SESSION_SECRET`) – Passwort ändern meldet alle ab. Login-Rate-Limit: 5 Fehlversuche / 15 min / IP. Frontend: alle API-Aufrufe über `apiFetch()` (`js/config.js`), bei 401 zurück zum Login; „Abmelden“ in der Sidebar. Benutzerverwaltung und Paywall folgen später.
 - **Vorstellungsseite `willkommen.html`:** Öffentliche Startseite für nicht angemeldete Besucher (`/` und `/index.html` leiten ohne Login dorthin, öffentlich sind ausserdem `/img/web/*`). Konzept „Cecilias Sammelalbum“: Nachthimmel-Hero mit Handschrift (Caveat) und Polaroid, gerissene Papierkante, Album-Seiten auf rosa Punktpapier. Ein inszenierter Moment: Mini-Chat tippt einen Wunsch, Cecilia antwortet, Polaroid fällt herein (IntersectionObserver, „Nochmal zaubern“). Dazu Notizzettel mit Washi-Tape, wischbare Wäscheleine mit Outfits, Sicherheits-Brief, Einladung mit Sternschnuppe. Anmelde-Knöpfe werden bei bestehender Sitzung zu „Weiter zu Cecilia“. `prefers-reduced-motion` zeigt alles sofort im Endzustand. Open-Graph-Tags gesetzt. axe-core: keine Verstösse. Die Login-Seite verlinkt zurück.
 - **`AGENTS.md` ist ein Symlink auf `CLAUDE.md`**, damit beide nicht mehr auseinanderlaufen. `TODO.md` neu geschrieben (Offen / Erledigt).
 - **Hintergrund-Effekte:** Nachts Sternenhimmel (70–180 per JS erzeugte `.star`, Anzahl nach Bildschirmfläche) mit gelegentlicher Sternschnuppe, keine Schmetterlinge; tagsüber Schmetterlinge. Schmetterlinge fliegen jetzt mit dem Kopf voraus (SVG von oben, per CSS um 90° gedreht, Neigung folgt der Flugbahn). Schalter „Zauber-Effekte“ in der Sidebar setzt `data-effects="on|off"` auf `<html>` (localStorage `cecilia_effects`, Standard aus bei `prefers-reduced-motion`); aus = keine Glühwürmchen, Schmetterlinge, Sternschnuppen, kein Funkeln, Sterne bleiben ruhig stehen.
 - `ImageStore` bricht `indexedDB.open()` nach 4 s ab (z.B. blockiert durch anderen Tab), damit die App nicht hängen bleibt
+
+### Runde 10 (2026-09-29) – Benutzerverwaltung Stufe 1
+Ersetzt den Einzel-Login aus der `.env` (Cookies `cecilia_session` alt/HMAC, `/api/login|session`, `SESSION_SECRET` gibt es nicht mehr). Spec und Plan: `docs/superpowers/specs|plans/2026-09-29-benutzerverwaltung*.md`.
+- **SQLite in `data/cecilia.db`** (better-sqlite3, WAL): Konten, Profile, Sitzungen. Chats und Bilder bleiben im Browser. Alles SQL steht in `src/db/`.
+- **Familien-Login + Profilwahl:** E-Mail + Passwort → `profile.html` (Avatar, optional 4-stellige PIN). **Kind-Login:** Benutzername + Passwort, fest an ein Profil gebunden, ohne Zugriff auf Profilwahl und Admin.
+- **Admin-Seite `admin.html`:** Konten anlegen/sperren/löschen/Passwort zurücksetzen/alle abmelden, Profile, PINs, Kind-Logins. Zugriff nur mit Rolle `admin` **und** Passwort-Freigabe (`/api/auth/admin-unlock`, 15 min). Neue Passwörter erscheinen nur einmal.
+- **Sitzungen serverseitig:** 32 Zufallsbytes im HttpOnly-Cookie `cecilia_session`, in der DB nur der SHA-256-Hash (Familie 30 Tage, Kind 14 Tage). Sperren/Reset/Löschen beendet Sitzungen sofort; abgelaufene werden stündlich gelöscht.
+- **Speicher pro Profil:** Das lesbare Cookie `cecilia_profile` liefert die Profil-ID. Alle Browser-Schlüssel laufen über `profileKey()` (Suffix `:p_<id>`), IndexedDB heisst `cecilia_images:p_<id>`. Alte Geräte-Daten (`cecilia_chats` u. a., `cecilia_images`) übernimmt einmalig das erste Profil, das auf dem Gerät gewählt wird; Bilder mit Wiederholungs-Marker `cecilia_legacy_images_pending:p_<id>`.
+- **Bootstrap aus `.env`:** `user=`/`passwort=` legen nur bei leerer Datenbank das erste Admin-Konto an.
+- **Tests:** `cd cecilia-chat && npm test` (node:test, Dummy-`OPENROUTER_API_KEY` aus `test/setup-env.mjs`, Produktionscode unverändert).
+- **Volume-Pflicht:** `./data:/app/data` in `docker-compose.yml`, sonst sind bei jedem Neubau alle Konten weg. **Backup:** `npm run backup` (siehe Docker-Abschnitt); die DB enthält E-Mails und Hashes.
+- **Sicherheitsentscheidungen (Details in `SECURITY.md`):**
+  - `verifySecret` lehnt leere Hashes und ungültige/riesige scrypt-Parameter ab (N ≤ 2^20, r und p ≤ 16).
+  - `pageGate` normalisiert den Pfad (dekodieren + klein, 400 bei ungültiger Kodierung) vor jedem Vergleich – verhindert `/admin%2Ehtml`-Umgehung.
+  - Statische Dateien nur aus der Allowlist `staticAllowlist` in `app.mjs` (HTML-Seiten, `chat.css`, `styles.css`, `placeholder-images.js`, Favicons, `/js/*.js`, `/img/web/*`), alles andere 404 – `data/cecilia.db`, `cecilia-chat/` und Doku werden nie ausgeliefert. **Neue Frontend-Dateien** müssen in diese Allowlist, bei öffentlichen Seiten zusätzlich in `PUBLIC_PATHS` (`lib/auth.mjs`) und in die `COPY`-Zeile des Dockerfiles.
+  - `/api/auth/admin-unlock` hat das IP-Limit und ist bei gesperrtem Konto blockiert.
+  - `next`-Ziele in `login.html`/`profile.html` werden mit `new URL(…, location.origin)` aufgelöst, nur gleiche Origin erlaubt (kein Open Redirect).
+  - `app.set("trust proxy", 1)`: IP-Rate-Limit und `Secure`-Cookie gehen von **genau einem** Reverse-Proxy (Plesk-nginx) davor aus.
 
 ## Was bereits erledigt ist
 
@@ -258,6 +303,9 @@ docker compose logs -f
 
 # Stoppen
 docker compose down
+
+# Datenbank sichern (schreibt data/backup-<Datum>.db)
+docker compose exec cecilia npm --prefix cecilia-chat run backup
 ```
 
 - **Single-Container:** Express serviert Frontend + API
@@ -265,6 +313,7 @@ docker compose down
 - **Healthcheck:** `GET /health` alle 30s
 - **Port:** 30000 (konfigurierbar via `.env`)
 - **Env:** Liest `cecilia-chat/.env` via `env_file`
+- **Volume (PFLICHT):** `./data:/app/data` enthält `cecilia.db` (Konten). Ohne Volume gehen bei jedem Neubau alle Konten verloren. Backups enthalten E-Mails und Hashes – schützen.
 
 ## Was als nächstes ansteht (Priorität)
 
@@ -272,7 +321,7 @@ Siehe `TODO.md` für die vollständige, aktuelle Liste. Highlights:
 - [ ] Datenschutz für Minderjährige rechtlich klären (Datenschutzerklärung, ggf. Einwilligung der Eltern)
 - [ ] Serverseitige Moderation der KI-Antworten
 - [ ] Strukturiertes Logging, zentraler Error-Handler, Startup-Check der ENV-Variablen
-- [ ] Testing (Vitest + Playwright mit gemockter API) und CI/CD
+- [ ] Testing: Backend-Tests für Konten vorhanden (`npm test`); E2E (Playwright) und CI/CD fehlen
 - [ ] Poster und Charakterseite ans neue Design angleichen
 
 ## Hinweise
@@ -281,5 +330,5 @@ Siehe `TODO.md` für die vollständige, aktuelle Liste. Highlights:
 - Die alten PNG-Referenzbilder in `img/` wurden am 2026-09-29 gelöscht (liegen noch in der Git-Historie); verwendet werden nur `img/web/*.webp`
 - Frontend API-URLs: Relativ wenn Port 30000, sonst explizit `http://localhost:30000`
 - `npm run dev` im `cecilia-chat/` Ordner startet Backend mit Auto-Reload (nodemon)
-- `server.mjs` serviert statische Frontend-Dateien via `PUBLIC_DIR` (default: Projekt-Root)
+- `app.mjs` serviert statische Frontend-Dateien via `PUBLIC_DIR` (default: Projekt-Root), aber nur aus der Allowlist
 - User spricht Deutsch, Antworten immer auf Deutsch

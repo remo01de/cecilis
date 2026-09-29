@@ -617,10 +617,10 @@
   <script>
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Schon angemeldet? Dann führen die Knöpfe direkt in den Chat.
-    fetch('/api/session').then(r => r.json()).then(({ loggedIn }) => {
+    // Schon angemeldet? Dann führen die Knöpfe direkt weiter.
+    fetch('/api/auth/session').then(r => r.json()).then(({ loggedIn, profile }) => {
       if (!loggedIn) return;
-      document.querySelectorAll('[data-cta]').forEach(a => { a.href = '/'; a.textContent = 'Weiter zu Cecilia ✨'; });
+      document.querySelectorAll('[data-cta]').forEach(a => { a.href = profile ? '/' : '/profile.html'; a.textContent = 'Weiter zu Cecilia ✨'; });
       document.querySelectorAll('[data-cta-note]').forEach(p => { p.textContent = 'Du bist schon angemeldet.'; });
     }).catch(() => {});
 
