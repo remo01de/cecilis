@@ -108,6 +108,17 @@ test("Ändernde API-Aufrufe ohne JSON → 415", async (t) => {
   assert.equal(r.status, 415);
 });
 
+test("PWA-Dateien sind ohne Sitzung erreichbar, der Service Worker nie veraltet", async (t) => {
+  const app = await startTestApp();
+  t.after(app.close);
+  const c = client(app.base);
+  for (const p of ["/manifest.webmanifest", "/sw.js", "/offline.html", "/icon-512.png", "/icon-maskable-512.png"]) {
+    assert.equal((await c.req(p)).status, 200, p);
+  }
+  const sw = await fetch(app.base + "/sw.js");
+  assert.equal(sw.headers.get("cache-control"), "no-cache");
+});
+
 test("Seitenschutz ohne Sitzung", async (t) => {
   const app = await startTestApp();
   t.after(app.close);

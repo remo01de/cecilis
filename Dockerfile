@@ -16,6 +16,8 @@ COPY js ./js
 # xss-test.html ist eine Entwickler-Testseite und gehört nicht ins Produktions-Image
 COPY poster.html cecilia-charakter.html ./
 COPY favicon.ico favicon.svg favicon-32.png favicon-192.png apple-touch-icon.png ./
+# PWA: Manifest, Service Worker, Offline-Seite, Icons
+COPY manifest.webmanifest sw.js offline.html icon-512.png icon-maskable-512.png ./
 COPY img/web ./img/web
 
 ENV NODE_ENV=production

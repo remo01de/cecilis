@@ -267,6 +267,14 @@ Ersetzt den Einzel-Login aus der `.env` (Cookies `cecilia_session` alt/HMAC, `/a
   - `next`-Ziele in `login.html`/`profile.html` werden mit `new URL(…, location.origin)` aufgelöst, nur gleiche Origin erlaubt (kein Open Redirect).
   - `app.set("trust proxy", 1)`: IP-Rate-Limit und `Secure`-Cookie gehen von **genau einem** Reverse-Proxy (Plesk-nginx) davor aus.
 
+### Runde 11 (2026-10-03) – Installierbare Web-App (PWA)
+
+- **Dateien im Projektstamm:** `manifest.webmanifest` (Start `/`, `standalone`, Farbe `#15082A`), `sw.js`, `offline.html`, `icon-512.png`, `icon-maskable-512.png` (aus `favicon.svg` mit `sips` erzeugt); `js/pwa.js` meldet den Service Worker an (nur HTTPS oder localhost), `login.html` hat dasselbe inline.
+- **Manifest-Link und iOS-/`theme-color`-Tags** stehen in `index.html`, `login.html`, `profile.html`. **Nicht** in `willkommen.html` (Entscheidung Remo: gehört nicht zur PWA) und nicht in `admin.html`. Der Manifest-`scope` kann eine einzelne Seite nicht ausschliessen; getrennt wird nur dadurch, dass die Seite kein Manifest einbindet.
+- **Service Worker (`sw.js`):** HTML-Seiten und `/api/*` nie gecacht (Sitzungsbezug); Navigationen gehen immer ans Netz, nur bei Ausfall kommt `offline.html`. `chat.css` und `js/*` Netz zuerst, Bilder und Icons Cache zuerst. Fremde Origins (Google Fonts) fasst er nicht an. Bei Änderungen an der Cache-Logik `VERSION` hochzählen. `sw.js` wird mit `Cache-Control: no-cache` ausgeliefert.
+- Die neuen Dateien stehen in `STATIC_FILES`, `PUBLIC_PATHS` und in der `COPY`-Zeile des Dockerfiles; Test in `auth.test.mjs`.
+- **Bekannt:** Läuft die Sitzung ab, öffnet die installierte App über `/` die Willkommensseite (bestehendes Verhalten des Seitenwächters). Der eingebettete Browser der Claude-App erlaubt keine Service Worker; getestet mit Playwright.
+
 ## Was bereits erledigt ist
 
 - [x] XSS-Schutz (Frontend + Backend) – 2025-11-30

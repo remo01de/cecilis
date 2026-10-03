@@ -107,7 +107,8 @@ export function requireAdmin(req, res, next) {
 // Schutz für Seiten und Dateien (nicht für /api – das regeln die Wächter oben)
 const PUBLIC_PATHS = new Set([
   "/willkommen.html", "/login.html", "/favicon.ico", "/favicon.svg", "/favicon-32.png",
-  "/favicon-192.png", "/apple-touch-icon.png", "/health"
+  "/favicon-192.png", "/apple-touch-icon.png", "/health",
+  "/manifest.webmanifest", "/sw.js", "/offline.html", "/icon-512.png", "/icon-maskable-512.png"
 ]);
 const PUBLIC_PREFIXES = ["/img/web/"];
 

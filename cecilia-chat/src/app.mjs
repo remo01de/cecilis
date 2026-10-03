@@ -11,7 +11,8 @@ import { loadSession, requireJsonBody, requireProfile, pageGate, normalizePath }
 const STATIC_FILES = new Set([
   "/", "/index.html", "/willkommen.html", "/login.html", "/profile.html", "/admin.html", "/poster.html",
   "/cecilia-charakter.html", "/chat.css", "/styles.css", "/placeholder-images.js", "/favicon.ico",
-  "/favicon.svg", "/favicon-32.png", "/favicon-192.png", "/apple-touch-icon.png"
+  "/favicon.svg", "/favicon-32.png", "/favicon-192.png", "/apple-touch-icon.png",
+  "/manifest.webmanifest", "/sw.js", "/offline.html", "/icon-512.png", "/icon-maskable-512.png"
 ]);
 function staticAllowlist(req, res, next) {
   const p = normalizePath(req.path);
@@ -51,6 +52,10 @@ export function createApp({ db, publicDir, now = () => Date.now(), loginLimit = 
 
   app.use(pageGate);
   app.use(staticAllowlist);
-  app.use(express.static(publicDir, { dotfiles: "deny" }));
+  app.use(express.static(publicDir, {
+    dotfiles: "deny",
+    // Der Service Worker darf nie veraltet aus dem Browser-Cache kommen, sonst bleiben Updates hängen
+    setHeaders: (res, file) => { if (file.endsWith("sw.js")) res.setHeader("Cache-Control", "no-cache"); }
+  }));
   return app;
 }
