@@ -748,6 +748,10 @@ body.lightbox-open { overflow: hidden; }
   box-shadow: 0 0 8px var(--cyan-500);
   animation-delay: 0.30s;
 }
+.typing-text {
+  font-size: 13px; color: var(--text-3);
+  margin-left: 4px; max-width: 200px;
+}
 @keyframes typing-bounce {
   0%,60%,100% { transform: translateY(0); opacity: 0.6; }
   30%         { transform: translateY(-5px); opacity: 1; }
@@ -913,6 +917,36 @@ body.lightbox-open { overflow: hidden; }
   font-size: 13px; color: var(--text-3);
   margin-top: 10px;
   animation: pulse 1.5s infinite;
+}
+/* Bildermalen: Pinsel zieht einen Farbstreifen, Text wechselt (10–30 s Wartezeit) */
+.image-loading {
+  flex-direction: column; align-items: stretch; gap: 10px;
+  min-width: min(240px, 100%); padding: 14px 18px 12px;
+  animation: none;
+}
+.image-loading .wait-text { text-align: center; min-height: 1.3em; }
+.paint-track {
+  height: 10px; border-radius: var(--r-pill);
+  background: var(--surface-2); border: 1px solid var(--stroke-soft);
+  position: relative;
+}
+.paint-fill {
+  height: 100%; width: 4%; border-radius: inherit;
+  background: var(--grad-magic);
+  position: relative;
+  animation: paint-grow 28s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.paint-brush {
+  position: absolute; right: -14px; top: -16px;
+  font-size: 22px; line-height: 1;
+  transform-origin: bottom left;
+  animation: brush-stroke 0.9s ease-in-out infinite;
+}
+[data-effects="off"] .paint-brush { animation: none; }
+@keyframes paint-grow { to { width: 92%; } }
+@keyframes brush-stroke {
+  0%,100% { transform: rotate(-8deg) translateY(0); }
+  50%     { transform: rotate(10deg) translateY(2px); }
 }
 .image-error {
   padding: 8px 12px;

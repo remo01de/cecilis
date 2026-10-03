@@ -74,6 +74,13 @@ const CONFIG = {
   STORAGE_KEY: profileKey('cecilia_chat_state')
 };
 
+// Wechselnde Wartetexte (Reihenfolge = zeitlicher Ablauf; hold: letzter Text bleibt stehen)
+const WAIT_TEXTS = {
+  typing:  ['Cecilia sammelt Feenstaub …', 'Sie überlegt kurz …', 'Gleich geht’s los …', 'Ein Zauberspruch dauert …'],
+  image:   ['Cecilia mischt die Farben …', 'Sie malt die ersten Striche …', 'Jetzt kommen die Sterne dazu …', 'Noch ein Pinselstrich …', 'Gleich fertig! …'],
+  gallery: ['malt …', 'mischt Farben …', 'fast fertig …']
+};
+
 // Alle API-Aufrufe laufen hierüber: schickt das Login-Cookie mit, setzt bei
 // ändernden Aufrufen JSON (sonst lehnt der Server mit 415 ab) und führt bei
 // abgelaufener Sitzung zum Login bzw. ohne Profil zur Profilwahl.

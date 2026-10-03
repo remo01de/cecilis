@@ -126,6 +126,24 @@ document.getElementById('chatMessages').addEventListener('click', async (e) => {
 });
 
 // ==========================================
+// WARTETEXTE
+// ==========================================
+// Wechselt den Text von `el` reihum. Läuft von selbst aus, sobald `el` aus dem
+// DOM entfernt wird. `hold`: beim letzten Text stehen bleiben statt von vorn.
+function rotateWaitText(el, texts, intervalMs = 3000, hold = false) {
+  let i = 0;
+  el.textContent = texts[0];
+  const timer = setInterval(() => {
+    if (!el.isConnected) { clearInterval(timer); return; }
+    if (hold && i >= texts.length - 1) { clearInterval(timer); return; }
+    i = (i + 1) % texts.length;
+    el.textContent = texts[i];
+  }, intervalMs);
+  el._stopWait = () => clearInterval(timer);
+  return el._stopWait;
+}
+
+// ==========================================
 // SUGGESTION CHIPS
 // ==========================================
 function useSuggestion(btn) {

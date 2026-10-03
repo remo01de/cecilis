@@ -99,8 +99,10 @@ function addMessageToChat(sender, message, isLoading = false, isRestore = false)
       <span class="typing-dot" aria-hidden="true"></span>
       <span class="typing-dot" aria-hidden="true"></span>
       <span class="typing-dot" aria-hidden="true"></span>
+      <span class="typing-text" aria-hidden="true"></span>
       <span class="sr-only">Cecilia schreibt …</span>`;
     contentDiv.appendChild(typingDiv);
+    rotateWaitText(typingDiv.querySelector('.typing-text'), WAIT_TEXTS.typing, 2800);
   } else {
     const bubble = document.createElement('div');
     bubble.classList.add('bubble', sender === 'user' ? 'user' : 'cecilia', 'entering');
@@ -192,7 +194,12 @@ async function handleImageGeneration(messageDiv, prompt) {
   const contentDiv = messageDiv.querySelector('.msg-content');
   const loadingEl  = document.createElement('div');
   loadingEl.classList.add('image-loading');
-  loadingEl.innerHTML = '🎨 Cecilia malt...';
+  loadingEl.setAttribute('role', 'status');
+  loadingEl.innerHTML = `<div class="paint-track" aria-hidden="true">
+      <div class="paint-fill"><span class="paint-brush">🖌️</span></div>
+    </div>
+    <span class="wait-text"></span>`;
+  rotateWaitText(loadingEl.querySelector('.wait-text'), WAIT_TEXTS.image, 4500, true);
   const meta = contentDiv.querySelector('.msg-meta');
   if (meta) contentDiv.insertBefore(loadingEl, meta);
   else contentDiv.appendChild(loadingEl);
@@ -498,20 +505,17 @@ async function sendMessage() {
     if (searchQueries.length > 0 && isAIResponse) {
       const searchQuery     = searchQueries[0];
       const preliminaryText = stripSearchMarkers(response);
-      const typingEl        = loadingMsg.querySelector('.typing-indicator');
-      if (typingEl) {
-        const span = document.createElement('span');
-        span.style.cssText = 'font-size:12px;color:var(--text-3);margin-left:4px';
-        span.textContent = '🔮 Sucht...';
-        typingEl.appendChild(span);
-      }
+      const typingText      = loadingMsg.querySelector('.typing-text');
+      const setTypingStatus = (text) => {
+        if (!typingText) return;
+        if (typingText._stopWait) typingText._stopWait();
+        typingText.textContent = text;
+      };
+      setTypingStatus('🔮 Sucht …');
       try {
         searchResults = await performWebSearch(searchQuery);
         const searchContext = formatSearchResultsForContext(searchQuery, searchResults);
-        if (typingEl) {
-          const span = typingEl.querySelector('span[style]');
-          if (span) span.textContent = '✨ Verarbeitet...';
-        }
+        setTypingStatus('✨ Verarbeitet …');
         const followUpPayload = {
           message: `Der User hat gefragt: "${message}"\n\nDu hast eine Websuche durchgeführt. Hier sind die inhaltlichen Auszüge aus dem Web:\n\n${searchContext}\n\nBitte antworte dem User ausführlich basierend auf diesen Inhalten. Nenne konkrete Fakten aus den "Inhalt/Auszug"-Texten (bitte berichte die eigentlichen Inhalte, anstatt nur die Namen der Webseiten aufzuzählen!). Beantworte ausschließlich diese eine Frage und wiederhole keine früheren Antworten. Bleibe in deinem Charakter als Cecilia. Fasse die Informationen zusammen und präsentiere sie freundlich. Verwende KEINEN [SEARCH: ...] Marker mehr.`,
           history: conversationHistory,

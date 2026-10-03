@@ -161,8 +161,9 @@ async function autoGenerateGalleryImage() {
   const mainEl  = document.getElementById('galleryMain');
   const overlay = document.createElement('div');
   overlay.classList.add('gallery-generating');
-  overlay.innerHTML = '<div class="spinner"></div><span>malt...</span>';
+  overlay.innerHTML = '<div class="spinner"></div><span class="wait-text"></span>';
   mainEl.appendChild(overlay);
+  rotateWaitText(overlay.querySelector('.wait-text'), WAIT_TEXTS.gallery, 5000, true);
   stopGalleryRotation();
 
   try {
@@ -405,8 +406,9 @@ async function generateWelcomeImage() {
   const mainEl  = document.getElementById('galleryMain');
   const overlay = document.createElement('div');
   overlay.classList.add('gallery-generating');
-  overlay.innerHTML = '<div class="spinner"></div><span>malt...</span>';
+  overlay.innerHTML = '<div class="spinner"></div><span class="wait-text"></span>';
   mainEl.appendChild(overlay);
+  rotateWaitText(overlay.querySelector('.wait-text'), WAIT_TEXTS.gallery, 5000, true);
 
   try {
     const r = await apiFetch(CONFIG.IMAGE_URL, {

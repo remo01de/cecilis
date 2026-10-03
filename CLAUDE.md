@@ -276,6 +276,10 @@ Ersetzt den Einzel-Login aus der `.env` (Cookies `cecilia_session` alt/HMAC, `/a
 - **Handy-Ansicht (≤ 600 px):** `initCompactHeader()` in `js/ui.js` setzt beim Runterscrollen (> 12 px) die Klasse `is-compact` auf `.chat-col`: Kopfzeile transparent ohne Blur, „online · im Feenwald" weg, Galerie auf Höhe 0 (`inert` + `aria-hidden`). Hochscrollen (> 12 px) oder `scrollTop < 8` bringt alles zurück. Eingeklappt wird nur, wenn der Chat danach noch scrollbar bleibt. Styles am Ende des Galerie-Blocks in `chat.css`; Desktop unverändert.
 - **Bekannt:** Läuft die Sitzung ab, öffnet die installierte App über `/` die Willkommensseite (bestehendes Verhalten des Seitenwächters). Der eingebettete Browser der Claude-App erlaubt keine Service Worker; getestet mit Playwright.
 
+### Runde 12 (2026-10-03) – Spassfaktor und Wartezeit
+
+- **Wartetexte:** `WAIT_TEXTS` in `js/config.js`, `rotateWaitText(el, texts, ms, hold)` in `js/ui.js` (stoppt von selbst, sobald das Element aus dem DOM ist). Typing-Indikator zeigt neben den Punkten wechselnde Sprüche (`.typing-text`, für Screenreader `aria-hidden`); bei der Websuche ersetzt `setTypingStatus()` in `chat.js` den Text durch „Sucht …/Verarbeitet …“. Bildermalen im Chat: Pinsel zieht einen Farbstreifen (`.paint-track`/`.paint-fill`, CSS-Animation 28 s bis 92 %), Text wechselt und bleibt bei „Gleich fertig!“ stehen. Galerie-Overlay nutzt dieselben Wartetexte.
+
 ## Was bereits erledigt ist
 
 - [x] XSS-Schutz (Frontend + Backend) – 2025-11-30
