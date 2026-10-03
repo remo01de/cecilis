@@ -568,7 +568,7 @@ async function sendMessage() {
       displayEntry
     );
     updateSuggestions();
-    if (isAIResponse) updateMoodFromReply(finalResponse);
+    if (isAIResponse) { updateMoodFromReply(finalResponse); addStars(1); }
 
     if (isAIResponse) {
       conversationHistory.push(

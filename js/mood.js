@@ -33,7 +33,10 @@ function renderMood(animate) {
   const el = document.getElementById('headerStatusText');
   if (!el) return;
   const m = MOODS[currentMood];
-  el.textContent = `${m.emoji} ${m.label} · im Feenwald`;
+  const place = document.createElement('span');
+  place.className = 'mood-place';
+  place.textContent = ' · im Feenwald';
+  el.replaceChildren(document.createTextNode(`${m.emoji} ${m.label}`), place);
   if (animate) {
     el.classList.remove('mood-pop');
     void el.offsetWidth; // Animation neu starten

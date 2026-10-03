@@ -108,13 +108,14 @@
         <div class="chat-header-avatar">
           <img src="img/web/cecilia-avatar.webp" alt="Cecilia" onerror="this.style.display='none'">
         </div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:0">
           <h1 class="chat-header-name">Cecilia</h1>
           <span class="chat-header-status">
             <span class="status-dot" aria-hidden="true"></span><span class="sr-only">online, </span>
             <span id="headerStatusText">😊 fröhlich · im Feenwald</span>
           </span>
         </div>
+        <div class="star-counter" id="starCounter" aria-label="Deine Sterne: 0"><span aria-hidden="true">⭐</span><span id="starCount" aria-hidden="true">0</span></div>
         <button class="icon-btn help-btn" type="button" onclick="openHelp()" aria-label="Hilfe, wenn dich etwas bedrückt">
           <span aria-hidden="true">💜</span><span class="help-btn-label">Hilfe</span>
         </button>
@@ -161,6 +162,7 @@
   </div>
 
   <!-- Toast mit Rückgängig (z.B. nach dem Löschen eines Gesprächs) -->
+  <div class="reward-toast" id="rewardToast" role="status" aria-live="polite"></div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden>
     <span id="toastText"></span>
     <button type="button" class="toast-undo" id="toastUndo">Rückgängig</button>
@@ -234,6 +236,7 @@
   <script src="js/ambient.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/mood.js"></script>
+  <script src="js/rewards.js"></script>
   <script src="js/image-store.js"></script>
   <script src="js/gallery.js"></script>
   <script src="js/chat.js"></script>
