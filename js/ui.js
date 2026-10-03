@@ -175,3 +175,47 @@ function updateCharCounter() {
   counter.classList.toggle('full', len >= max);
 }
 document.getElementById('chatInput').addEventListener('input', updateCharCounter);
+
+// ==========================================
+// KOMPAKTE KOPFZEILE  –  nur Handy: runterscrollen blendet Status und Galerie aus,
+// hochscrollen bringt sie zurück (CSS: .chat-col.is-compact in chat.css)
+// ==========================================
+function initCompactHeader() {
+  const stream  = document.getElementById('streamArea');
+  const col     = document.querySelector('.chat-col');
+  const gallery = document.getElementById('gallerySection');
+  const phone   = window.matchMedia('(max-width: 600px)');
+  const STEP = 12;          // so viel muss man in eine Richtung scrollen, bevor umgeschaltet wird
+  let anchor = stream.scrollTop, compact = false, ticking = false;
+
+  function setCompact(on) {
+    if (compact === on) return;
+    compact = on;
+    col.classList.toggle('is-compact', on);
+    // versteckte Galerie ist weder per Tastatur noch per Screenreader erreichbar
+    gallery.inert = on;
+    gallery.setAttribute('aria-hidden', on ? 'true' : 'false');
+    anchor = stream.scrollTop;
+  }
+
+  function update() {
+    ticking = false;
+    const top = stream.scrollTop;
+    if (!phone.matches || top < 8) { setCompact(false); anchor = top; return; }
+    if (top - anchor > STEP) {
+      // nur einklappen, wenn danach noch genug zum Scrollen übrig bleibt (sonst hängt die Ansicht fest)
+      const reserve = gallery.offsetHeight + 40;
+      if (stream.scrollHeight - stream.clientHeight > reserve) setCompact(true);
+      anchor = top;
+    } else if (anchor - top > STEP) {
+      setCompact(false);
+      anchor = top;
+    }
+  }
+
+  stream.addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  phone.addEventListener('change', update);
+}
+initCompactHeader();

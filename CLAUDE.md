@@ -115,7 +115,7 @@ Markup in `index.html`, Styles in `chat.css`, Logik in `js/` als klassische Scri
 |---|---|
 | `config.js` | `CONFIG` (API-URLs, Limits) |
 | `ambient.js` | Sternenhimmel + Sternschnuppen, Glühwürmchen/Feenstaub, Schmetterlinge, Schalter Zauber-Effekte, Nacht/Tag-Umschalter |
-| `ui.js` | Sidebar, Sicherheits-Dialoge (Hilfe, Datenschutz, externe Links), Vorschlags-Chips, Toast, Begrüssung, Zeichenzähler |
+| `ui.js` | Sidebar, Sicherheits-Dialoge (Hilfe, Datenschutz, externe Links), Vorschlags-Chips, Toast, Begrüssung, Zeichenzähler, `initCompactHeader()` (Handy: Kopfzeile/Galerie einklappen) |
 | `image-store.js` | `ImageStore` (IndexedDB), `persistImage()` |
 | `gallery.js` | Automatische Galerie inkl. Willkommensbild |
 | `chat.js` | Marker, Markdown, Nachrichten-DOM, Bild/Suche, Zauberwörter, `sendMessage()`, Zusammenfassung |
@@ -273,6 +273,7 @@ Ersetzt den Einzel-Login aus der `.env` (Cookies `cecilia_session` alt/HMAC, `/a
 - **Manifest-Link und iOS-/`theme-color`-Tags** stehen in `index.html`, `login.html`, `profile.html`. **Nicht** in `willkommen.html` (Entscheidung Remo: gehört nicht zur PWA) und nicht in `admin.html`. Der Manifest-`scope` kann eine einzelne Seite nicht ausschliessen; getrennt wird nur dadurch, dass die Seite kein Manifest einbindet.
 - **Service Worker (`sw.js`):** HTML-Seiten und `/api/*` nie gecacht (Sitzungsbezug); Navigationen gehen immer ans Netz, nur bei Ausfall kommt `offline.html`. `chat.css` und `js/*` Netz zuerst, Bilder und Icons Cache zuerst. Fremde Origins (Google Fonts) fasst er nicht an. Bei Änderungen an der Cache-Logik `VERSION` hochzählen. `sw.js` wird mit `Cache-Control: no-cache` ausgeliefert.
 - Die neuen Dateien stehen in `STATIC_FILES`, `PUBLIC_PATHS` und in der `COPY`-Zeile des Dockerfiles; Test in `auth.test.mjs`.
+- **Handy-Ansicht (≤ 600 px):** `initCompactHeader()` in `js/ui.js` setzt beim Runterscrollen (> 12 px) die Klasse `is-compact` auf `.chat-col`: Kopfzeile transparent ohne Blur, „online · im Feenwald" weg, Galerie auf Höhe 0 (`inert` + `aria-hidden`). Hochscrollen (> 12 px) oder `scrollTop < 8` bringt alles zurück. Eingeklappt wird nur, wenn der Chat danach noch scrollbar bleibt. Styles am Ende des Galerie-Blocks in `chat.css`; Desktop unverändert.
 - **Bekannt:** Läuft die Sitzung ab, öffnet die installierte App über `/` die Willkommensseite (bestehendes Verhalten des Seitenwächters). Der eingebettete Browser der Claude-App erlaubt keine Service Worker; getestet mit Playwright.
 
 ## Was bereits erledigt ist
