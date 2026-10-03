@@ -154,10 +154,39 @@ function useSuggestion(btn) {
   sendMessage();
 }
 
-// Chips nur am Gespräch-Anfang: nach SUGGESTION_ROUNDS Runden (Nachricht + Antwort) weg, spart Platz
+// Würfelt 3 Chips aus verschiedenen Kategorien, möglichst keinen vom letzten Mal
+let lastSuggestionTexts = [];
+function pickSuggestions() {
+  const fresh = SUGGESTION_POOL.filter(s => !lastSuggestionTexts.includes(s.text));
+  const cats  = [...new Set(fresh.map(s => s.cat))].sort(() => Math.random() - 0.5).slice(0, 3);
+  return cats.map(cat => {
+    const options = fresh.filter(s => s.cat === cat);
+    return options[Math.floor(Math.random() * options.length)];
+  });
+}
+
+function renderSuggestions() {
+  const row = document.getElementById('suggestionRow');
+  const picks = pickSuggestions();
+  lastSuggestionTexts = picks.map(s => s.text);
+  row.replaceChildren(...picks.map(s => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'suggestion-chip';
+    btn.dataset.text = s.text;
+    btn.textContent = `${s.emoji} ${s.label}`;
+    btn.onclick = () => useSuggestion(btn);
+    return btn;
+  }));
+}
+
+// Chips nur am Gespräch-Anfang: nach SUGGESTION_ROUNDS Runden (Nachricht + Antwort) weg, spart Platz.
+// Solange sie sichtbar sind, wechseln sie bei jedem Aufruf (nach jeder Runde, bei Gesprächswechsel).
 function updateSuggestions() {
   const rounds = displayMessages.filter(m => m.sender === 'user').length;
-  document.getElementById('suggestionRow').hidden = rounds >= CONFIG.SUGGESTION_ROUNDS;
+  const hidden = rounds >= CONFIG.SUGGESTION_ROUNDS;
+  document.getElementById('suggestionRow').hidden = hidden;
+  if (!hidden) renderSuggestions();
 }
 
 // ==========================================

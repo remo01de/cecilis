@@ -279,6 +279,7 @@ Ersetzt den Einzel-Login aus der `.env` (Cookies `cecilia_session` alt/HMAC, `/a
 ### Runde 12 (2026-10-03) – Spassfaktor und Wartezeit
 
 - **Wartetexte:** `WAIT_TEXTS` in `js/config.js`, `rotateWaitText(el, texts, ms, hold)` in `js/ui.js` (stoppt von selbst, sobald das Element aus dem DOM ist). Typing-Indikator zeigt neben den Punkten wechselnde Sprüche (`.typing-text`, für Screenreader `aria-hidden`); bei der Websuche ersetzt `setTypingStatus()` in `chat.js` den Text durch „Sucht …/Verarbeitet …“. Bildermalen im Chat: Pinsel zieht einen Farbstreifen (`.paint-track`/`.paint-fill`, CSS-Animation 28 s bis 92 %), Text wechselt und bleibt bei „Gleich fertig!“ stehen. Galerie-Overlay nutzt dieselben Wartetexte.
+- **Vorschlags-Chips wechseln:** `SUGGESTION_POOL` (15 Einträge, Kategorien bild/geschichte/wissen/spiel) in `js/config.js`; `renderSuggestions()` in `js/ui.js` baut 3 Chips aus verschiedenen Kategorien, möglichst keinen vom letzten Mal. `updateSuggestions()` würfelt bei jedem Aufruf neu (nach jeder Runde, bei Laden/Wechsel/Neu) und blendet nach `SUGGESTION_ROUNDS` aus. `index.html` enthält keine festen Chips mehr.
 
 ## Was bereits erledigt ist
 

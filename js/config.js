@@ -74,6 +74,25 @@ const CONFIG = {
   STORAGE_KEY: profileKey('cecilia_chat_state')
 };
 
+// Vorschlags-Chips: pro Runde werden 3 aus verschiedenen Kategorien gewürfelt
+const SUGGESTION_POOL = [
+  { cat: 'bild',      emoji: '✨', label: 'Mal mir eine Katze mit Flügeln',  text: 'Mal mir eine Katze mit Flügeln' },
+  { cat: 'bild',      emoji: '🦄', label: 'Mal mir ein Einhorn im Wald',     text: 'Mal mir ein Einhorn im Feenwald' },
+  { cat: 'bild',      emoji: '🏰', label: 'Mal mir ein Schloss aus Wolken',  text: 'Mal mir ein Schloss aus Wolken' },
+  { cat: 'bild',      emoji: '🐉', label: 'Mal mir einen kleinen Drachen',   text: 'Mal mir einen kleinen freundlichen Drachen' },
+  { cat: 'geschichte', emoji: '🌙', label: 'Gute-Nacht-Geschichte',          text: 'Gute-Nacht-Geschichte' },
+  { cat: 'geschichte', emoji: '🗺️', label: 'Erzähl ein Abenteuer',           text: 'Erzähl mir ein Abenteuer mit einer Schatzkarte' },
+  { cat: 'geschichte', emoji: '🧚', label: 'Wie wurdest du eine Fee?',       text: 'Wie wurdest du eigentlich eine Fee?' },
+  { cat: 'wissen',    emoji: '🐬', label: 'Erzähl mir was über Delfine',     text: 'Erzähl mir was Spannendes über Delfine' },
+  { cat: 'wissen',    emoji: '🌌', label: 'Warum leuchten Sterne?',          text: 'Warum leuchten Sterne?' },
+  { cat: 'wissen',    emoji: '🦋', label: 'Wie werden Schmetterlinge?',      text: 'Wie wird aus einer Raupe ein Schmetterling?' },
+  { cat: 'wissen',    emoji: '🌈', label: 'Wie entsteht ein Regenbogen?',    text: 'Wie entsteht ein Regenbogen?' },
+  { cat: 'spiel',     emoji: '🎲', label: 'Spielen wir Ich sehe was?',       text: 'Spielen wir „Ich sehe was, was du nicht siehst“?' },
+  { cat: 'spiel',     emoji: '🧩', label: 'Stell mir ein Rätsel',            text: 'Stell mir ein lustiges Rätsel' },
+  { cat: 'spiel',     emoji: '🔮', label: 'Was wäre wenn …?',                text: 'Spielen wir „Was wäre wenn …?“ Stell mir eine Frage!' },
+  { cat: 'spiel',     emoji: '🎭', label: 'Erfinde ein Tier mit mir',        text: 'Lass uns zusammen ein neues Fabeltier erfinden' }
+];
+
 // Wechselnde Wartetexte (Reihenfolge = zeitlicher Ablauf; hold: letzter Text bleibt stehen)
 const WAIT_TEXTS = {
   typing:  ['Cecilia sammelt Feenstaub …', 'Sie überlegt kurz …', 'Gleich geht’s los …', 'Ein Zauberspruch dauert …'],

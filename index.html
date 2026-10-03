@@ -144,11 +144,7 @@
       <!-- Composer -->
       <div class="composer">
         <div class="composer-inner">
-          <div class="suggestion-row" id="suggestionRow">
-            <button class="suggestion-chip" data-text="Mal mir eine Katze mit Flügeln" onclick="useSuggestion(this)">✨ Mal mir eine Katze mit Flügeln</button>
-            <button class="suggestion-chip" data-text="Gute-Nacht-Geschichte" onclick="useSuggestion(this)">🌙 Gute-Nacht-Geschichte</button>
-            <button class="suggestion-chip" data-text="Erzähl mir was Spannendes über Delfine" onclick="useSuggestion(this)">🐬 Erzähl mir was über Delfine</button>
-          </div>
+          <div class="suggestion-row" id="suggestionRow"><!-- Chips kommen aus SUGGESTION_POOL (js/ui.js) --></div>
           <div class="input-shell">
             <input type="text" id="chatInput" placeholder="Erzähl Cecilia, was du sehen willst..." autocomplete="off" maxlength="1000" aria-label="Nachricht an Cecilia" aria-describedby="charCounter">
             <span class="char-counter" id="charCounter" aria-live="polite" hidden></span>
