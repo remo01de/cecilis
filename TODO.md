@@ -59,6 +59,7 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 - [x] Favicon-Set, Lightbox (2026-09-27)
 - [x] Installierbare Web-App (PWA): Manifest, Icons, Service Worker, Offline-Hinweisseite (2026-10-03, ohne Willkommensseite)
 - [x] Handy: Kopfzeile und Galerie klappen beim Runterscrollen ein (2026-10-03)
+- [x] Vorschlags-Chips verschwinden nach der 5. Runde (2026-10-03)
 - [x] **2026-09-29 (Runde 9):**
   - Jugendschutz: Galerie-Motive, Bild-Sicherheitszusatz, System-Prompt für 10–16, Websuche mit Sperrliste/Positivliste
   - Sicherheits-UI: Willkommens-Dialog, Hilfe-Knopf (147 / 116 111), Warnung vor persönlichen Daten, Hilfe-Karte bei Sorgen-Stichworten, Hinweis vor externen Links

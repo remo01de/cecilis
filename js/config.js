@@ -70,6 +70,7 @@ const CONFIG = {
   MAX_MESSAGE_LENGTH: 1000,
   SUMMARIZE_THRESHOLD: 30,
   MAX_DISPLAY_MESSAGES: 100,
+  SUGGESTION_ROUNDS: 5,        // nach so vielen Runden verschwinden die Vorschlags-Chips
   STORAGE_KEY: profileKey('cecilia_chat_state')
 };
 

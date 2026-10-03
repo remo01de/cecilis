@@ -115,7 +115,7 @@ Markup in `index.html`, Styles in `chat.css`, Logik in `js/` als klassische Scri
 |---|---|
 | `config.js` | `CONFIG` (API-URLs, Limits) |
 | `ambient.js` | Sternenhimmel + Sternschnuppen, Glühwürmchen/Feenstaub, Schmetterlinge, Schalter Zauber-Effekte, Nacht/Tag-Umschalter |
-| `ui.js` | Sidebar, Sicherheits-Dialoge (Hilfe, Datenschutz, externe Links), Vorschlags-Chips, Toast, Begrüssung, Zeichenzähler, `initCompactHeader()` (Handy: Kopfzeile/Galerie einklappen) |
+| `ui.js` | Sidebar, Sicherheits-Dialoge (Hilfe, Datenschutz, externe Links), Vorschlags-Chips, Toast, Begrüssung, Zeichenzähler, `initCompactHeader()` (Handy: Kopfzeile/Galerie einklappen), `updateSuggestions()` (Vorschlags-Chips weg nach `CONFIG.SUGGESTION_ROUNDS` = 5 Runden pro Gespräch) |
 | `image-store.js` | `ImageStore` (IndexedDB), `persistImage()` |
 | `gallery.js` | Automatische Galerie inkl. Willkommensbild |
 | `chat.js` | Marker, Markdown, Nachrichten-DOM, Bild/Suche, Zauberwörter, `sendMessage()`, Zusammenfassung |

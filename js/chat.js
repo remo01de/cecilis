@@ -563,6 +563,7 @@ async function sendMessage() {
       { sender: 'user', text: message },
       displayEntry
     );
+    updateSuggestions();
 
     if (isAIResponse) {
       conversationHistory.push(

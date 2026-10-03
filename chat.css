@@ -942,6 +942,7 @@ body.lightbox-open { overflow: hidden; }
 .suggestion-row {
   display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
 }
+.suggestion-row[hidden] { display: none; }
 .suggestion-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px;

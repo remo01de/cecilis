@@ -136,6 +136,12 @@ function useSuggestion(btn) {
   sendMessage();
 }
 
+// Chips nur am Gespräch-Anfang: nach SUGGESTION_ROUNDS Runden (Nachricht + Antwort) weg, spart Platz
+function updateSuggestions() {
+  const rounds = displayMessages.filter(m => m.sender === 'user').length;
+  document.getElementById('suggestionRow').hidden = rounds >= CONFIG.SUGGESTION_ROUNDS;
+}
+
 // ==========================================
 // TOAST
 // ==========================================

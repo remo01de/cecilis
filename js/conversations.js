@@ -126,6 +126,7 @@ async function loadChatState() {
 }
 
 async function restoreDisplayMessages() {
+  updateSuggestions();
   for (const msg of displayMessages) {
     const msgDiv = addMessageToChat(msg.sender, msg.text, false, true);
     const imageUrl = msg.imageId
