@@ -214,6 +214,7 @@ async function addGalleryImage(url, analysis, season) {
   renderGalleryMain();
   renderGalleryThumbnails();
   startGalleryRotation();
+  onNewSticker(entry);
   return entry;
 }
 

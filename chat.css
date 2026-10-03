@@ -1188,6 +1188,43 @@ body.lightbox-open { overflow: hidden; }
   color: #2A0526; box-shadow: var(--shadow-glow-pink);
 }
 
+/* Stickerbuch */
+.sticker-dialog { width: min(480px, calc(100vw - 32px)); }
+.sticker-dialog p { text-align: center; font-size: 14px; color: var(--text-3); }
+.sticker-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  margin-top: 16px; padding: 4px;
+}
+.sticker {
+  position: relative; aspect-ratio: 1; padding: 0;
+  border-radius: 18px; border: 4px solid #fff;
+  background: var(--surface-2); overflow: visible; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 180ms var(--ease-magic);
+}
+.sticker:hover, .sticker:focus-visible { transform: rotate(0deg) scale(1.06); }
+.sticker img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  border-radius: 13px; pointer-events: none;
+}
+.sticker.rare {
+  border-color: var(--gold-300);
+  box-shadow: 0 0 0 2px var(--gold-500), 0 0 16px rgba(255,214,102,0.55);
+}
+.sticker-rare-mark { position: absolute; top: -10px; right: -8px; font-size: 20px; }
+.sticker.empty {
+  display: grid; place-items: center; cursor: default;
+  border: 2px dashed var(--stroke); background: transparent; box-shadow: none;
+  color: var(--text-4); font: 400 28px/1 var(--font-display); transform: none;
+}
+.gallery-main.sticker-pop { animation: sticker-pop 700ms var(--ease-magic); }
+@keyframes sticker-pop {
+  0%   { transform: scale(0.7) rotate(-8deg); }
+  60%  { transform: scale(1.12) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
 /* Hilfe-Karte im Chat (bei Sorgen-Stichworten) */
 .help-card {
   align-self: stretch;

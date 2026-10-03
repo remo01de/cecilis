@@ -62,6 +62,12 @@
             <span style="font-size:13px;color:var(--text-1);font-weight:600">Sicher chatten</span>
           </span>
         </button>
+        <button class="history-item" type="button" onclick="closeSidebar(); openStickerBook()">
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <span aria-hidden="true" style="font-size:16px">🌟</span>
+            <span style="font-size:13px;color:var(--text-1);font-weight:600">Stickerbuch</span>
+          </span>
+        </button>
         <button class="history-item" id="effectsToggle" type="button" onclick="toggleEffects()" aria-pressed="true">
           <span style="display:inline-flex;align-items:center;gap:10px;flex:1">
             <span aria-hidden="true" style="font-size:16px">🦋</span>
@@ -184,6 +190,16 @@
     </form>
   </dialog>
 
+  <dialog class="fairy-dialog sticker-dialog" id="stickerDialog" aria-labelledby="stickerTitle">
+    <div class="fairy-dialog-icon" aria-hidden="true">🌟</div>
+    <h2 id="stickerTitle">Dein Stickerbuch</h2>
+    <p id="stickerCount"></p>
+    <div class="sticker-grid" id="stickerGrid"></div>
+    <form method="dialog" class="dialog-actions">
+      <button class="dialog-btn primary" value="ok">Schliessen</button>
+    </form>
+  </dialog>
+
   <dialog class="fairy-dialog" id="helpDialog" aria-labelledby="helpTitle">
     <div class="fairy-dialog-icon" aria-hidden="true">💜</div>
     <h2 id="helpTitle">Du bist nicht allein</h2>
@@ -239,6 +255,7 @@
   <script src="js/rewards.js"></script>
   <script src="js/image-store.js"></script>
   <script src="js/gallery.js"></script>
+  <script src="js/stickers.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/conversations.js"></script>
   <script src="js/lightbox.js"></script>
