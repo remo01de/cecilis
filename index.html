@@ -111,8 +111,8 @@
         <div style="flex:1">
           <h1 class="chat-header-name">Cecilia</h1>
           <span class="chat-header-status">
-            <span class="status-dot"></span>
-            online · im Feenwald
+            <span class="status-dot" aria-hidden="true"></span><span class="sr-only">online, </span>
+            <span id="headerStatusText">😊 fröhlich · im Feenwald</span>
           </span>
         </div>
         <button class="icon-btn help-btn" type="button" onclick="openHelp()" aria-label="Hilfe, wenn dich etwas bedrückt">
@@ -233,6 +233,7 @@
   <script src="js/config.js"></script>
   <script src="js/ambient.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/mood.js"></script>
   <script src="js/image-store.js"></script>
   <script src="js/gallery.js"></script>
   <script src="js/chat.js"></script>

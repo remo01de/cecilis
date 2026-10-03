@@ -31,7 +31,7 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 
 ### Frontend & Design
 - [ ] **Poster und Charakterseite** ans neue Design angleichen (Schriften, Nacht/Tag, Hilfe-Knopf)
-- [ ] **Spassfaktor:** Cecilias Stimmung im Header, Galeriebilder als Sticker sammeln, kleine Belohnungen
+- [ ] **Spassfaktor:** Galeriebilder als Sticker sammeln, kleine Belohnungen
 - [ ] **Screenreader-Test** mit echten Geräten (VoiceOver iOS, TalkBack)
 - [ ] **Performance auf günstigen Android-Geräten** prüfen (viele `backdrop-filter`-Ebenen)
 
@@ -60,6 +60,7 @@ Details zu allem Erledigten stehen in `CLAUDE.md` unter „Projektgeschichte“.
 - [x] Vorschlags-Chips verschwinden nach der 5. Runde (2026-10-03)
 - [x] Kindgerechte Warteanimation: wechselnde Wartetexte beim Antworten, Pinsel mit Farbstreifen beim Bildermalen, Galerie-Overlay (2026-10-03)
 - [x] Vorschlags-Chips wechseln: 3 aus 15 (je andere Kategorie) bei jeder Runde und jedem Gesprächswechsel (2026-10-03)
+- [x] Cecilias Stimmung im Header (6 Stimmungen, aus der Antwort abgeleitet, pro Profil gespeichert) (2026-10-03)
 - [x] **2026-09-29 (Runde 9):**
   - Jugendschutz: Galerie-Motive, Bild-Sicherheitszusatz, System-Prompt für 10–16, Websuche mit Sperrliste/Positivliste
   - Sicherheits-UI: Willkommens-Dialog, Hilfe-Knopf (147 / 116 111), Warnung vor persönlichen Daten, Hilfe-Karte bei Sorgen-Stichworten, Hinweis vor externen Links

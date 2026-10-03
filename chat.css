@@ -428,6 +428,11 @@ body {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; color: var(--text-3); margin-top: 2px;
 }
+.mood-pop { animation: mood-pop 520ms var(--ease-magic); display: inline-block; }
+@keyframes mood-pop {
+  0%   { transform: scale(0.8); opacity: 0.4; }
+  100% { transform: scale(1);   opacity: 1; }
+}
 .status-dot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--mint-500); box-shadow: 0 0 8px var(--mint-500);

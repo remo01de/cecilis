@@ -4,6 +4,7 @@
 // Galerie und Chat laden Bilder asynchron aus IndexedDB. sendMessage()
 // wartet auf appReady, damit ein früh abgeschickter Text den geladenen
 // Verlauf nicht überschreibt.
+initMood();
 const appReady = (async () => {
   try {
     // Alte Bilder (aus der Zeit vor den Profilen) übernehmen. Die Markierung bleibt
